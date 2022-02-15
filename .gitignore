@@ -1,0 +1,17 @@
+# Compiled files
+/main
+/emerge
+
+# Build directories
+/bin/**
+/build/**
+
+# Test files
+*.log
+*.test
+*.out
+*.output
+
+# Misc
+*.html
+/.brew_home/
