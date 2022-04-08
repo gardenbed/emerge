@@ -1,6 +1,6 @@
 # Theory
 
-## Background and Context
+## Languages
 
 A language is defined by four sets:
 
@@ -66,14 +66,105 @@ A deterministic finite automaton (DFA) is a special case of an NFA where:
   - There are no moves on input `ε`, and
   - For each state `s` and input symbol `a`, there is exactly one edge out of `s` labeled `a`.
 
-## Lexical Analysis
+## Compilers
 
-  - A **token** is a tuple consisting of a token name alongside some optional attribute values (*lexeme, position, etc.*).
+A compiler is a program that can read a program in the source language and translate it into an equivalent program in the target language.
+A compiler has two major parts:
+
+  - **Analysis** (front-end)
+  - **Synthesis** (back-end)
+
+The analysis part breaks up the source program into constituent pieces and imposes a grammatical structure on them.
+It then uses this structure to create an **intermediate representation** of the source program.
+If the analysis part finds that the source program is either syntactically malformed or semantically unsound,
+then it must provide informative messages for the user to take actions.
+The analysis part also collects information about the source program and stores it in a data structure called **symbol table**.
+The **symbol table** is then passed along with the **intermediate representation** to the synthesis part.
+
+The synthesis part constructs the desired **target program** from the intermediate representation and the information in the symbol table.
+
+```
+                                          Character Stream
+                                                 │
+                                ┌────────────────┴───────────────────┐
+           .....................│         Lexical Analyzer           │
+           .                    └────────────────┬───────────────────┘
+           .                                     │
+           .                                Token Stream
+           .                                     │
+           .                    ┌────────────────┴───────────────────┐
+           .....................│          Syntax Analyzer           │
+           .                    └────────────────┬───────────────────┘
+           .                                     │
+           .                                Syntax Tree
+           .                                     │
+           .                    ┌────────────────┴───────────────────┐
+           .....................│        Semantic Analyzer           │
+           .                    └────────────────┬───────────────────┘
+           .                                     │
+           .                                Syntax Tree
+ ┌───────────────────┐                           │
+ │                   │          ┌────────────────┴───────────────────┐
+ │   Symbol Table    │..........│    Intermediate Code Generator     │
+ │                   │          └────────────────┬───────────────────┘
+ └───────────────────┘                           │
+           .                        Intermediate Representation
+           .                                     │
+           .                    ┌────────────────┴───────────────────┐
+           .....................│ Machine-Independent Code Optimizer │
+           .                    └────────────────┬───────────────────┘
+           .                                     │
+           .                        Intermediate Representation
+           .                                     │
+           .                    ┌────────────────┴───────────────────┐
+           .....................│            Code Generator          │
+           .                    └────────────────┬───────────────────┘
+           .                                     │
+           .                            Target-Machine Code
+           .                                     │
+           .                    ┌────────────────┴───────────────────┐
+           .....................│  Machine-Dependent Code Optimizer  │
+                                └────────────────┬───────────────────┘
+                                                 │
+                                        Target-Machine Code
+                                                 │
+                                                 ▼
+```
+
+In an implementation, activities from several phases may be grouped together into a **pass**
+that reads an input file and writes an output file.
+
+### Lexical Analysis
+
+The first phase of a compiler is called *lexical analysis* or *scanning*.
+There are a number of reasons for the separation of *lexical analysis* and *syntax analysis*:
+
+  - Simplicity of design
+  - Compiler efficiency
+  - Compiler portability
+
+The lexical analyzer performs the following tasks:
+
+  - Reading the **stream of characters** of the source program, grouping them into **lexemes**, and producing a **stream of of tokens**.
+  - Stripping out comments and whitespace (blank, newline, tab, ...).
+  - Correlating error messages generated by the compiler with the source program.
+
+It is common for the lexical analyzer to interact with the *symbol table* as well.
+Often, information about an identifier (lexeme, type, location at which it is first found, etc.) is kept in the symbol table.
+Hence, the appropriate attribute value for an identifier is a pointer to the symbol-table entry for that identifier.
+
+  - A **token** is a tuple consisting of a token name alongside some optional attributes (*lexeme*, *position*, etc.).
     The token name is an abstract symbol representing a kind of lexical unit.
   - A **lexeme** is a sequence of characters (from the language's alphabet)
-    that matches the pattern for a token and is identified by the lexical analyzer as an instance of that token.
+    that matches the **pattern** for a token and is identified by the lexical analyzer as an instance of that token.
 
-## Syntax Analysis
+The parser calls the lexical analyzer using the `getNextToken` command, causes the lexical analyzer to read characters
+from its input until it can identify the next lexeme and produce the next token, which it returns to the parser.
+
+### Syntax Analysis
+
+The second phase of the compiler is *syntax analysis* or *parsing*.
+The parser creates a **syntax tree** (intermediate representation) that depicts the grammatical structure of the token stream.
 
   - [Top-Down Parsers](https://en.wikipedia.org/wiki/Top-down_parsing)
     - [LL Parser](https://en.wikipedia.org/wiki/LL_parser)
@@ -86,7 +177,31 @@ A deterministic finite automaton (DFA) is a special case of an NFA where:
       - [Canonical LR Parser](https://en.wikipedia.org/wiki/Canonical_LR_parser)
       - [GLR Parser](https://en.wikipedia.org/wiki/GLR_parser)
 
-## Semantic Analysis
+### Semantic Analysis
+
+The semantic analyzer uses the *syntax tree* and the information in the *symbol table*
+to check the source program for semantic consistency with the language definition.
+It also gathers **type information** and saves it in either the syntax tree or the symbol table.
+An important part of semantic analysis is **type checking**, where the compiler checks that each operator has matching operands.
+
+### Intermediate Code Generation
+
+After syntax and semantic analysis of the source program, many compilers generate an explicit *low-level* or *machine-like* intermediate representation.
+This intermediate representation can be thought of as a program for an *abstract machine*.
+
+### Machine-Independent Code Optimization
+
+The machine-independent code optimization phase attempts to improve the intermediate code so that better target code will result.
+Usually better means faster, but other objectives may be desired, such as shorter code, or target code that consumes less power.
+
+### Code Generation
+
+The code generator takes as input an intermediate representation of the source program and maps it into the *target language*.
+
+### Machine-Dependent Code Optimization
+
+*Optimization* is a misnomer!
+In fact, there is no way that the code produced by a compiler can be guaranteed to be as fast or faster than any other code that performs the same task.
 
 ## References
 
