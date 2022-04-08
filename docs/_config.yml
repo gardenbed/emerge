@@ -2,4 +2,4 @@
 name: Emerge Documentation
 description: Theory and in-depth details about the design and implementation of Emerge.
 markdown: GFM
-theme: cayman
+theme: jekyll-theme-cayman
