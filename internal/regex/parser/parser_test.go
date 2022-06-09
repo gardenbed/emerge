@@ -45,70 +45,62 @@ func (s *stringInput) Remaining() input {
 	}
 }
 
-func TestResult_Get(t *testing.T) {
+func TestGetAt(t *testing.T) {
 	tests := []struct {
-		name           string
-		r              result
-		i              int
-		expectedOK     bool
-		expectedResult result
+		name          string
+		v             any
+		i             int
+		expectedOK    bool
+		expectedValue any
 	}{
 		{
-			name: "Input_Not_List",
-			r: result{
-				Val: 'c',
-			},
+			name:       "Input_Not_List",
+			v:          'c',
 			i:          2,
 			expectedOK: false,
 		},
 		{
 			name: "Index_LT_Zero",
-			r: result{
-				Val: list{
-					result{'a', 0},
-					result{'b', 1},
-					result{'c', 2},
-					result{'d', 3},
-				},
+			v: list{
+				result{'a', 0},
+				result{'b', 1},
+				result{'c', 2},
+				result{'d', 3},
 			},
 			i:          -1,
 			expectedOK: false,
 		},
 		{
 			name: "Index_GEQ_Len",
-			r: result{
-				Val: list{
-					result{'a', 0},
-					result{'b', 1},
-					result{'c', 2},
-					result{'d', 3},
-				},
+			v: list{
+				result{'a', 0},
+				result{'b', 1},
+				result{'c', 2},
+				result{'d', 3},
 			},
 			i:          4,
 			expectedOK: false,
 		},
 		{
 			name: "Successful",
-			r: result{
-				Val: list{
-					result{'a', 0},
-					result{'b', 1},
-					result{'c', 2},
-					result{'d', 3},
-				},
+			v: list{
+				result{'a', 0},
+				result{'b', 1},
+				result{'c', 2},
+				result{'d', 3},
 			},
-			i:              2,
-			expectedOK:     true,
-			expectedResult: result{'c', 2},
+			i:             2,
+			expectedOK:    true,
+			expectedValue: 'c',
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			res, ok := tc.r.Get(tc.i)
+			v, ok := getAt(tc.v, tc.i)
 
 			assert.Equal(t, tc.expectedOK, ok)
-			assert.Equal(t, tc.expectedResult, res)
+			assert.Equal(t, tc.expectedValue, v)
 		})
 	}
 }
@@ -1169,8 +1161,8 @@ func TestParser_Get(t *testing.T) {
 }
 
 func TestParser_Convert(t *testing.T) {
-	toUpper := func(r result) (any, bool) {
-		return strings.ToUpper(r.Val.(string)), true
+	toUpper := func(v any) (any, bool) {
+		return strings.ToUpper(v.(string)), true
 	}
 
 	tests := []struct {

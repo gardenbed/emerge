@@ -1,6 +1,6 @@
-// Package basic implements a minimal abstract syntax tree for regular expressions.
+// Package ast implements a minimal abstract syntax tree for regular expressions.
 // The functions computed on each node are required by the construction alogorithm for finite state automata.
-package basic
+package ast
 
 // Node is the interface for all nodes in an abstract syntax tree.
 type Node interface {
