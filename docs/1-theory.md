@@ -1,4 +1,4 @@
-# Theory
+# Theory of Languages and Compilers
 
 ## Languages
 
@@ -56,10 +56,10 @@ In fact, every nondeterministic finite automata (NFA) can be converted to a dete
 A nondeterministic finite automaton (NFA) is defined as follows:
 
   1. A finite set of states `S`.
-  2. A set of input symbols `Σ`, the input alphabet (we assume the empty string `ε` is never a member of `Σ`).
-  3. A transition function that determines a set of next states for each state and for each symbol in `Σ ∪ {ε}`.
+  2. A set of input symbols `Σ`, the *input alphabet* (we assume the empty string `ε` is never a member of `Σ`).
+  3. A *transition function* that determines a set of next states for each state and for each symbol in `Σ ∪ {ε}`.
   4. A state <code>s<sub>0</sub> ∈ S</code> that is distinguished as the *start state* or *initial state*.
-  5. A set of states `F`, a subset of `S`, that is distinguished as the *accepting states* or *final states*.
+  5. A set of states `F ⊆ S` that is distinguished as the *accepting states* or *final states*.
 
 A deterministic finite automaton (DFA) is a special case of an NFA where:
 
@@ -153,6 +153,8 @@ It is common for the lexical analyzer to interact with the *symbol table* as wel
 Often, information about an identifier (lexeme, type, location at which it is first found, etc.) is kept in the symbol table.
 Hence, the appropriate attribute value for an identifier is a pointer to the symbol-table entry for that identifier.
 
+It is hard for a lexical analyzer to tell, without the aid of other components, that there is a source-code error.
+
   - A **token** is a tuple consisting of a token name alongside some optional attributes (*lexeme*, *position*, etc.).
     The token name is an abstract symbol representing a kind of lexical unit.
   - A **lexeme** is a sequence of characters (from the language's alphabet)
@@ -161,10 +163,14 @@ Hence, the appropriate attribute value for an identifier is a pointer to the sym
 The parser calls the lexical analyzer using the `getNextToken` command, causes the lexical analyzer to read characters
 from its input until it can identify the next lexeme and produce the next token, which it returns to the parser.
 
+For a more in-depth theory of lexical analysis and lexers, please see [Theory of Lexers](./2-lexer-theory.md).
+
 ### Syntax Analysis
 
 The second phase of the compiler is *syntax analysis* or *parsing*.
 The parser creates a **syntax tree** (intermediate representation) that depicts the grammatical structure of the token stream.
+
+For a more in-depth theory of syntax analysis and parsers, please see [Theory of Parser](./2-parser-theory.md).
 
   - [Top-Down Parsers](https://en.wikipedia.org/wiki/Top-down_parsing)
     - [LL Parser](https://en.wikipedia.org/wiki/LL_parser)

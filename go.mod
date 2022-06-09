@@ -1,9 +1,10 @@
 module github.com/gardenbed/emerge
 
-go 1.17
+go 1.18
 
 require (
 	github.com/gardenbed/charm v0.1.3
+	github.com/hashicorp/go-multierror v1.1.1
 	github.com/mitchellh/cli v1.1.4
 	github.com/stretchr/testify v1.7.2
 )
@@ -18,7 +19,6 @@ require (
 	github.com/fatih/color v1.7.0 // indirect
 	github.com/google/uuid v1.1.2 // indirect
 	github.com/hashicorp/errwrap v1.0.0 // indirect
-	github.com/hashicorp/go-multierror v1.0.0 // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/mattn/go-colorable v0.0.9 // indirect

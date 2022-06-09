@@ -1,0 +1,47 @@
+// Grammar name
+grammar please
+
+/* ------------------------------------------------------------ TOKENS ------------------------------------------------------------ */
+
+EOL    = /TODO:/
+INT    = /TODO:/
+STRING = /TODO:/
+IDENT  = /TODO:/
+
+/* ------------------------------------------------------------ RULES ------------------------------------------------------------ */
+
+file_input      = { statement }
+
+statement       = ( "pass" | "continue" | return | assert | for | if | func_def | ident_statement | expression ) EOL
+return          = "return" [ expression { "," expression } ]
+assert          = "assert" expression [ "," expression ]
+for             = "for" IDENT { "," IDENT } "in" expression ":" EOL { statement }
+if              = "if" expression ":" EOL { statement }
+                  [ "elif" expression ":" EOL { statement } ]
+                  [ "else" ":" EOL { statement } ]
+func_def        = "def" IDENT "(" [ func_arg { "," func_arg } ] ")" ":" EOL
+                  [ STRING EOL ]
+                  { statement }
+func_arg        = IDENT [ ":" STRING { "|" STRING } ] { "&" IDENT } [ "=" expression ]
+ident_statement = IDENT
+                  ( { "," IDENT } "=" expression
+                  | ( "[" expression "]" ( "=" | "+=" ) expression )
+                  | ( "." ident | call | ( "=" | "+=" ) expression ) )
+
+expression      = [ "-" | "not" ] value [ operator expression ] [ "if" expression "else" expression ]
+value           = ( "None" | "True" | "False" | INT | string | ident | tuple | list | dict | lambda ) [ slice ] [ ( "." ident | call ) ]
+string          = [ "f" | "r" ] STRING
+ident           = IDENT { "." ident | call }
+tuple           = "(" expression { "," expression } ")"
+list            = "[" expression [ { "," expression } | comprehension ] "]"
+dict            = "{" expression ":" expression [ { "," expression ":" expression } | comprehension ] "}"
+lambda          = "lambda" [ lambda_arg { "," lambda_arg } ] ":" expression
+lambda_arg      = IDENT [ "=" expression ]
+slice           = "[" [ expression ] [ ":" expression ] "]"
+call            = "(" [ call_arg { "," call_arg } ] ")"
+call_arg        = expression | ident "=" expression
+comprehension   = "for" IDENT { "," IDENT } "in" expression
+                  [ "for" IDENT { "," IDENT } "in" expression ]
+                  [ "if" expression ]
+
+operator        = ( "+" | "-" | "*" | "/" | "%" | "<" | ">" | "<=" | ">=" | "==" | "!=" | "and" | "or" | "is" | "in" | "is" "not" | "not" "in" | "|" )
