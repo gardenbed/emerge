@@ -1,16 +1,17 @@
 # Design
 
-In this document,
+In this document, we go over some of the design decisions and rationals behind **Emerge**.
 
 ## Regular Expression
 
 ### Language Design
 
-The following items are not included in the Emerge's Regular Expression language.
-They seem unnecessary for the purpose of designing and defining a language.
+The following features are NOT included in the Emerge's Regular Expression language.
+They seem unnecessary for the purpose of designing and defining tokens of a language.
 
-  - `\A`, `\G`, `\z`, `\Z` anchors
   - Unicode character class
+  - Non-capturing modifier `?:`
+  - `\A`, `\b`, `\B`, `\z`, `\Z`, `\G`
 
 ### Parser Design
 
@@ -44,6 +45,11 @@ The following terminal symbols are removed from the Emerge's EBNF language for s
 The Solidus (Slash) character (`/`) is added to the Emerge's EBNF language for defining regex patterns.
 
 ### Lexer Design
+
+#### Input Buffer
+
+We employ the *two-buffer* scheme explained [here](./2-lexer-theory.md#input-buffering).
+The two buffers are implemented as one buffer divided into two halves.
 
 ### Parser Design
 

@@ -12,7 +12,8 @@ We need a regular expression parser for building a lexer for any EBNF parser.
 
 Regular expression, as the name suggests, is a regular language or a Type-3 language.
 Since Type-2 languages are a superset of Type-3 languages,
-we can define the regular expression language using the EBNF notation as well (we will define the EBNF notation formally later).
+we can define the regular expression language using the EBNF notation as well
+(we will define the EBNF notation formally in the next section).
 
 ### Grammar
 
@@ -21,9 +22,9 @@ regex            = [ "^" ] expr
 expr             = subexpr [ "|" expr ]
 subexpr          = {{ subexpr_item }}
 subexpr_item     = group | anchor | backref | match
-anchor           = "$" | "\b" | "\B"
+anchor           = "$"
 backref          = "\" num
-group            = "(" [ "?:" ] expr ")" [ quantifier ]
+group            = "(" expr ")" [ quantifier ]
 match            = match_item [ quantifier ]
 match_item       = any_char | char_class | ascii_char_class | char_group | char /* excluding | ) */
 any_char         = "."
@@ -32,11 +33,8 @@ ascii_char_class = "[:blank:]" | "[:space:]" | "[:digit:]" | "[:xdigit:]" | "[:u
 char_group       = "[" [ "^" ] {{ char_group_item }} "]"
 char_group_item  = char_class | ascii_char_class | char_range | char /* excluding ] */
 char_range       = char "-" char
-quantifier       = cardinality [ "?" ]
-cardinality      = zero_or_one | zero_or_more | one_or_more | range
-zero_or_one      = "?"
-zero_or_more     = "*"
-one_or_more      = "+"
+quantifier       = repetition [ "?" ]
+repetition       = "?" | "*" | "+" | range
 range            = "{" num [ upper_bound ] "}"
 upper_bound      = "," [ num ]
 num              = {{ digit }}

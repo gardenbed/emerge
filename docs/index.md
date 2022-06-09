@@ -3,8 +3,10 @@
 Emerge is a command-line tool for generating Lexers and Parsers from an
 [EBNF](https://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_form) description.
 
-## Table of Content
+## Table of Contents
 
-  - [Theory](./theory.md)
-  - [Definitions](./definitions.md)
-  - [Design](./design.md)
+  - [Theory of Languages and Compilers](./1-theory.md)
+      - [Theory of Lexers](./2-lexer-theory.md)
+      - [Theory of Parser](./3-parser-theory.md)
+  - [Definitions](./4-definitions.md)
+  - [Design](./5-design.md)
