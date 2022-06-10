@@ -6,7 +6,7 @@ type (
 	empty struct{}
 
 	// result is the result of parsing a production rule.
-	// It represents a production rule.
+	// It represents a production rule result.
 	result struct {
 		Val any
 		Pos int
