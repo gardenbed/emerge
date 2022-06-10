@@ -14,7 +14,7 @@ func Parse(in input) (ast.Node, error) {
 
 	out, ok := r.regex(in)
 	if !ok {
-		return nil, errors.New("syntax error")
+		return nil, errors.New("invalid regular expression")
 	}
 
 	// Check for errors
@@ -73,8 +73,8 @@ type regex struct {
 	errors error
 
 	char           parser
-	charInGroup    parser
-	charInMatch    parser
+	unescapedChar  parser
+	escapedChar    parser
 	digit          parser
 	letter         parser
 	num            parser
@@ -100,13 +100,18 @@ type regex struct {
 func newRegex() *regex {
 	r := new(regex)
 
-	r.char = expectRuneInRange(0x20, 0x7E).Map(r.toChar)                                     // char --> /* all valid characters */
-	r.charInGroup = expectRuneInRange(0x20, 0x7E).Bind(excludeRunes(']')).Map(r.toChar)      // char --> /* all valid characters except ] */
-	r.charInMatch = expectRuneInRange(0x20, 0x7E).Bind(excludeRunes(')', '|')).Map(r.toChar) // char --> /* all valid characters except ) and | */
-	r.digit = expectRuneInRange('0', '9')                                                    // digit --> "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
-	r.letter = expectRuneInRange('A', 'Z').ALT(expectRuneInRange('a', 'z'))                  // letter --> "A" | ... | "Z" | "a" | ... | "z"
-	r.num = r.digit.REP1().Map(r.toNum)                                                      // num --> digit+
-	r.letters = r.letter.REP1().Map(r.toLetters)                                             // letters --> letter+
+	// char --> /* all valid characters */
+	r.char = expectRuneInRange(0x20, 0x7E)
+	// all characters excluding the escaped ones
+	r.unescapedChar = r.char.Bind(excludeRunes('\\', '/', '|', '.', '?', '*', '+', '(', ')', '[', ']', '{', '}')).Map(r.toUnescapedChar)
+	// escaped_char --> "\" ( "\" | "/" | "|" | "." | "?" | "*" | "+" | "(" | ")" | "[" | "]" | "{" | "}" )
+	r.escapedChar = expectRune('\\').CONCAT(expectRuneIn('\\', '/', '|', '.', '?', '*', '+', '(', ')', '[', ']', '{', '}')).Map(r.toEscapedChar)
+
+	r.digit = expectRuneInRange('0', '9')                                   // digit --> "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+	r.letter = expectRuneInRange('A', 'Z').ALT(expectRuneInRange('a', 'z')) // letter --> "A" | ... | "Z" | "a" | ... | "z"
+
+	r.num = r.digit.REP1().Map(r.toNum)          // num --> digit+
+	r.letters = r.letter.REP1().Map(r.toLetters) // letters --> letter+
 
 	// rep_op --> "?" | "*" | "+"
 	r.repOp = expectRune('?').ALT(
@@ -158,11 +163,12 @@ func newRegex() *regex {
 		expectString("[:word:]"), expectString("[:ascii:]"),
 	).Map(r.toASCIICharClass)
 
-	// char_group_item -->  char_class | ascii_char_class | char_range | char /* excluding ] */
+	// char_group_item --> char_class | ascii_char_class | char_range | escaped_char | unescaped_char
 	r.charGroupItem = r.charClass.ALT(
 		r.asciiCharClass,
 		r.charRange,
-		r.charInGroup,
+		r.escapedChar,
+		r.unescapedChar,
 	).Map(r.toCharGroupItem)
 
 	// char_group --> "[" "^"? char_group_item+ "]"
@@ -175,12 +181,13 @@ func newRegex() *regex {
 	// any_char --> "."
 	r.anyChar = expectRune('.').Map(r.toAnyChar)
 
-	// match_item --> any_char | char_class | ascii_char_class | char_group | char /* excluding | ) */
+	// match_item --> any_char | unescaped_char | escaped_char | char_class | ascii_char_class | char_group
 	r.matchItem = r.anyChar.ALT(
+		r.unescapedChar,
+		r.escapedChar,
 		r.charClass,
 		r.asciiCharClass,
 		r.charGroup,
-		r.charInMatch,
 	).Map(r.toMatchItem)
 
 	// match --> match_item quantifier?
@@ -205,9 +212,9 @@ func (r *regex) group(in input) (output, bool) {
 }
 
 // Recursive definition
-// subexpr_item --> group | anchor | match
+// subexpr_item --> anchor | group | match
 func (r *regex) subexprItem(in input) (output, bool) {
-	return parser(r.group).ALT(r.anchor, r.match).Map(r.toSubexprItem)(in)
+	return parser(r.anchor).ALT(r.group, r.match).Map(r.toSubexprItem)(in)
 }
 
 // Recursive definition
@@ -413,8 +420,16 @@ func quantifyNode(n ast.Node, t tuple[any, bool]) ast.Node {
 	return node
 }
 
-func (r *regex) toChar(v any) (any, bool) {
+func (r *regex) toUnescapedChar(v any) (any, bool) {
 	c := v.(rune)
+
+	return runeToChar(c), true
+}
+
+func (r *regex) toEscapedChar(v any) (any, bool) {
+	v1, _ := getAt(v, 1)
+
+	c := v1.(rune)
 
 	return runeToChar(c), true
 }
@@ -505,19 +520,18 @@ func (r *regex) toCharRange(v any) (any, bool) {
 	v0, _ := getAt(v, 0)
 	v2, _ := getAt(v, 2)
 
-	low := v0.(*ast.Char)
-	up := v2.(*ast.Char)
+	low, up := v0.(rune), v2.(rune)
 
-	if low.Val > up.Val {
+	if low > up {
 		r.errors = multierror.Append(r.errors,
 			fmt.Errorf("invalid character range %s-%s",
-				string(low.Val),
-				string(up.Val),
+				string(low),
+				string(up),
 			),
 		)
 	}
 
-	return runeRangesToAlt(false, [2]rune{low.Val, up.Val}), true
+	return runeRangesToAlt(false, [2]rune{low, up}), true
 }
 
 func (r *regex) toCharGroupItem(v any) (any, bool) {
@@ -555,27 +569,6 @@ func (r *regex) toCharGroup(v any) (any, bool) {
 	}, true
 }
 
-func (r *regex) toCharClass(v any) (any, bool) {
-	class := v.(string)
-
-	switch class {
-	case `\d`:
-		return runeRangesToAlt(false, [2]rune{'0', '9'}), true
-	case `\D`:
-		return runeRangesToAlt(true, [2]rune{'0', '9'}), true
-	case `\s`:
-		return runesToAlt(false, ' ', '\t', '\n', '\r', '\f'), true
-	case `\S`:
-		return runesToAlt(true, ' ', '\t', '\n', '\r', '\f'), true
-	case `\w`:
-		return runeRangesToAlt(false, [2]rune{'0', '9'}, [2]rune{'A', 'Z'}, [2]rune{'_', '_'}, [2]rune{'a', 'z'}), true
-	case `\W`:
-		return runeRangesToAlt(true, [2]rune{'0', '9'}, [2]rune{'A', 'Z'}, [2]rune{'_', '_'}, [2]rune{'a', 'z'}), true
-	default:
-		return nil, false
-	}
-}
-
 func (r *regex) toASCIICharClass(v any) (any, bool) {
 	class := v.(string)
 
@@ -600,6 +593,27 @@ func (r *regex) toASCIICharClass(v any) (any, bool) {
 		return runeRangesToAlt(false, [2]rune{'0', '9'}, [2]rune{'A', 'Z'}, [2]rune{'_', '_'}, [2]rune{'a', 'z'}), true
 	case "[:ascii:]":
 		return runeRangesToAlt(false, [2]rune{0x00, 0x7f}), true
+	default:
+		return nil, false
+	}
+}
+
+func (r *regex) toCharClass(v any) (any, bool) {
+	class := v.(string)
+
+	switch class {
+	case `\d`:
+		return runeRangesToAlt(false, [2]rune{'0', '9'}), true
+	case `\D`:
+		return runeRangesToAlt(true, [2]rune{'0', '9'}), true
+	case `\s`:
+		return runesToAlt(false, ' ', '\t', '\n', '\r', '\f'), true
+	case `\S`:
+		return runesToAlt(true, ' ', '\t', '\n', '\r', '\f'), true
+	case `\w`:
+		return runeRangesToAlt(false, [2]rune{'0', '9'}, [2]rune{'A', 'Z'}, [2]rune{'_', '_'}, [2]rune{'a', 'z'}), true
+	case `\W`:
+		return runeRangesToAlt(true, [2]rune{'0', '9'}, [2]rune{'A', 'Z'}, [2]rune{'_', '_'}, [2]rune{'a', 'z'}), true
 	default:
 		return nil, false
 	}
