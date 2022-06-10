@@ -4,113 +4,993 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/gardenbed/emerge/internal/regex/ast"
 )
 
-// nopConvs implements the converters interface for testing purposes.
-type nopConvs struct{}
+var (
+	digit = &ast.Alt{
+		Exprs: []ast.Node{
+			&ast.Char{Val: '0'},
+			&ast.Char{Val: '1'},
+			&ast.Char{Val: '2'},
+			&ast.Char{Val: '3'},
+			&ast.Char{Val: '4'},
+			&ast.Char{Val: '5'},
+			&ast.Char{Val: '6'},
+			&ast.Char{Val: '7'},
+			&ast.Char{Val: '8'},
+			&ast.Char{Val: '9'},
+		},
+	}
 
-func (c *nopConvs) ToChar(res result) (any, bool) {
-	return res.Val, true
+	nonDigit = &ast.Alt{
+		Exprs: []ast.Node{
+			&ast.Char{Val: 0},
+			&ast.Char{Val: 1},
+			&ast.Char{Val: 2},
+			&ast.Char{Val: 3},
+			&ast.Char{Val: 4},
+			&ast.Char{Val: 5},
+			&ast.Char{Val: 6},
+			&ast.Char{Val: 7},
+			&ast.Char{Val: 8},
+			&ast.Char{Val: 9},
+			&ast.Char{Val: 10},
+			&ast.Char{Val: 11},
+			&ast.Char{Val: 12},
+			&ast.Char{Val: 13},
+			&ast.Char{Val: 14},
+			&ast.Char{Val: 15},
+			&ast.Char{Val: 16},
+			&ast.Char{Val: 17},
+			&ast.Char{Val: 18},
+			&ast.Char{Val: 19},
+			&ast.Char{Val: 20},
+			&ast.Char{Val: 21},
+			&ast.Char{Val: 22},
+			&ast.Char{Val: 23},
+			&ast.Char{Val: 24},
+			&ast.Char{Val: 25},
+			&ast.Char{Val: 26},
+			&ast.Char{Val: 27},
+			&ast.Char{Val: 28},
+			&ast.Char{Val: 29},
+			&ast.Char{Val: 30},
+			&ast.Char{Val: 31},
+			&ast.Char{Val: 32},
+			&ast.Char{Val: 33},
+			&ast.Char{Val: 34},
+			&ast.Char{Val: 35},
+			&ast.Char{Val: 36},
+			&ast.Char{Val: 37},
+			&ast.Char{Val: 38},
+			&ast.Char{Val: 39},
+			&ast.Char{Val: 40},
+			&ast.Char{Val: 41},
+			&ast.Char{Val: 42},
+			&ast.Char{Val: 43},
+			&ast.Char{Val: 44},
+			&ast.Char{Val: 45},
+			&ast.Char{Val: 46},
+			&ast.Char{Val: 47},
+			&ast.Char{Val: 58},
+			&ast.Char{Val: 59},
+			&ast.Char{Val: 60},
+			&ast.Char{Val: 61},
+			&ast.Char{Val: 62},
+			&ast.Char{Val: 63},
+			&ast.Char{Val: 64},
+			&ast.Char{Val: 65},
+			&ast.Char{Val: 66},
+			&ast.Char{Val: 67},
+			&ast.Char{Val: 68},
+			&ast.Char{Val: 69},
+			&ast.Char{Val: 70},
+			&ast.Char{Val: 71},
+			&ast.Char{Val: 72},
+			&ast.Char{Val: 73},
+			&ast.Char{Val: 74},
+			&ast.Char{Val: 75},
+			&ast.Char{Val: 76},
+			&ast.Char{Val: 77},
+			&ast.Char{Val: 78},
+			&ast.Char{Val: 79},
+			&ast.Char{Val: 80},
+			&ast.Char{Val: 81},
+			&ast.Char{Val: 82},
+			&ast.Char{Val: 83},
+			&ast.Char{Val: 84},
+			&ast.Char{Val: 85},
+			&ast.Char{Val: 86},
+			&ast.Char{Val: 87},
+			&ast.Char{Val: 88},
+			&ast.Char{Val: 89},
+			&ast.Char{Val: 90},
+			&ast.Char{Val: 91},
+			&ast.Char{Val: 92},
+			&ast.Char{Val: 93},
+			&ast.Char{Val: 94},
+			&ast.Char{Val: 95},
+			&ast.Char{Val: 96},
+			&ast.Char{Val: 97},
+			&ast.Char{Val: 98},
+			&ast.Char{Val: 99},
+			&ast.Char{Val: 100},
+			&ast.Char{Val: 101},
+			&ast.Char{Val: 102},
+			&ast.Char{Val: 103},
+			&ast.Char{Val: 104},
+			&ast.Char{Val: 105},
+			&ast.Char{Val: 106},
+			&ast.Char{Val: 107},
+			&ast.Char{Val: 108},
+			&ast.Char{Val: 109},
+			&ast.Char{Val: 110},
+			&ast.Char{Val: 111},
+			&ast.Char{Val: 112},
+			&ast.Char{Val: 113},
+			&ast.Char{Val: 114},
+			&ast.Char{Val: 115},
+			&ast.Char{Val: 116},
+			&ast.Char{Val: 117},
+			&ast.Char{Val: 118},
+			&ast.Char{Val: 119},
+			&ast.Char{Val: 120},
+			&ast.Char{Val: 121},
+			&ast.Char{Val: 122},
+			&ast.Char{Val: 123},
+			&ast.Char{Val: 124},
+			&ast.Char{Val: 125},
+			&ast.Char{Val: 126},
+			&ast.Char{Val: 127},
+		},
+	}
+
+	whitespace = &ast.Alt{
+		Exprs: []ast.Node{
+			&ast.Char{Val: ' '},
+			&ast.Char{Val: '\t'},
+			&ast.Char{Val: '\n'},
+			&ast.Char{Val: '\r'},
+			&ast.Char{Val: '\f'},
+		},
+	}
+
+	nonWhitespace = &ast.Alt{
+		Exprs: []ast.Node{
+			&ast.Char{Val: 0},
+			&ast.Char{Val: 1},
+			&ast.Char{Val: 2},
+			&ast.Char{Val: 3},
+			&ast.Char{Val: 4},
+			&ast.Char{Val: 5},
+			&ast.Char{Val: 6},
+			&ast.Char{Val: 7},
+			&ast.Char{Val: 8},
+			&ast.Char{Val: 11},
+			&ast.Char{Val: 14},
+			&ast.Char{Val: 15},
+			&ast.Char{Val: 16},
+			&ast.Char{Val: 17},
+			&ast.Char{Val: 18},
+			&ast.Char{Val: 19},
+			&ast.Char{Val: 20},
+			&ast.Char{Val: 21},
+			&ast.Char{Val: 22},
+			&ast.Char{Val: 23},
+			&ast.Char{Val: 24},
+			&ast.Char{Val: 25},
+			&ast.Char{Val: 26},
+			&ast.Char{Val: 27},
+			&ast.Char{Val: 28},
+			&ast.Char{Val: 29},
+			&ast.Char{Val: 30},
+			&ast.Char{Val: 31},
+			&ast.Char{Val: 33},
+			&ast.Char{Val: 34},
+			&ast.Char{Val: 35},
+			&ast.Char{Val: 36},
+			&ast.Char{Val: 37},
+			&ast.Char{Val: 38},
+			&ast.Char{Val: 39},
+			&ast.Char{Val: 40},
+			&ast.Char{Val: 41},
+			&ast.Char{Val: 42},
+			&ast.Char{Val: 43},
+			&ast.Char{Val: 44},
+			&ast.Char{Val: 45},
+			&ast.Char{Val: 46},
+			&ast.Char{Val: 47},
+			&ast.Char{Val: 48},
+			&ast.Char{Val: 49},
+			&ast.Char{Val: 50},
+			&ast.Char{Val: 51},
+			&ast.Char{Val: 52},
+			&ast.Char{Val: 53},
+			&ast.Char{Val: 54},
+			&ast.Char{Val: 55},
+			&ast.Char{Val: 56},
+			&ast.Char{Val: 57},
+			&ast.Char{Val: 58},
+			&ast.Char{Val: 59},
+			&ast.Char{Val: 60},
+			&ast.Char{Val: 61},
+			&ast.Char{Val: 62},
+			&ast.Char{Val: 63},
+			&ast.Char{Val: 64},
+			&ast.Char{Val: 65},
+			&ast.Char{Val: 66},
+			&ast.Char{Val: 67},
+			&ast.Char{Val: 68},
+			&ast.Char{Val: 69},
+			&ast.Char{Val: 70},
+			&ast.Char{Val: 71},
+			&ast.Char{Val: 72},
+			&ast.Char{Val: 73},
+			&ast.Char{Val: 74},
+			&ast.Char{Val: 75},
+			&ast.Char{Val: 76},
+			&ast.Char{Val: 77},
+			&ast.Char{Val: 78},
+			&ast.Char{Val: 79},
+			&ast.Char{Val: 80},
+			&ast.Char{Val: 81},
+			&ast.Char{Val: 82},
+			&ast.Char{Val: 83},
+			&ast.Char{Val: 84},
+			&ast.Char{Val: 85},
+			&ast.Char{Val: 86},
+			&ast.Char{Val: 87},
+			&ast.Char{Val: 88},
+			&ast.Char{Val: 89},
+			&ast.Char{Val: 90},
+			&ast.Char{Val: 91},
+			&ast.Char{Val: 92},
+			&ast.Char{Val: 93},
+			&ast.Char{Val: 94},
+			&ast.Char{Val: 95},
+			&ast.Char{Val: 96},
+			&ast.Char{Val: 97},
+			&ast.Char{Val: 98},
+			&ast.Char{Val: 99},
+			&ast.Char{Val: 100},
+			&ast.Char{Val: 101},
+			&ast.Char{Val: 102},
+			&ast.Char{Val: 103},
+			&ast.Char{Val: 104},
+			&ast.Char{Val: 105},
+			&ast.Char{Val: 106},
+			&ast.Char{Val: 107},
+			&ast.Char{Val: 108},
+			&ast.Char{Val: 109},
+			&ast.Char{Val: 110},
+			&ast.Char{Val: 111},
+			&ast.Char{Val: 112},
+			&ast.Char{Val: 113},
+			&ast.Char{Val: 114},
+			&ast.Char{Val: 115},
+			&ast.Char{Val: 116},
+			&ast.Char{Val: 117},
+			&ast.Char{Val: 118},
+			&ast.Char{Val: 119},
+			&ast.Char{Val: 120},
+			&ast.Char{Val: 121},
+			&ast.Char{Val: 122},
+			&ast.Char{Val: 123},
+			&ast.Char{Val: 124},
+			&ast.Char{Val: 125},
+			&ast.Char{Val: 126},
+			&ast.Char{Val: 127},
+		},
+	}
+
+	word = &ast.Alt{
+		Exprs: []ast.Node{
+			&ast.Char{Val: '0'},
+			&ast.Char{Val: '1'},
+			&ast.Char{Val: '2'},
+			&ast.Char{Val: '3'},
+			&ast.Char{Val: '4'},
+			&ast.Char{Val: '5'},
+			&ast.Char{Val: '6'},
+			&ast.Char{Val: '7'},
+			&ast.Char{Val: '8'},
+			&ast.Char{Val: '9'},
+			&ast.Char{Val: 'A'},
+			&ast.Char{Val: 'B'},
+			&ast.Char{Val: 'C'},
+			&ast.Char{Val: 'D'},
+			&ast.Char{Val: 'E'},
+			&ast.Char{Val: 'F'},
+			&ast.Char{Val: 'G'},
+			&ast.Char{Val: 'H'},
+			&ast.Char{Val: 'I'},
+			&ast.Char{Val: 'J'},
+			&ast.Char{Val: 'K'},
+			&ast.Char{Val: 'L'},
+			&ast.Char{Val: 'M'},
+			&ast.Char{Val: 'N'},
+			&ast.Char{Val: 'O'},
+			&ast.Char{Val: 'P'},
+			&ast.Char{Val: 'Q'},
+			&ast.Char{Val: 'R'},
+			&ast.Char{Val: 'S'},
+			&ast.Char{Val: 'T'},
+			&ast.Char{Val: 'U'},
+			&ast.Char{Val: 'V'},
+			&ast.Char{Val: 'W'},
+			&ast.Char{Val: 'X'},
+			&ast.Char{Val: 'Y'},
+			&ast.Char{Val: 'Z'},
+			&ast.Char{Val: '_'},
+			&ast.Char{Val: 'a'},
+			&ast.Char{Val: 'b'},
+			&ast.Char{Val: 'c'},
+			&ast.Char{Val: 'd'},
+			&ast.Char{Val: 'e'},
+			&ast.Char{Val: 'f'},
+			&ast.Char{Val: 'g'},
+			&ast.Char{Val: 'h'},
+			&ast.Char{Val: 'i'},
+			&ast.Char{Val: 'j'},
+			&ast.Char{Val: 'k'},
+			&ast.Char{Val: 'l'},
+			&ast.Char{Val: 'm'},
+			&ast.Char{Val: 'n'},
+			&ast.Char{Val: 'o'},
+			&ast.Char{Val: 'p'},
+			&ast.Char{Val: 'q'},
+			&ast.Char{Val: 'r'},
+			&ast.Char{Val: 's'},
+			&ast.Char{Val: 't'},
+			&ast.Char{Val: 'u'},
+			&ast.Char{Val: 'v'},
+			&ast.Char{Val: 'w'},
+			&ast.Char{Val: 'x'},
+			&ast.Char{Val: 'y'},
+			&ast.Char{Val: 'z'},
+		},
+	}
+
+	nonWord = &ast.Alt{
+		Exprs: []ast.Node{
+			&ast.Char{Val: 0},
+			&ast.Char{Val: 1},
+			&ast.Char{Val: 2},
+			&ast.Char{Val: 3},
+			&ast.Char{Val: 4},
+			&ast.Char{Val: 5},
+			&ast.Char{Val: 6},
+			&ast.Char{Val: 7},
+			&ast.Char{Val: 8},
+			&ast.Char{Val: 9},
+			&ast.Char{Val: 10},
+			&ast.Char{Val: 11},
+			&ast.Char{Val: 12},
+			&ast.Char{Val: 13},
+			&ast.Char{Val: 14},
+			&ast.Char{Val: 15},
+			&ast.Char{Val: 16},
+			&ast.Char{Val: 17},
+			&ast.Char{Val: 18},
+			&ast.Char{Val: 19},
+			&ast.Char{Val: 20},
+			&ast.Char{Val: 21},
+			&ast.Char{Val: 22},
+			&ast.Char{Val: 23},
+			&ast.Char{Val: 24},
+			&ast.Char{Val: 25},
+			&ast.Char{Val: 26},
+			&ast.Char{Val: 27},
+			&ast.Char{Val: 28},
+			&ast.Char{Val: 29},
+			&ast.Char{Val: 30},
+			&ast.Char{Val: 31},
+			&ast.Char{Val: 32},
+			&ast.Char{Val: 33},
+			&ast.Char{Val: 34},
+			&ast.Char{Val: 35},
+			&ast.Char{Val: 36},
+			&ast.Char{Val: 37},
+			&ast.Char{Val: 38},
+			&ast.Char{Val: 39},
+			&ast.Char{Val: 40},
+			&ast.Char{Val: 41},
+			&ast.Char{Val: 42},
+			&ast.Char{Val: 43},
+			&ast.Char{Val: 44},
+			&ast.Char{Val: 45},
+			&ast.Char{Val: 46},
+			&ast.Char{Val: 47},
+			&ast.Char{Val: 58},
+			&ast.Char{Val: 59},
+			&ast.Char{Val: 60},
+			&ast.Char{Val: 61},
+			&ast.Char{Val: 62},
+			&ast.Char{Val: 63},
+			&ast.Char{Val: 64},
+			&ast.Char{Val: 91},
+			&ast.Char{Val: 92},
+			&ast.Char{Val: 93},
+			&ast.Char{Val: 94},
+			&ast.Char{Val: 96},
+			&ast.Char{Val: 123},
+			&ast.Char{Val: 124},
+			&ast.Char{Val: 125},
+			&ast.Char{Val: 126},
+			&ast.Char{Val: 127},
+		},
+	}
+
+	xdigit = &ast.Alt{
+		Exprs: []ast.Node{
+			&ast.Char{Val: '0'},
+			&ast.Char{Val: '1'},
+			&ast.Char{Val: '2'},
+			&ast.Char{Val: '3'},
+			&ast.Char{Val: '4'},
+			&ast.Char{Val: '5'},
+			&ast.Char{Val: '6'},
+			&ast.Char{Val: '7'},
+			&ast.Char{Val: '8'},
+			&ast.Char{Val: '9'},
+			&ast.Char{Val: 'A'},
+			&ast.Char{Val: 'B'},
+			&ast.Char{Val: 'C'},
+			&ast.Char{Val: 'D'},
+			&ast.Char{Val: 'E'},
+			&ast.Char{Val: 'F'},
+			&ast.Char{Val: 'a'},
+			&ast.Char{Val: 'b'},
+			&ast.Char{Val: 'c'},
+			&ast.Char{Val: 'd'},
+			&ast.Char{Val: 'e'},
+			&ast.Char{Val: 'f'},
+		},
+	}
+
+	upper = &ast.Alt{
+		Exprs: []ast.Node{
+			&ast.Char{Val: 'A'},
+			&ast.Char{Val: 'B'},
+			&ast.Char{Val: 'C'},
+			&ast.Char{Val: 'D'},
+			&ast.Char{Val: 'E'},
+			&ast.Char{Val: 'F'},
+			&ast.Char{Val: 'G'},
+			&ast.Char{Val: 'H'},
+			&ast.Char{Val: 'I'},
+			&ast.Char{Val: 'J'},
+			&ast.Char{Val: 'K'},
+			&ast.Char{Val: 'L'},
+			&ast.Char{Val: 'M'},
+			&ast.Char{Val: 'N'},
+			&ast.Char{Val: 'O'},
+			&ast.Char{Val: 'P'},
+			&ast.Char{Val: 'Q'},
+			&ast.Char{Val: 'R'},
+			&ast.Char{Val: 'S'},
+			&ast.Char{Val: 'T'},
+			&ast.Char{Val: 'U'},
+			&ast.Char{Val: 'V'},
+			&ast.Char{Val: 'W'},
+			&ast.Char{Val: 'X'},
+			&ast.Char{Val: 'Y'},
+			&ast.Char{Val: 'Z'},
+		},
+	}
+
+	lower = &ast.Alt{
+		Exprs: []ast.Node{
+			&ast.Char{Val: 'a'},
+			&ast.Char{Val: 'b'},
+			&ast.Char{Val: 'c'},
+			&ast.Char{Val: 'd'},
+			&ast.Char{Val: 'e'},
+			&ast.Char{Val: 'f'},
+			&ast.Char{Val: 'g'},
+			&ast.Char{Val: 'h'},
+			&ast.Char{Val: 'i'},
+			&ast.Char{Val: 'j'},
+			&ast.Char{Val: 'k'},
+			&ast.Char{Val: 'l'},
+			&ast.Char{Val: 'm'},
+			&ast.Char{Val: 'n'},
+			&ast.Char{Val: 'o'},
+			&ast.Char{Val: 'p'},
+			&ast.Char{Val: 'q'},
+			&ast.Char{Val: 'r'},
+			&ast.Char{Val: 's'},
+			&ast.Char{Val: 't'},
+			&ast.Char{Val: 'u'},
+			&ast.Char{Val: 'v'},
+			&ast.Char{Val: 'w'},
+			&ast.Char{Val: 'x'},
+			&ast.Char{Val: 'y'},
+			&ast.Char{Val: 'z'},
+		},
+	}
+
+	alpha = &ast.Alt{
+		Exprs: []ast.Node{
+			&ast.Char{Val: 'A'},
+			&ast.Char{Val: 'B'},
+			&ast.Char{Val: 'C'},
+			&ast.Char{Val: 'D'},
+			&ast.Char{Val: 'E'},
+			&ast.Char{Val: 'F'},
+			&ast.Char{Val: 'G'},
+			&ast.Char{Val: 'H'},
+			&ast.Char{Val: 'I'},
+			&ast.Char{Val: 'J'},
+			&ast.Char{Val: 'K'},
+			&ast.Char{Val: 'L'},
+			&ast.Char{Val: 'M'},
+			&ast.Char{Val: 'N'},
+			&ast.Char{Val: 'O'},
+			&ast.Char{Val: 'P'},
+			&ast.Char{Val: 'Q'},
+			&ast.Char{Val: 'R'},
+			&ast.Char{Val: 'S'},
+			&ast.Char{Val: 'T'},
+			&ast.Char{Val: 'U'},
+			&ast.Char{Val: 'V'},
+			&ast.Char{Val: 'W'},
+			&ast.Char{Val: 'X'},
+			&ast.Char{Val: 'Y'},
+			&ast.Char{Val: 'Z'},
+			&ast.Char{Val: 'a'},
+			&ast.Char{Val: 'b'},
+			&ast.Char{Val: 'c'},
+			&ast.Char{Val: 'd'},
+			&ast.Char{Val: 'e'},
+			&ast.Char{Val: 'f'},
+			&ast.Char{Val: 'g'},
+			&ast.Char{Val: 'h'},
+			&ast.Char{Val: 'i'},
+			&ast.Char{Val: 'j'},
+			&ast.Char{Val: 'k'},
+			&ast.Char{Val: 'l'},
+			&ast.Char{Val: 'm'},
+			&ast.Char{Val: 'n'},
+			&ast.Char{Val: 'o'},
+			&ast.Char{Val: 'p'},
+			&ast.Char{Val: 'q'},
+			&ast.Char{Val: 'r'},
+			&ast.Char{Val: 's'},
+			&ast.Char{Val: 't'},
+			&ast.Char{Val: 'u'},
+			&ast.Char{Val: 'v'},
+			&ast.Char{Val: 'w'},
+			&ast.Char{Val: 'x'},
+			&ast.Char{Val: 'y'},
+			&ast.Char{Val: 'z'},
+		},
+	}
+
+	alnum = &ast.Alt{
+		Exprs: []ast.Node{
+			&ast.Char{Val: '0'},
+			&ast.Char{Val: '1'},
+			&ast.Char{Val: '2'},
+			&ast.Char{Val: '3'},
+			&ast.Char{Val: '4'},
+			&ast.Char{Val: '5'},
+			&ast.Char{Val: '6'},
+			&ast.Char{Val: '7'},
+			&ast.Char{Val: '8'},
+			&ast.Char{Val: '9'},
+			&ast.Char{Val: 'A'},
+			&ast.Char{Val: 'B'},
+			&ast.Char{Val: 'C'},
+			&ast.Char{Val: 'D'},
+			&ast.Char{Val: 'E'},
+			&ast.Char{Val: 'F'},
+			&ast.Char{Val: 'G'},
+			&ast.Char{Val: 'H'},
+			&ast.Char{Val: 'I'},
+			&ast.Char{Val: 'J'},
+			&ast.Char{Val: 'K'},
+			&ast.Char{Val: 'L'},
+			&ast.Char{Val: 'M'},
+			&ast.Char{Val: 'N'},
+			&ast.Char{Val: 'O'},
+			&ast.Char{Val: 'P'},
+			&ast.Char{Val: 'Q'},
+			&ast.Char{Val: 'R'},
+			&ast.Char{Val: 'S'},
+			&ast.Char{Val: 'T'},
+			&ast.Char{Val: 'U'},
+			&ast.Char{Val: 'V'},
+			&ast.Char{Val: 'W'},
+			&ast.Char{Val: 'X'},
+			&ast.Char{Val: 'Y'},
+			&ast.Char{Val: 'Z'},
+			&ast.Char{Val: 'a'},
+			&ast.Char{Val: 'b'},
+			&ast.Char{Val: 'c'},
+			&ast.Char{Val: 'd'},
+			&ast.Char{Val: 'e'},
+			&ast.Char{Val: 'f'},
+			&ast.Char{Val: 'g'},
+			&ast.Char{Val: 'h'},
+			&ast.Char{Val: 'i'},
+			&ast.Char{Val: 'j'},
+			&ast.Char{Val: 'k'},
+			&ast.Char{Val: 'l'},
+			&ast.Char{Val: 'm'},
+			&ast.Char{Val: 'n'},
+			&ast.Char{Val: 'o'},
+			&ast.Char{Val: 'p'},
+			&ast.Char{Val: 'q'},
+			&ast.Char{Val: 'r'},
+			&ast.Char{Val: 's'},
+			&ast.Char{Val: 't'},
+			&ast.Char{Val: 'u'},
+			&ast.Char{Val: 'v'},
+			&ast.Char{Val: 'w'},
+			&ast.Char{Val: 'x'},
+			&ast.Char{Val: 'y'},
+			&ast.Char{Val: 'z'},
+		},
+	}
+
+	ascii = &ast.Alt{
+		Exprs: []ast.Node{
+			&ast.Char{Val: 0},
+			&ast.Char{Val: 1},
+			&ast.Char{Val: 2},
+			&ast.Char{Val: 3},
+			&ast.Char{Val: 4},
+			&ast.Char{Val: 5},
+			&ast.Char{Val: 6},
+			&ast.Char{Val: 7},
+			&ast.Char{Val: 8},
+			&ast.Char{Val: 9},
+			&ast.Char{Val: 10},
+			&ast.Char{Val: 11},
+			&ast.Char{Val: 12},
+			&ast.Char{Val: 13},
+			&ast.Char{Val: 14},
+			&ast.Char{Val: 15},
+			&ast.Char{Val: 16},
+			&ast.Char{Val: 17},
+			&ast.Char{Val: 18},
+			&ast.Char{Val: 19},
+			&ast.Char{Val: 20},
+			&ast.Char{Val: 21},
+			&ast.Char{Val: 22},
+			&ast.Char{Val: 23},
+			&ast.Char{Val: 24},
+			&ast.Char{Val: 25},
+			&ast.Char{Val: 26},
+			&ast.Char{Val: 27},
+			&ast.Char{Val: 28},
+			&ast.Char{Val: 29},
+			&ast.Char{Val: 30},
+			&ast.Char{Val: 31},
+			&ast.Char{Val: 32},
+			&ast.Char{Val: 33},
+			&ast.Char{Val: 34},
+			&ast.Char{Val: 35},
+			&ast.Char{Val: 36},
+			&ast.Char{Val: 37},
+			&ast.Char{Val: 38},
+			&ast.Char{Val: 39},
+			&ast.Char{Val: 40},
+			&ast.Char{Val: 41},
+			&ast.Char{Val: 42},
+			&ast.Char{Val: 43},
+			&ast.Char{Val: 44},
+			&ast.Char{Val: 45},
+			&ast.Char{Val: 46},
+			&ast.Char{Val: 47},
+			&ast.Char{Val: 48},
+			&ast.Char{Val: 49},
+			&ast.Char{Val: 50},
+			&ast.Char{Val: 51},
+			&ast.Char{Val: 52},
+			&ast.Char{Val: 53},
+			&ast.Char{Val: 54},
+			&ast.Char{Val: 55},
+			&ast.Char{Val: 56},
+			&ast.Char{Val: 57},
+			&ast.Char{Val: 58},
+			&ast.Char{Val: 59},
+			&ast.Char{Val: 60},
+			&ast.Char{Val: 61},
+			&ast.Char{Val: 62},
+			&ast.Char{Val: 63},
+			&ast.Char{Val: 64},
+			&ast.Char{Val: 65},
+			&ast.Char{Val: 66},
+			&ast.Char{Val: 67},
+			&ast.Char{Val: 68},
+			&ast.Char{Val: 69},
+			&ast.Char{Val: 70},
+			&ast.Char{Val: 71},
+			&ast.Char{Val: 72},
+			&ast.Char{Val: 73},
+			&ast.Char{Val: 74},
+			&ast.Char{Val: 75},
+			&ast.Char{Val: 76},
+			&ast.Char{Val: 77},
+			&ast.Char{Val: 78},
+			&ast.Char{Val: 79},
+			&ast.Char{Val: 80},
+			&ast.Char{Val: 81},
+			&ast.Char{Val: 82},
+			&ast.Char{Val: 83},
+			&ast.Char{Val: 84},
+			&ast.Char{Val: 85},
+			&ast.Char{Val: 86},
+			&ast.Char{Val: 87},
+			&ast.Char{Val: 88},
+			&ast.Char{Val: 89},
+			&ast.Char{Val: 90},
+			&ast.Char{Val: 91},
+			&ast.Char{Val: 92},
+			&ast.Char{Val: 93},
+			&ast.Char{Val: 94},
+			&ast.Char{Val: 95},
+			&ast.Char{Val: 96},
+			&ast.Char{Val: 97},
+			&ast.Char{Val: 98},
+			&ast.Char{Val: 99},
+			&ast.Char{Val: 100},
+			&ast.Char{Val: 101},
+			&ast.Char{Val: 102},
+			&ast.Char{Val: 103},
+			&ast.Char{Val: 104},
+			&ast.Char{Val: 105},
+			&ast.Char{Val: 106},
+			&ast.Char{Val: 107},
+			&ast.Char{Val: 108},
+			&ast.Char{Val: 109},
+			&ast.Char{Val: 110},
+			&ast.Char{Val: 111},
+			&ast.Char{Val: 112},
+			&ast.Char{Val: 113},
+			&ast.Char{Val: 114},
+			&ast.Char{Val: 115},
+			&ast.Char{Val: 116},
+			&ast.Char{Val: 117},
+			&ast.Char{Val: 118},
+			&ast.Char{Val: 119},
+			&ast.Char{Val: 120},
+			&ast.Char{Val: 121},
+			&ast.Char{Val: 122},
+			&ast.Char{Val: 123},
+			&ast.Char{Val: 124},
+			&ast.Char{Val: 125},
+			&ast.Char{Val: 126},
+			&ast.Char{Val: 127},
+		},
+	}
+)
+
+func intPtr(v int) *int {
+	return &v
 }
 
-func (c *nopConvs) ToNum(res result) (any, bool) {
-	return res.Val, true
+func TestParse(t *testing.T) {
+	tests := []struct {
+		name             string
+		in               input
+		expectedError    string
+		expectedAST      ast.Node
+		expectedNullable bool
+		expectedFirstPos []int
+		expectedLastPos  []int
+	}{
+		{
+			name:          "InvalidCharRange",
+			in:            newStringInput("[9-0]"),
+			expectedError: "1 error occurred:\n\t* invalid character range 9-0\n\n",
+		},
+		{
+			name:          "InvalidRepRange",
+			in:            newStringInput("[0-9]{4,2}"),
+			expectedError: "1 error occurred:\n\t* invalid repetition range {4,2}\n\n",
+		},
+		{
+			name: "Successful",
+			in:   newStringInput(`[A-Z]?[a-z][0-9a-z]{1,}`),
+			expectedAST: &ast.Concat{
+				Exprs: []ast.Node{
+					&ast.Alt{
+						Exprs: []ast.Node{
+							&ast.Empty{},
+							&ast.Alt{
+								Exprs: []ast.Node{
+									&ast.Char{Val: 'A', Pos: 1},
+									&ast.Char{Val: 'B', Pos: 2},
+									&ast.Char{Val: 'C', Pos: 3},
+									&ast.Char{Val: 'D', Pos: 4},
+									&ast.Char{Val: 'E', Pos: 5},
+									&ast.Char{Val: 'F', Pos: 6},
+									&ast.Char{Val: 'G', Pos: 7},
+									&ast.Char{Val: 'H', Pos: 8},
+									&ast.Char{Val: 'I', Pos: 9},
+									&ast.Char{Val: 'J', Pos: 10},
+									&ast.Char{Val: 'K', Pos: 11},
+									&ast.Char{Val: 'L', Pos: 12},
+									&ast.Char{Val: 'M', Pos: 13},
+									&ast.Char{Val: 'N', Pos: 14},
+									&ast.Char{Val: 'O', Pos: 15},
+									&ast.Char{Val: 'P', Pos: 16},
+									&ast.Char{Val: 'Q', Pos: 17},
+									&ast.Char{Val: 'R', Pos: 18},
+									&ast.Char{Val: 'S', Pos: 19},
+									&ast.Char{Val: 'T', Pos: 20},
+									&ast.Char{Val: 'U', Pos: 21},
+									&ast.Char{Val: 'V', Pos: 22},
+									&ast.Char{Val: 'W', Pos: 23},
+									&ast.Char{Val: 'X', Pos: 24},
+									&ast.Char{Val: 'Y', Pos: 25},
+									&ast.Char{Val: 'Z', Pos: 26},
+								},
+							},
+						},
+					},
+					&ast.Alt{
+						Exprs: []ast.Node{
+							&ast.Char{Val: 'a', Pos: 27},
+							&ast.Char{Val: 'b', Pos: 28},
+							&ast.Char{Val: 'c', Pos: 29},
+							&ast.Char{Val: 'd', Pos: 30},
+							&ast.Char{Val: 'e', Pos: 31},
+							&ast.Char{Val: 'f', Pos: 32},
+							&ast.Char{Val: 'g', Pos: 33},
+							&ast.Char{Val: 'h', Pos: 34},
+							&ast.Char{Val: 'i', Pos: 35},
+							&ast.Char{Val: 'j', Pos: 36},
+							&ast.Char{Val: 'k', Pos: 37},
+							&ast.Char{Val: 'l', Pos: 38},
+							&ast.Char{Val: 'm', Pos: 39},
+							&ast.Char{Val: 'n', Pos: 40},
+							&ast.Char{Val: 'o', Pos: 41},
+							&ast.Char{Val: 'p', Pos: 42},
+							&ast.Char{Val: 'q', Pos: 43},
+							&ast.Char{Val: 'r', Pos: 44},
+							&ast.Char{Val: 's', Pos: 45},
+							&ast.Char{Val: 't', Pos: 46},
+							&ast.Char{Val: 'u', Pos: 47},
+							&ast.Char{Val: 'v', Pos: 48},
+							&ast.Char{Val: 'w', Pos: 49},
+							&ast.Char{Val: 'x', Pos: 50},
+							&ast.Char{Val: 'y', Pos: 51},
+							&ast.Char{Val: 'z', Pos: 52},
+						},
+					},
+					&ast.Concat{
+						Exprs: []ast.Node{
+							&ast.Alt{
+								Exprs: []ast.Node{
+									&ast.Char{Val: '0', Pos: 53},
+									&ast.Char{Val: '1', Pos: 54},
+									&ast.Char{Val: '2', Pos: 55},
+									&ast.Char{Val: '3', Pos: 56},
+									&ast.Char{Val: '4', Pos: 57},
+									&ast.Char{Val: '5', Pos: 58},
+									&ast.Char{Val: '6', Pos: 59},
+									&ast.Char{Val: '7', Pos: 60},
+									&ast.Char{Val: '8', Pos: 61},
+									&ast.Char{Val: '9', Pos: 62},
+									&ast.Char{Val: 'a', Pos: 63},
+									&ast.Char{Val: 'b', Pos: 64},
+									&ast.Char{Val: 'c', Pos: 65},
+									&ast.Char{Val: 'd', Pos: 66},
+									&ast.Char{Val: 'e', Pos: 67},
+									&ast.Char{Val: 'f', Pos: 68},
+									&ast.Char{Val: 'g', Pos: 69},
+									&ast.Char{Val: 'h', Pos: 70},
+									&ast.Char{Val: 'i', Pos: 71},
+									&ast.Char{Val: 'j', Pos: 72},
+									&ast.Char{Val: 'k', Pos: 73},
+									&ast.Char{Val: 'l', Pos: 74},
+									&ast.Char{Val: 'm', Pos: 75},
+									&ast.Char{Val: 'n', Pos: 76},
+									&ast.Char{Val: 'o', Pos: 77},
+									&ast.Char{Val: 'p', Pos: 78},
+									&ast.Char{Val: 'q', Pos: 79},
+									&ast.Char{Val: 'r', Pos: 80},
+									&ast.Char{Val: 's', Pos: 81},
+									&ast.Char{Val: 't', Pos: 82},
+									&ast.Char{Val: 'u', Pos: 83},
+									&ast.Char{Val: 'v', Pos: 84},
+									&ast.Char{Val: 'w', Pos: 85},
+									&ast.Char{Val: 'x', Pos: 86},
+									&ast.Char{Val: 'y', Pos: 87},
+									&ast.Char{Val: 'z', Pos: 88},
+								},
+							},
+							&ast.Star{
+								Expr: &ast.Alt{
+									Exprs: []ast.Node{
+										&ast.Char{Val: '0', Pos: 89},
+										&ast.Char{Val: '1', Pos: 90},
+										&ast.Char{Val: '2', Pos: 91},
+										&ast.Char{Val: '3', Pos: 92},
+										&ast.Char{Val: '4', Pos: 93},
+										&ast.Char{Val: '5', Pos: 94},
+										&ast.Char{Val: '6', Pos: 95},
+										&ast.Char{Val: '7', Pos: 96},
+										&ast.Char{Val: '8', Pos: 97},
+										&ast.Char{Val: '9', Pos: 98},
+										&ast.Char{Val: 'a', Pos: 99},
+										&ast.Char{Val: 'b', Pos: 100},
+										&ast.Char{Val: 'c', Pos: 101},
+										&ast.Char{Val: 'd', Pos: 102},
+										&ast.Char{Val: 'e', Pos: 103},
+										&ast.Char{Val: 'f', Pos: 104},
+										&ast.Char{Val: 'g', Pos: 105},
+										&ast.Char{Val: 'h', Pos: 106},
+										&ast.Char{Val: 'i', Pos: 107},
+										&ast.Char{Val: 'j', Pos: 108},
+										&ast.Char{Val: 'k', Pos: 109},
+										&ast.Char{Val: 'l', Pos: 110},
+										&ast.Char{Val: 'm', Pos: 111},
+										&ast.Char{Val: 'n', Pos: 112},
+										&ast.Char{Val: 'o', Pos: 113},
+										&ast.Char{Val: 'p', Pos: 114},
+										&ast.Char{Val: 'q', Pos: 115},
+										&ast.Char{Val: 'r', Pos: 116},
+										&ast.Char{Val: 's', Pos: 117},
+										&ast.Char{Val: 't', Pos: 118},
+										&ast.Char{Val: 'u', Pos: 119},
+										&ast.Char{Val: 'v', Pos: 120},
+										&ast.Char{Val: 'w', Pos: 121},
+										&ast.Char{Val: 'x', Pos: 122},
+										&ast.Char{Val: 'y', Pos: 123},
+										&ast.Char{Val: 'z', Pos: 124},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedNullable: false,
+			expectedFirstPos: []int{
+				1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
+				27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52,
+			},
+			expectedLastPos: []int{
+				53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88,
+				89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124,
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			ast, err := Parse(tc.in)
+
+			if tc.expectedError != "" {
+				assert.Nil(t, ast)
+				assert.EqualError(t, err, tc.expectedError)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedAST, ast)
+				assert.Equal(t, tc.expectedNullable, ast.Nullable())
+				assert.Equal(t, tc.expectedFirstPos, ast.FirstPos())
+				assert.Equal(t, tc.expectedLastPos, ast.LastPos())
+			}
+		})
+	}
 }
 
-func (c *nopConvs) ToLetters(res result) (any, bool) {
-	return res.Val, true
-}
-
-func (c *nopConvs) ToRepOp(res result) (any, bool) {
-	return res.Val, true
-}
-
-func (c *nopConvs) ToUpperBound(res result) (any, bool) {
-	return res.Val, true
-}
-
-func (c *nopConvs) ToRange(res result) (any, bool) {
-	return res.Val, true
-}
-
-func (c *nopConvs) ToRepetition(res result) (any, bool) {
-	return res.Val, true
-}
-
-func (c *nopConvs) ToQuantifier(res result) (any, bool) {
-	return res.Val, true
-}
-
-func (c *nopConvs) ToCharRange(res result) (any, bool) {
-	return res.Val, true
-}
-
-func (c *nopConvs) ToCharGroupItem(res result) (any, bool) {
-	return res.Val, true
-}
-
-func (c *nopConvs) ToCharGroup(res result) (any, bool) {
-	return res.Val, true
-}
-
-func (c *nopConvs) ToCharClass(res result) (any, bool) {
-	return res.Val, true
-}
-
-func (c *nopConvs) ToASCIICharClass(res result) (any, bool) {
-	return res.Val, true
-}
-
-func (c *nopConvs) ToAnyChar(res result) (any, bool) {
-	return res.Val, true
-}
-
-func (c *nopConvs) ToMatchItem(res result) (any, bool) {
-	return res.Val, true
-}
-
-func (c *nopConvs) ToMatch(res result) (any, bool) {
-	return res.Val, true
-}
-
-func (c *nopConvs) ToBackref(res result) (any, bool) {
-	return res.Val, true
-}
-
-func (c *nopConvs) ToAnchor(res result) (any, bool) {
-	return res.Val, true
-}
-
-func (c *nopConvs) ToGroup(res result) (any, bool) {
-	return res.Val, true
-}
-
-func (c *nopConvs) ToSubexprItem(res result) (any, bool) {
-	return res.Val, true
-}
-
-func (c *nopConvs) ToSubexpr(res result) (any, bool) {
-	return res.Val, true
-}
-
-func (c *nopConvs) ToExpr(res result) (any, bool) {
-	return res.Val, true
-}
-
-func (c *nopConvs) ToRegex(res result) (any, bool) {
-	return res.Val, true
-}
-
-func TestRegex(t *testing.T) {
-	c := new(nopConvs)
-	r := NewRegex(c)
+func TestRegexMappers(t *testing.T) {
+	r := newRegex()
 
 	tests := []struct {
 		name        string
 		p           parser
 		in          input
 		expectedOK  bool
-		expectedOut any
+		expectedOut output
 	}{
 		{
 			name:       "char_Successful",
@@ -118,7 +998,9 @@ func TestRegex(t *testing.T) {
 			in:         newStringInput(`!"#$%&'()*+,-./[\]^_{|}~`),
 			expectedOK: true,
 			expectedOut: output{
-				Result: result{Val: '!', Pos: 0},
+				Result: result{
+					Val: &ast.Char{Val: '!'},
+				},
 				Remaining: &stringInput{
 					pos:   1,
 					runes: []rune(`"#$%&'()*+,-./[\]^_{|}~`),
@@ -131,7 +1013,9 @@ func TestRegex(t *testing.T) {
 			in:         newStringInput("0123456789"),
 			expectedOK: true,
 			expectedOut: output{
-				Result: result{Val: '0', Pos: 0},
+				Result: result{
+					Val: '0',
+				},
 				Remaining: &stringInput{
 					pos:   1,
 					runes: []rune("123456789"),
@@ -144,7 +1028,9 @@ func TestRegex(t *testing.T) {
 			in:         newStringInput("abcdefghijklmnopqrstuvwxyz"),
 			expectedOK: true,
 			expectedOut: output{
-				Result: result{Val: 'a', Pos: 0},
+				Result: result{
+					Val: 'a',
+				},
 				Remaining: &stringInput{
 					pos:   1,
 					runes: []rune("bcdefghijklmnopqrstuvwxyz"),
@@ -158,13 +1044,7 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: list{
-						result{Val: '2', Pos: 0},
-						result{Val: '0', Pos: 1},
-						result{Val: '2', Pos: 2},
-						result{Val: '2', Pos: 3},
-					},
-					Pos: 0,
+					Val: 2022,
 				},
 				Remaining: &stringInput{
 					pos:   4,
@@ -179,13 +1059,7 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: list{
-						result{Val: 'h', Pos: 0},
-						result{Val: 'e', Pos: 1},
-						result{Val: 'a', Pos: 2},
-						result{Val: 'd', Pos: 3},
-					},
-					Pos: 0,
+					Val: "head",
 				},
 				Remaining: &stringInput{
 					pos:   4,
@@ -199,7 +1073,9 @@ func TestRegex(t *testing.T) {
 			in:         newStringInput("?tail"),
 			expectedOK: true,
 			expectedOut: output{
-				Result: result{Val: '?', Pos: 0},
+				Result: result{
+					Val: '?',
+				},
 				Remaining: &stringInput{
 					pos:   1,
 					runes: []rune("tail"),
@@ -212,7 +1088,9 @@ func TestRegex(t *testing.T) {
 			in:         newStringInput("*tail"),
 			expectedOK: true,
 			expectedOut: output{
-				Result: result{Val: '*', Pos: 0},
+				Result: result{
+					Val: '*',
+				},
 				Remaining: &stringInput{
 					pos:   1,
 					runes: []rune("tail"),
@@ -225,7 +1103,9 @@ func TestRegex(t *testing.T) {
 			in:         newStringInput("+tail"),
 			expectedOK: true,
 			expectedOut: output{
-				Result: result{Val: '+', Pos: 0},
+				Result: result{
+					Val: '+',
+				},
 				Remaining: &stringInput{
 					pos:   1,
 					runes: []rune("tail"),
@@ -239,11 +1119,7 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: list{
-						result{Val: ',', Pos: 0},
-						result{Val: empty{}},
-					},
-					Pos: 0,
+					Val: (*int)(nil),
 				},
 				Remaining: &stringInput{
 					pos:   1,
@@ -258,16 +1134,7 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: list{
-						result{Val: ',', Pos: 0},
-						result{
-							Val: list{
-								result{Val: '4', Pos: 1},
-							},
-							Pos: 1,
-						},
-					},
-					Pos: 0,
+					Val: intPtr(4),
 				},
 				Remaining: &stringInput{
 					pos:   2,
@@ -282,18 +1149,10 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: list{
-						result{Val: '{', Pos: 0},
-						result{
-							Val: list{
-								result{Val: '2', Pos: 1},
-							},
-							Pos: 1,
-						},
-						result{Val: empty{}},
-						result{Val: '}', Pos: 2},
+					Val: tuple[int, *int]{
+						p: 2,
+						q: intPtr(2),
 					},
-					Pos: 0,
 				},
 				Remaining: &stringInput{
 					pos:   3,
@@ -308,24 +1167,10 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: list{
-						result{Val: '{', Pos: 0},
-						result{
-							Val: list{
-								result{Val: '2', Pos: 1},
-							},
-							Pos: 1,
-						},
-						result{
-							Val: list{
-								result{Val: ',', Pos: 2},
-								result{Val: empty{}},
-							},
-							Pos: 2,
-						},
-						result{Val: '}', Pos: 3},
+					Val: tuple[int, *int]{
+						p: 2,
+						q: nil,
 					},
-					Pos: 0,
 				},
 				Remaining: &stringInput{
 					pos:   4,
@@ -340,29 +1185,10 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: list{
-						result{Val: '{', Pos: 0},
-						result{
-							Val: list{
-								result{Val: '2', Pos: 1},
-							},
-							Pos: 1,
-						},
-						result{
-							Val: list{
-								result{Val: ',', Pos: 2},
-								result{
-									Val: list{
-										result{Val: '4', Pos: 3},
-									},
-									Pos: 3,
-								},
-							},
-							Pos: 2,
-						},
-						result{Val: '}', Pos: 4},
+					Val: tuple[int, *int]{
+						p: 2,
+						q: intPtr(4),
 					},
-					Pos: 0,
 				},
 				Remaining: &stringInput{
 					pos:   5,
@@ -378,7 +1204,6 @@ func TestRegex(t *testing.T) {
 			expectedOut: output{
 				Result: result{
 					Val: '?',
-					Pos: 0,
 				},
 				Remaining: &stringInput{
 					pos:   1,
@@ -394,7 +1219,6 @@ func TestRegex(t *testing.T) {
 			expectedOut: output{
 				Result: result{
 					Val: '*',
-					Pos: 0,
 				},
 				Remaining: &stringInput{
 					pos:   1,
@@ -410,7 +1234,6 @@ func TestRegex(t *testing.T) {
 			expectedOut: output{
 				Result: result{
 					Val: '+',
-					Pos: 0,
 				},
 				Remaining: &stringInput{
 					pos:   1,
@@ -425,18 +1248,10 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: list{
-						result{Val: '{', Pos: 0},
-						result{
-							Val: list{
-								result{Val: '2', Pos: 1},
-							},
-							Pos: 1,
-						},
-						result{Val: empty{}},
-						result{Val: '}', Pos: 2},
+					Val: tuple[int, *int]{
+						p: 2,
+						q: intPtr(2),
 					},
-					Pos: 0,
 				},
 				Remaining: &stringInput{
 					pos:   3,
@@ -451,24 +1266,10 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: list{
-						result{Val: '{', Pos: 0},
-						result{
-							Val: list{
-								result{Val: '2', Pos: 1},
-							},
-							Pos: 1,
-						},
-						result{
-							Val: list{
-								result{Val: ',', Pos: 2},
-								result{Val: empty{}},
-							},
-							Pos: 2,
-						},
-						result{Val: '}', Pos: 3},
+					Val: tuple[int, *int]{
+						p: 2,
+						q: nil,
 					},
-					Pos: 0,
 				},
 				Remaining: &stringInput{
 					pos:   4,
@@ -483,29 +1284,10 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: list{
-						result{Val: '{', Pos: 0},
-						result{
-							Val: list{
-								result{Val: '2', Pos: 1},
-							},
-							Pos: 1,
-						},
-						result{
-							Val: list{
-								result{Val: ',', Pos: 2},
-								result{
-									Val: list{
-										result{Val: '4', Pos: 3},
-									},
-									Pos: 3,
-								},
-							},
-							Pos: 2,
-						},
-						result{Val: '}', Pos: 4},
+					Val: tuple[int, *int]{
+						p: 2,
+						q: intPtr(4),
 					},
-					Pos: 0,
 				},
 				Remaining: &stringInput{
 					pos:   5,
@@ -520,11 +1302,10 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: list{
-						result{Val: '?', Pos: 0},
-						result{Val: '?', Pos: 1},
+					Val: tuple[any, bool]{
+						p: '?',
+						q: true,
 					},
-					Pos: 0,
 				},
 				Remaining: &stringInput{
 					pos:   2,
@@ -539,11 +1320,10 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: list{
-						result{Val: '*', Pos: 0},
-						result{Val: '?', Pos: 1},
+					Val: tuple[any, bool]{
+						p: '*',
+						q: true,
 					},
-					Pos: 0,
 				},
 				Remaining: &stringInput{
 					pos:   2,
@@ -558,11 +1338,10 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: list{
-						result{Val: '+', Pos: 0},
-						result{Val: '?', Pos: 1},
+					Val: tuple[any, bool]{
+						p: '+',
+						q: true,
 					},
-					Pos: 0,
 				},
 				Remaining: &stringInput{
 					pos:   2,
@@ -577,24 +1356,13 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: list{
-						result{
-							Val: list{
-								result{Val: '{', Pos: 0},
-								result{
-									Val: list{
-										result{Val: '2', Pos: 1},
-									},
-									Pos: 1,
-								},
-								result{Val: empty{}},
-								result{Val: '}', Pos: 2},
-							},
-							Pos: 0,
+					Val: tuple[any, bool]{
+						p: tuple[int, *int]{
+							p: 2,
+							q: intPtr(2),
 						},
-						result{Val: '?', Pos: 3},
+						q: true,
 					},
-					Pos: 0,
 				},
 				Remaining: &stringInput{
 					pos:   4,
@@ -609,30 +1377,13 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: list{
-						result{
-							Val: list{
-								result{Val: '{', Pos: 0},
-								result{
-									Val: list{
-										result{Val: '2', Pos: 1},
-									},
-									Pos: 1,
-								},
-								result{
-									Val: list{
-										result{Val: ',', Pos: 2},
-										result{Val: empty{}},
-									},
-									Pos: 2,
-								},
-								result{Val: '}', Pos: 3},
-							},
-							Pos: 0,
+					Val: tuple[any, bool]{
+						p: tuple[int, *int]{
+							p: 2,
+							q: nil,
 						},
-						result{Val: '?', Pos: 4},
+						q: true,
 					},
-					Pos: 0,
 				},
 				Remaining: &stringInput{
 					pos:   5,
@@ -647,35 +1398,13 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: list{
-						result{
-							Val: list{
-								result{Val: '{', Pos: 0},
-								result{
-									Val: list{
-										result{Val: '2', Pos: 1},
-									},
-									Pos: 1,
-								},
-								result{
-									Val: list{
-										result{Val: ',', Pos: 2},
-										result{
-											Val: list{
-												result{Val: '4', Pos: 3},
-											},
-											Pos: 3,
-										},
-									},
-									Pos: 2,
-								},
-								result{Val: '}', Pos: 4},
-							},
-							Pos: 0,
+					Val: tuple[any, bool]{
+						p: tuple[int, *int]{
+							p: 2,
+							q: intPtr(4),
 						},
-						result{Val: '?', Pos: 5},
+						q: true,
 					},
-					Pos: 0,
 				},
 				Remaining: &stringInput{
 					pos:   6,
@@ -690,12 +1419,7 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: list{
-						result{Val: '0', Pos: 0},
-						result{Val: '-', Pos: 1},
-						result{Val: '9', Pos: 2},
-					},
-					Pos: 0,
+					Val: digit,
 				},
 				Remaining: &stringInput{
 					pos:   3,
@@ -710,8 +1434,7 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: `\d`,
-					Pos: 0,
+					Val: digit,
 				},
 				Remaining: &stringInput{
 					pos:   2,
@@ -726,8 +1449,7 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: `\D`,
-					Pos: 0,
+					Val: nonDigit,
 				},
 				Remaining: &stringInput{
 					pos:   2,
@@ -742,8 +1464,7 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: `\s`,
-					Pos: 0,
+					Val: whitespace,
 				},
 				Remaining: &stringInput{
 					pos:   2,
@@ -758,8 +1479,7 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: `\S`,
-					Pos: 0,
+					Val: nonWhitespace,
 				},
 				Remaining: &stringInput{
 					pos:   2,
@@ -774,8 +1494,7 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: `\w`,
-					Pos: 0,
+					Val: word,
 				},
 				Remaining: &stringInput{
 					pos:   2,
@@ -790,8 +1509,7 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: `\W`,
-					Pos: 0,
+					Val: nonWord,
 				},
 				Remaining: &stringInput{
 					pos:   2,
@@ -806,8 +1524,12 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: "[:blank:]",
-					Pos: 0,
+					Val: &ast.Alt{
+						Exprs: []ast.Node{
+							&ast.Char{Val: ' '},
+							&ast.Char{Val: '\t'},
+						},
+					},
 				},
 				Remaining: &stringInput{
 					pos:   9,
@@ -822,8 +1544,16 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: "[:space:]",
-					Pos: 0,
+					Val: &ast.Alt{
+						Exprs: []ast.Node{
+							&ast.Char{Val: ' '},
+							&ast.Char{Val: '\t'},
+							&ast.Char{Val: '\n'},
+							&ast.Char{Val: '\r'},
+							&ast.Char{Val: '\f'},
+							&ast.Char{Val: '\v'},
+						},
+					},
 				},
 				Remaining: &stringInput{
 					pos:   9,
@@ -838,8 +1568,7 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: "[:digit:]",
-					Pos: 0,
+					Val: digit,
 				},
 				Remaining: &stringInput{
 					pos:   9,
@@ -854,8 +1583,7 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: "[:xdigit:]",
-					Pos: 0,
+					Val: xdigit,
 				},
 				Remaining: &stringInput{
 					pos:   10,
@@ -870,8 +1598,7 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: "[:upper:]",
-					Pos: 0,
+					Val: upper,
 				},
 				Remaining: &stringInput{
 					pos:   9,
@@ -886,8 +1613,7 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: "[:lower:]",
-					Pos: 0,
+					Val: lower,
 				},
 				Remaining: &stringInput{
 					pos:   9,
@@ -902,8 +1628,7 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: "[:alpha:]",
-					Pos: 0,
+					Val: alpha,
 				},
 				Remaining: &stringInput{
 					pos:   9,
@@ -918,8 +1643,7 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: "[:alnum:]",
-					Pos: 0,
+					Val: alnum,
 				},
 				Remaining: &stringInput{
 					pos:   9,
@@ -934,8 +1658,7 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: "[:word:]",
-					Pos: 0,
+					Val: word,
 				},
 				Remaining: &stringInput{
 					pos:   8,
@@ -950,8 +1673,7 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: "[:ascii:]",
-					Pos: 0,
+					Val: ascii,
 				},
 				Remaining: &stringInput{
 					pos:   9,
@@ -966,8 +1688,7 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: `\w`,
-					Pos: 0,
+					Val: word,
 				},
 				Remaining: &stringInput{
 					pos:   2,
@@ -982,8 +1703,7 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: "[:word:]",
-					Pos: 0,
+					Val: word,
 				},
 				Remaining: &stringInput{
 					pos:   8,
@@ -998,12 +1718,7 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: list{
-						result{Val: '0', Pos: 0},
-						result{Val: '-', Pos: 1},
-						result{Val: '9', Pos: 2},
-					},
-					Pos: 0,
+					Val: digit,
 				},
 				Remaining: &stringInput{
 					pos:   3,
@@ -1018,8 +1733,7 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: '!',
-					Pos: 0,
+					Val: &ast.Char{Val: '!'},
 				},
 				Remaining: &stringInput{
 					pos:   1,
@@ -1034,18 +1748,7 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: list{
-						result{Val: '[', Pos: 0},
-						result{Val: empty{}},
-						result{
-							Val: list{
-								result{Val: `\w`, Pos: 1},
-							},
-							Pos: 1,
-						},
-						result{Val: ']', Pos: 3},
-					},
-					Pos: 0,
+					Val: word,
 				},
 				Remaining: &stringInput{
 					pos:   4,
@@ -1060,18 +1763,7 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: list{
-						result{Val: '[', Pos: 0},
-						result{Val: empty{}},
-						result{
-							Val: list{
-								result{Val: "[:word:]", Pos: 1},
-							},
-							Pos: 1,
-						},
-						result{Val: ']', Pos: 9},
-					},
-					Pos: 0,
+					Val: word,
 				},
 				Remaining: &stringInput{
 					pos:   10,
@@ -1086,25 +1778,7 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: list{
-						result{Val: '[', Pos: 0},
-						result{Val: empty{}},
-						result{
-							Val: list{
-								result{
-									Val: list{
-										result{Val: '0', Pos: 1},
-										result{Val: '-', Pos: 2},
-										result{Val: '9', Pos: 3},
-									},
-									Pos: 1,
-								},
-							},
-							Pos: 1,
-						},
-						result{Val: ']', Pos: 4},
-					},
-					Pos: 0,
+					Val: digit,
 				},
 				Remaining: &stringInput{
 					pos:   5,
@@ -1119,18 +1793,11 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: list{
-						result{Val: '[', Pos: 0},
-						result{Val: empty{}},
-						result{
-							Val: list{
-								result{Val: '!', Pos: 1},
-							},
-							Pos: 1,
+					Val: &ast.Alt{
+						Exprs: []ast.Node{
+							&ast.Char{Val: '!'},
 						},
-						result{Val: ']', Pos: 2},
 					},
-					Pos: 0,
 				},
 				Remaining: &stringInput{
 					pos:   3,
@@ -1145,19 +1812,136 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: list{
-						result{Val: '[', Pos: 0},
-						result{Val: '^', Pos: 1},
-						result{
-							Val: list{
-								result{Val: '#', Pos: 2},
-								result{Val: '$', Pos: 3},
-							},
-							Pos: 2,
+					Val: &ast.Alt{
+						Exprs: []ast.Node{
+							&ast.Char{Val: 0},
+							&ast.Char{Val: 1},
+							&ast.Char{Val: 2},
+							&ast.Char{Val: 3},
+							&ast.Char{Val: 4},
+							&ast.Char{Val: 5},
+							&ast.Char{Val: 6},
+							&ast.Char{Val: 7},
+							&ast.Char{Val: 8},
+							&ast.Char{Val: 9},
+							&ast.Char{Val: 10},
+							&ast.Char{Val: 11},
+							&ast.Char{Val: 12},
+							&ast.Char{Val: 13},
+							&ast.Char{Val: 14},
+							&ast.Char{Val: 15},
+							&ast.Char{Val: 16},
+							&ast.Char{Val: 17},
+							&ast.Char{Val: 18},
+							&ast.Char{Val: 19},
+							&ast.Char{Val: 20},
+							&ast.Char{Val: 21},
+							&ast.Char{Val: 22},
+							&ast.Char{Val: 23},
+							&ast.Char{Val: 24},
+							&ast.Char{Val: 25},
+							&ast.Char{Val: 26},
+							&ast.Char{Val: 27},
+							&ast.Char{Val: 28},
+							&ast.Char{Val: 29},
+							&ast.Char{Val: 30},
+							&ast.Char{Val: 31},
+							&ast.Char{Val: 32},
+							&ast.Char{Val: 33},
+							&ast.Char{Val: 34},
+							&ast.Char{Val: 37},
+							&ast.Char{Val: 38},
+							&ast.Char{Val: 39},
+							&ast.Char{Val: 40},
+							&ast.Char{Val: 41},
+							&ast.Char{Val: 42},
+							&ast.Char{Val: 43},
+							&ast.Char{Val: 44},
+							&ast.Char{Val: 45},
+							&ast.Char{Val: 46},
+							&ast.Char{Val: 47},
+							&ast.Char{Val: 48},
+							&ast.Char{Val: 49},
+							&ast.Char{Val: 50},
+							&ast.Char{Val: 51},
+							&ast.Char{Val: 52},
+							&ast.Char{Val: 53},
+							&ast.Char{Val: 54},
+							&ast.Char{Val: 55},
+							&ast.Char{Val: 56},
+							&ast.Char{Val: 57},
+							&ast.Char{Val: 58},
+							&ast.Char{Val: 59},
+							&ast.Char{Val: 60},
+							&ast.Char{Val: 61},
+							&ast.Char{Val: 62},
+							&ast.Char{Val: 63},
+							&ast.Char{Val: 64},
+							&ast.Char{Val: 65},
+							&ast.Char{Val: 66},
+							&ast.Char{Val: 67},
+							&ast.Char{Val: 68},
+							&ast.Char{Val: 69},
+							&ast.Char{Val: 70},
+							&ast.Char{Val: 71},
+							&ast.Char{Val: 72},
+							&ast.Char{Val: 73},
+							&ast.Char{Val: 74},
+							&ast.Char{Val: 75},
+							&ast.Char{Val: 76},
+							&ast.Char{Val: 77},
+							&ast.Char{Val: 78},
+							&ast.Char{Val: 79},
+							&ast.Char{Val: 80},
+							&ast.Char{Val: 81},
+							&ast.Char{Val: 82},
+							&ast.Char{Val: 83},
+							&ast.Char{Val: 84},
+							&ast.Char{Val: 85},
+							&ast.Char{Val: 86},
+							&ast.Char{Val: 87},
+							&ast.Char{Val: 88},
+							&ast.Char{Val: 89},
+							&ast.Char{Val: 90},
+							&ast.Char{Val: 91},
+							&ast.Char{Val: 92},
+							&ast.Char{Val: 93},
+							&ast.Char{Val: 94},
+							&ast.Char{Val: 95},
+							&ast.Char{Val: 96},
+							&ast.Char{Val: 97},
+							&ast.Char{Val: 98},
+							&ast.Char{Val: 99},
+							&ast.Char{Val: 100},
+							&ast.Char{Val: 101},
+							&ast.Char{Val: 102},
+							&ast.Char{Val: 103},
+							&ast.Char{Val: 104},
+							&ast.Char{Val: 105},
+							&ast.Char{Val: 106},
+							&ast.Char{Val: 107},
+							&ast.Char{Val: 108},
+							&ast.Char{Val: 109},
+							&ast.Char{Val: 110},
+							&ast.Char{Val: 111},
+							&ast.Char{Val: 112},
+							&ast.Char{Val: 113},
+							&ast.Char{Val: 114},
+							&ast.Char{Val: 115},
+							&ast.Char{Val: 116},
+							&ast.Char{Val: 117},
+							&ast.Char{Val: 118},
+							&ast.Char{Val: 119},
+							&ast.Char{Val: 120},
+							&ast.Char{Val: 121},
+							&ast.Char{Val: 122},
+							&ast.Char{Val: 123},
+							&ast.Char{Val: 124},
+							&ast.Char{Val: 125},
+							&ast.Char{Val: 126},
+							&ast.Char{Val: 127},
 						},
-						result{Val: ']', Pos: 4},
 					},
-					Pos: 0,
 				},
 				Remaining: &stringInput{
 					pos:   5,
@@ -1172,8 +1956,7 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: '.',
-					Pos: 0,
+					Val: ascii,
 				},
 				Remaining: &stringInput{
 					pos:   1,
@@ -1188,8 +1971,7 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: '.',
-					Pos: 0,
+					Val: ascii,
 				},
 				Remaining: &stringInput{
 					pos:   1,
@@ -1204,8 +1986,7 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: `\w`,
-					Pos: 0,
+					Val: word,
 				},
 				Remaining: &stringInput{
 					pos:   2,
@@ -1220,8 +2001,7 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: "[:word:]",
-					Pos: 0,
+					Val: word,
 				},
 				Remaining: &stringInput{
 					pos:   8,
@@ -1236,25 +2016,7 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: list{
-						result{Val: '[', Pos: 0},
-						result{Val: empty{}},
-						result{
-							Val: list{
-								result{
-									Val: list{
-										result{Val: '0', Pos: 1},
-										result{Val: '-', Pos: 2},
-										result{Val: '9', Pos: 3},
-									},
-									Pos: 1,
-								},
-							},
-							Pos: 1,
-						},
-						result{Val: ']', Pos: 4},
-					},
-					Pos: 0,
+					Val: digit,
 				},
 				Remaining: &stringInput{
 					pos:   5,
@@ -1269,27 +2031,7 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: '!',
-					Pos: 0,
-				},
-				Remaining: &stringInput{
-					pos:   1,
-					runes: []rune("tail"),
-				},
-			},
-		},
-		{
-			name:       "match_anyChar_Successful",
-			p:          r.match,
-			in:         newStringInput(".tail"),
-			expectedOK: true,
-			expectedOut: output{
-				Result: result{
-					Val: list{
-						result{Val: '.', Pos: 0},
-						result{Val: empty{}},
-					},
-					Pos: 0,
+					Val: &ast.Char{Val: '!'},
 				},
 				Remaining: &stringInput{
 					pos:   1,
@@ -1304,11 +2046,7 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: list{
-						result{Val: `\w`, Pos: 0},
-						result{Val: empty{}},
-					},
-					Pos: 0,
+					Val: word,
 				},
 				Remaining: &stringInput{
 					pos:   2,
@@ -1323,11 +2061,7 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: list{
-						result{Val: "[:word:]", Pos: 0},
-						result{Val: empty{}},
-					},
-					Pos: 0,
+					Val: word,
 				},
 				Remaining: &stringInput{
 					pos:   8,
@@ -1342,61 +2076,24 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: list{
-						result{
-							Val: list{
-								result{Val: '[', Pos: 0},
-								result{Val: empty{}},
-								result{
-									Val: list{
-										result{
-											Val: list{
-												result{Val: '0', Pos: 1},
-												result{Val: '-', Pos: 2},
-												result{Val: '9', Pos: 3},
-											},
-											Pos: 1,
-										},
-									},
-									Pos: 1,
+					Val: &ast.Concat{
+						Exprs: []ast.Node{
+							digit,
+							digit,
+							&ast.Alt{
+								Exprs: []ast.Node{
+									&ast.Empty{},
+									digit,
 								},
-								result{Val: ']', Pos: 4},
 							},
-							Pos: 0,
-						},
-						result{
-							Val: list{
-								result{
-									Val: list{
-										result{Val: '{', Pos: 5},
-										result{
-											Val: list{
-												result{Val: '2', Pos: 6},
-											},
-											Pos: 6,
-										},
-										result{
-											Val: list{
-												result{Val: ',', Pos: 7},
-												result{
-													Val: list{
-														result{Val: '4', Pos: 8},
-													},
-													Pos: 8,
-												},
-											},
-											Pos: 7,
-										},
-										result{Val: '}', Pos: 9},
-									},
-									Pos: 5,
+							&ast.Alt{
+								Exprs: []ast.Node{
+									&ast.Empty{},
+									digit,
 								},
-								result{Val: empty{}},
 							},
-							Pos: 5,
 						},
 					},
-					Pos: 0,
 				},
 				Remaining: &stringInput{
 					pos:   10,
@@ -1411,41 +2108,24 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: list{
-						result{Val: '#', Pos: 0},
-						result{
-							Val: list{
-								result{
-									Val: list{
-										result{Val: '{', Pos: 1},
-										result{
-											Val: list{
-												result{Val: '2', Pos: 2},
-											},
-											Pos: 2,
-										},
-										result{
-											Val: list{
-												result{Val: ',', Pos: 3},
-												result{
-													Val: list{
-														result{Val: '4', Pos: 4},
-													},
-													Pos: 4,
-												},
-											},
-											Pos: 3,
-										},
-										result{Val: '}', Pos: 5},
-									},
-									Pos: 1,
+					Val: &ast.Concat{
+						Exprs: []ast.Node{
+							&ast.Char{Val: '#'},
+							&ast.Char{Val: '#'},
+							&ast.Alt{
+								Exprs: []ast.Node{
+									&ast.Empty{},
+									&ast.Char{Val: '#'},
 								},
-								result{Val: empty{}},
 							},
-							Pos: 1,
+							&ast.Alt{
+								Exprs: []ast.Node{
+									&ast.Empty{},
+									&ast.Char{Val: '#'},
+								},
+							},
 						},
 					},
-					Pos: 0,
 				},
 				Remaining: &stringInput{
 					pos:   6,
@@ -1460,52 +2140,20 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: list{result{Val: '(', Pos: 0},
-						result{
-							Val: list{
-								result{
-									Val: list{
-										result{
-											Val: list{
-												result{Val: 'a', Pos: 1},
-												result{Val: empty{}},
-											},
-											Pos: 1,
-										},
-									},
-									Pos: 1,
-								},
-								result{
-									Val: list{
-										result{Val: '|', Pos: 2},
-										result{
-											Val: list{
-												result{
-													Val: list{
-														result{
-															Val: list{
-																result{Val: 'b', Pos: 3},
-																result{Val: empty{}},
-															},
-															Pos: 3,
-														},
-													},
-													Pos: 3,
-												},
-												result{Val: empty{}},
-											},
-											Pos: 3,
-										},
-									},
-									Pos: 2,
+					Val: &ast.Alt{
+						Exprs: []ast.Node{
+							&ast.Concat{
+								Exprs: []ast.Node{
+									&ast.Char{Val: 'a'},
 								},
 							},
-							Pos: 1,
+							&ast.Concat{
+								Exprs: []ast.Node{
+									&ast.Char{Val: 'b'},
+								},
+							},
 						},
-						result{Val: ')', Pos: 4},
-						result{Val: empty{}},
 					},
-					Pos: 0,
 				},
 				Remaining: &stringInput{
 					pos:   5,
@@ -1520,86 +2168,43 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: list{
-						result{Val: '(', Pos: 0},
-						result{
-							Val: list{
-								result{
-									Val: list{
-										result{
-											Val: list{
-												result{Val: 'a', Pos: 1},
-												result{Val: empty{}},
-											},
-											Pos: 1,
+					Val: &ast.Concat{
+						Exprs: []ast.Node{
+							&ast.Alt{
+								Exprs: []ast.Node{
+									&ast.Concat{
+										Exprs: []ast.Node{
+											&ast.Char{Val: 'a'},
 										},
 									},
-									Pos: 1,
-								},
-								result{
-									Val: list{
-										result{Val: '|', Pos: 2},
-										result{
-											Val: list{
-												result{
-													Val: list{
-														result{
-															Val: list{
-																result{Val: 'b', Pos: 3},
-																result{Val: empty{}},
-															},
-															Pos: 3,
-														},
-													},
-													Pos: 3,
-												},
-												result{Val: empty{}},
-											},
-											Pos: 3,
+									&ast.Concat{
+										Exprs: []ast.Node{
+											&ast.Char{Val: 'b'},
 										},
 									},
-									Pos: 2,
 								},
 							},
-							Pos: 1,
-						},
-						result{Val: ')', Pos: 4},
-						result{
-							Val: list{
-								result{Val: '+', Pos: 5},
-								result{Val: empty{}},
+							&ast.Star{
+								Expr: &ast.Alt{
+									Exprs: []ast.Node{
+										&ast.Concat{
+											Exprs: []ast.Node{
+												&ast.Char{Val: 'a'},
+											},
+										},
+										&ast.Concat{
+											Exprs: []ast.Node{
+												&ast.Char{Val: 'b'},
+											},
+										},
+									},
+								},
 							},
-							Pos: 5,
 						},
 					},
-					Pos: 0,
 				},
 				Remaining: &stringInput{
 					pos:   6,
-					runes: []rune("tail"),
-				},
-			},
-		},
-		{
-			name:       "backref_Successful",
-			p:          r.backref,
-			in:         newStringInput(`\2tail`),
-			expectedOK: true,
-			expectedOut: output{
-				Result: result{
-					Val: list{
-						result{Val: '\\', Pos: 0},
-						result{
-							Val: list{
-								result{Val: '2', Pos: 1},
-							},
-							Pos: 1,
-						},
-					},
-					Pos: 0,
-				},
-				Remaining: &stringInput{
-					pos:   2,
 					runes: []rune("tail"),
 				},
 			},
@@ -1610,7 +2215,9 @@ func TestRegex(t *testing.T) {
 			in:         newStringInput("$tail"),
 			expectedOK: true,
 			expectedOut: output{
-				Result: result{Val: '$', Pos: 0},
+				Result: result{
+					Val: '$',
+				},
 				Remaining: &stringInput{
 					pos:   1,
 					runes: []rune("tail"),
@@ -1624,43 +2231,24 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: list{
-						result{Val: '(', Pos: 0},
-						result{
-							Val: list{
-								result{
-									Val: list{
-										result{
-											Val: list{
-												result{Val: 'a', Pos: 1},
-												result{Val: empty{}},
-											},
-											Pos: 1,
-										},
-										result{
-											Val: list{
-												result{Val: 'b', Pos: 2},
-												result{Val: empty{}},
-											},
-											Pos: 2,
-										},
-									},
-									Pos: 1,
+					Val: &ast.Concat{
+						Exprs: []ast.Node{
+							&ast.Concat{
+								Exprs: []ast.Node{
+									&ast.Char{Val: 'a'},
+									&ast.Char{Val: 'b'},
 								},
-								result{Val: empty{}},
 							},
-							Pos: 1,
-						},
-						result{Val: ')', Pos: 3},
-						result{
-							Val: list{
-								result{Val: '+', Pos: 4},
-								result{Val: empty{}},
+							&ast.Star{
+								Expr: &ast.Concat{
+									Exprs: []ast.Node{
+										&ast.Char{Val: 'a'},
+										&ast.Char{Val: 'b'},
+									},
+								},
 							},
-							Pos: 4,
 						},
 					},
-					Pos: 0,
 				},
 				Remaining: &stringInput{
 					pos:   5,
@@ -1674,32 +2262,10 @@ func TestRegex(t *testing.T) {
 			in:         newStringInput("$"),
 			expectedOK: true,
 			expectedOut: output{
-				Result:    result{Val: '$', Pos: 0},
-				Remaining: nil,
-			},
-		},
-		{
-			name:       "subexprItem_backref_Successful",
-			p:          r.subexprItem,
-			in:         newStringInput(`\2tail`),
-			expectedOK: true,
-			expectedOut: output{
 				Result: result{
-					Val: list{
-						result{Val: '\\', Pos: 0},
-						result{
-							Val: list{
-								result{Val: '2', Pos: 1},
-							},
-							Pos: 1,
-						},
-					},
-					Pos: 0,
+					Val: '$',
 				},
-				Remaining: &stringInput{
-					pos:   2,
-					runes: []rune("tail"),
-				},
+				Remaining: nil,
 			},
 		},
 		{
@@ -1709,37 +2275,14 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: list{
-						result{
-							Val: list{
-								result{Val: '[', Pos: 0},
-								result{Val: empty{}},
-								result{
-									Val: list{
-										result{
-											Val: list{
-												result{Val: '0', Pos: 1},
-												result{Val: '-', Pos: 2},
-												result{Val: '9', Pos: 3},
-											},
-											Pos: 1,
-										},
-									},
-									Pos: 1,
-								},
-								result{Val: ']', Pos: 4},
+					Val: &ast.Concat{
+						Exprs: []ast.Node{
+							digit,
+							&ast.Star{
+								Expr: digit,
 							},
-							Pos: 0,
-						},
-						result{
-							Val: list{
-								result{Val: '+', Pos: 5},
-								result{Val: empty{}},
-							},
-							Pos: 5,
 						},
 					},
-					Pos: 0,
 				},
 				Remaining: &stringInput{
 					pos:   6,
@@ -1754,109 +2297,35 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: list{
-						result{
-							Val: list{
-								result{Val: '(', Pos: 0},
-								result{
-									Val: list{
-										result{
-											Val: list{
-												result{
-													Val: list{
-														result{Val: 'a', Pos: 1},
-														result{Val: empty{}},
-													},
-													Pos: 1,
-												},
-												result{
-													Val: list{
-														result{Val: 'b', Pos: 2},
-														result{Val: empty{}},
-													},
-													Pos: 2,
-												},
-											},
-											Pos: 1,
+					Val: &ast.Concat{
+						Exprs: []ast.Node{
+							&ast.Concat{
+								Exprs: []ast.Node{
+									&ast.Concat{
+										Exprs: []ast.Node{
+											&ast.Char{Val: 'a'},
+											&ast.Char{Val: 'b'},
 										},
-										result{Val: empty{}},
 									},
-									Pos: 1,
-								},
-								result{Val: ')', Pos: 3},
-								result{
-									Val: list{
-										result{Val: '+', Pos: 4},
-										result{Val: empty{}},
-									},
-									Pos: 4,
-								},
-							},
-							Pos: 0,
-						},
-						result{
-							Val: list{
-								result{
-									Val: list{
-										result{Val: '[', Pos: 5},
-										result{Val: empty{}},
-										result{
-											Val: list{
-												result{
-													Val: list{
-														result{Val: '0', Pos: 6},
-														result{Val: '-', Pos: 7},
-														result{Val: '9', Pos: 8},
-													},
-													Pos: 6,
-												},
+									&ast.Star{
+										Expr: &ast.Concat{
+											Exprs: []ast.Node{
+												&ast.Char{Val: 'a'},
+												&ast.Char{Val: 'b'},
 											},
-											Pos: 6,
 										},
-										result{Val: ']', Pos: 9},
 									},
-									Pos: 5,
-								},
-								result{
-									Val: list{
-										result{Val: '*', Pos: 10},
-										result{Val: empty{}},
-									},
-									Pos: 10,
 								},
 							},
-							Pos: 5,
-						},
-						result{
-							Val: list{
-								result{Val: 't', Pos: 11},
-								result{Val: empty{}},
+							&ast.Star{
+								Expr: digit,
 							},
-							Pos: 11,
-						},
-						result{
-							Val: list{
-								result{Val: 'a', Pos: 12},
-								result{Val: empty{}},
-							},
-							Pos: 12,
-						},
-						result{
-							Val: list{
-								result{Val: 'i', Pos: 13},
-								result{Val: empty{}},
-							},
-							Pos: 13,
-						},
-						result{
-							Val: list{
-								result{Val: 'l', Pos: 14},
-								result{Val: empty{}},
-							},
-							Pos: 14,
+							&ast.Char{Val: 't'},
+							&ast.Char{Val: 'a'},
+							&ast.Char{Val: 'i'},
+							&ast.Char{Val: 'l'},
 						},
 					},
-					Pos: 0,
 				},
 				Remaining: nil,
 			},
@@ -1868,86 +2337,14 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: list{
-						result{
-							Val: list{
-								result{
-									Val: list{
-										result{
-											Val: list{
-												result{Val: '[', Pos: 0},
-												result{Val: empty{}},
-												result{
-													Val: list{
-														result{
-															Val: list{
-																result{Val: '0', Pos: 1},
-																result{Val: '-', Pos: 2},
-																result{Val: '9', Pos: 3},
-															},
-															Pos: 1,
-														},
-														result{
-															Val: list{
-																result{Val: 'A', Pos: 4},
-																result{Val: '-', Pos: 5},
-																result{Val: 'Z', Pos: 6},
-															},
-															Pos: 4,
-														},
-														result{
-															Val: list{
-																result{Val: 'a', Pos: 7},
-																result{Val: '-', Pos: 8},
-																result{Val: 'z', Pos: 9},
-															},
-															Pos: 7,
-														},
-														result{Val: '_', Pos: 10},
-													},
-													Pos: 1,
-												},
-												result{Val: ']', Pos: 11},
-											},
-											Pos: 0,
-										},
-										result{Val: empty{}},
-									},
-									Pos: 0,
-								},
-								result{
-									Val: list{
-										result{
-											Val: list{
-												result{Val: '[', Pos: 12},
-												result{Val: empty{}},
-												result{
-													Val: list{
-														result{Val: `\d`, Pos: 13},
-														result{Val: `\w`, Pos: 15},
-													},
-													Pos: 13,
-												},
-												result{Val: ']', Pos: 17},
-											},
-											Pos: 12,
-										},
-										result{
-											Val: list{
-												result{Val: '*', Pos: 18},
-												result{Val: empty{}},
-											},
-											Pos: 18,
-										},
-									},
-									Pos: 12,
-								},
+					Val: &ast.Concat{
+						Exprs: []ast.Node{
+							word,
+							&ast.Star{
+								Expr: word,
 							},
-							Pos: 0,
 						},
-						result{Val: empty{}},
 					},
-					Pos: 0,
 				},
 				Remaining: nil,
 			},
@@ -1959,154 +2356,29 @@ func TestRegex(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: list{
-						result{Val: '^', Pos: 0},
-						result{
-							Val: list{
-								result{
-									Val: list{
-										result{
-											Val: list{
-												result{Val: 'p', Pos: 1},
-												result{Val: empty{}},
-											},
-											Pos: 1,
-										},
-										result{
-											Val: list{
-												result{Val: 'a', Pos: 2},
-												result{Val: empty{}},
-											},
-											Pos: 2,
-										},
-										result{
-											Val: list{
-												result{Val: 'c', Pos: 3},
-												result{Val: empty{}},
-											},
-											Pos: 3,
-										},
-										result{
-											Val: list{
-												result{Val: 'k', Pos: 4},
-												result{Val: empty{}},
-											},
-											Pos: 4,
-										},
-										result{
-											Val: list{
-												result{Val: 'a', Pos: 5},
-												result{Val: empty{}},
-											},
-											Pos: 5,
-										},
-										result{
-											Val: list{
-												result{Val: 'g', Pos: 6},
-												result{Val: empty{}},
-											},
-											Pos: 6,
-										},
-										result{
-											Val: list{
-												result{Val: 'e', Pos: 7},
-												result{Val: empty{}},
-											},
-											Pos: 7,
-										},
-										result{
-											Val: list{
-												result{Val: `\s`, Pos: 8},
-												result{
-													Val: list{
-														result{Val: '+', Pos: 10},
-														result{Val: empty{}},
-													},
-													Pos: 10,
-												},
-											},
-											Pos: 8,
-										},
-										result{
-											Val: list{
-												result{
-													Val: list{
-														result{Val: '[', Pos: 11},
-														result{Val: empty{}},
-														result{
-															Val: list{
-																result{
-																	Val: list{
-																		result{Val: '0', Pos: 12},
-																		result{Val: '-', Pos: 13},
-																		result{Val: '9', Pos: 14},
-																	},
-																	Pos: 12,
-																},
-																result{
-																	Val: list{
-																		result{Val: 'A', Pos: 15},
-																		result{Val: '-', Pos: 16},
-																		result{Val: 'Z', Pos: 17},
-																	},
-																	Pos: 15,
-																},
-																result{
-																	Val: list{
-																		result{Val: 'a', Pos: 18},
-																		result{Val: '-', Pos: 19},
-																		result{Val: 'z', Pos: 20},
-																	},
-																	Pos: 18,
-																},
-																result{Val: '_', Pos: 21},
-															},
-															Pos: 12,
-														},
-														result{Val: ']', Pos: 22},
-													},
-													Pos: 11,
-												},
-												result{Val: empty{}},
-											},
-											Pos: 11,
-										},
-										result{
-											Val: list{
-												result{
-													Val: list{
-														result{Val: '[', Pos: 23},
-														result{Val: empty{}},
-														result{
-															Val: list{
-																result{Val: "\\d", Pos: 24},
-																result{Val: "\\w", Pos: 26},
-															},
-															Pos: 24,
-														},
-														result{Val: ']', Pos: 28},
-													},
-													Pos: 23,
-												},
-												result{
-													Val: list{
-														result{Val: '*', Pos: 29},
-														result{Val: empty{}},
-													},
-													Pos: 29,
-												},
-											},
-											Pos: 23,
-										},
+					Val: &ast.Concat{
+						Exprs: []ast.Node{
+							&ast.Char{Val: 'p'},
+							&ast.Char{Val: 'a'},
+							&ast.Char{Val: 'c'},
+							&ast.Char{Val: 'k'},
+							&ast.Char{Val: 'a'},
+							&ast.Char{Val: 'g'},
+							&ast.Char{Val: 'e'},
+							&ast.Concat{
+								Exprs: []ast.Node{
+									whitespace,
+									&ast.Star{
+										Expr: whitespace,
 									},
-									Pos: 1,
 								},
-								result{Val: empty{}},
 							},
-							Pos: 1,
+							word,
+							&ast.Star{
+								Expr: word,
+							},
 						},
 					},
-					Pos: 0,
 				},
 				Remaining: nil,
 			},
@@ -2115,6 +2387,9 @@ func TestRegex(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
+			// Reset the state
+			r.errors = nil
+
 			out, ok := tc.p(tc.in)
 
 			assert.Equal(t, tc.expectedOK, ok)

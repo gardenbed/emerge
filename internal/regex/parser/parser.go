@@ -6,7 +6,7 @@ type (
 	empty struct{}
 
 	// result is the result of parsing a production rule.
-	// It represents the left-side of a production rule.
+	// It represents a production rule result.
 	result struct {
 		Val any
 		Pos int
@@ -21,7 +21,6 @@ type (
 	input interface {
 		// Current returns the current rune from input along with its position in the input.
 		Current() (rune, int)
-
 		// Remaining returns the remaining of input. If no input left, it returns nil.
 		Remaining() input
 	}
@@ -36,23 +35,24 @@ type (
 	parser func(input) (output, bool)
 )
 
-// Get returns a symbol in the left-side of a production rule from a parsing result.
+// getAt returns the value of a symbol from the right-side of a production rule.
 //
 // Example:
 //
 // • Production Rule: range --> "{" num ( "," num? )? "}"
 //
-// • Input: "{2,4}"
+// • in = {2,4}
 //
-// • get(res, 1) = 2, get(res, 3) = 4
-func (r *result) Get(i int) (result, bool) {
-	if l, ok := r.Val.(list); ok {
+// • getAt(in, 1) = 2, get(in, 3) = 4
+//
+func getAt(v any, i int) (any, bool) {
+	if l, ok := v.(list); ok {
 		if 0 <= i && i < len(l) {
-			return l[i], true
+			return l[i].Val, true
 		}
 	}
 
-	return result{}, false
+	return nil, false
 }
 
 // expectRune creates a parser that returns a successful result only if the input starts with the given rune.
@@ -152,6 +152,26 @@ func expectString(s string) parser {
 		}
 
 		return output{}, false
+	}
+}
+
+// excludeRunes can be bound on a rune parser to exclude certain runes.
+func excludeRunes(r ...rune) constructor {
+	return func(res result) parser {
+		return func(in input) (output, bool) {
+			if a, ok := res.Val.(rune); ok {
+				for _, b := range r {
+					if a == b {
+						return output{}, false
+					}
+				}
+			}
+
+			return output{
+				Result:    res,
+				Remaining: in,
+			}, true
+		}
 	}
 }
 
@@ -300,7 +320,7 @@ func flatten(res result) list {
 }
 
 // Flatten composes a parser that applies parser p to the input and flattens all results into a single list.
-// This can be used for accessing the values of symbols in the left-side of a production rule more intuitively.
+// This can be used for accessing the values of symbols in the right-side of a production rule more intuitively.
 func (p parser) Flatten() parser {
 	return func(in input) (output, bool) {
 		if out, ok := p(in); ok {
@@ -315,7 +335,7 @@ func (p parser) Flatten() parser {
 	}
 }
 
-// Select composes a parser that applies parser p to the input and returns a list of symbols in the left-side of the production rule.
+// Select composes a parser that applies parser p to the input and returns a list of symbols from the right-side of the production rule.
 // This will not have any effect if the result of parsing is not a list.
 // If indices are invalid, you will get an empty string (ε).
 func (p parser) Select(i ...int) parser {
@@ -354,7 +374,7 @@ func (p parser) Select(i ...int) parser {
 	}
 }
 
-// Get composes a parser that applies parser p to the input and returns the value of a symbol in the left-side of the production rule.
+// Get composes a parser that applies parser p to the input and returns the value of a symbol from the right-side of the production rule.
 // This can be used after CONCAT, REP, REP1, Flatten, and/or Select.
 // It will not have any effect if used after other operators and the result of parsing is not a list.
 // If index is invalid, you will get an empty string (ε).
@@ -387,15 +407,15 @@ func (p parser) Get(i int) parser {
 	}
 }
 
-// converter is the type for a function that receives a parsing result and returns a new value for the result.
-type converter func(result) (any, bool)
+// mapper is the type for a function that receives a parsing result and returns a new value for the result.
+type mapper func(any) (any, bool)
 
-// Convert composes a parser that uses parser p to parse the input and applies a converter function to the result of parsing.
-// If the parser does not succeed, the converter function will not be applied.
-func (p parser) Convert(f converter) parser {
+// Map composes a parser that uses parser p to parse the input and applies a mapper function to the result of parsing.
+// If the parser does not succeed, the mapper function will not be applied.
+func (p parser) Map(f mapper) parser {
 	return func(in input) (output, bool) {
 		if out, ok := p(in); ok {
-			if val, ok := f(out.Result); ok {
+			if val, ok := f(out.Result.Val); ok {
 				return output{
 					Result:    result{val, out.Result.Pos},
 					Remaining: out.Remaining,
