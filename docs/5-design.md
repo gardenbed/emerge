@@ -9,9 +9,16 @@ In this document, we go over some of the design decisions and rationals behind *
 The following features are NOT included in the Emerge's Regular Expression language.
 They seem unnecessary for the purpose of designing and defining tokens of a language.
 
+  - Backreference
   - Unicode character class
-  - Non-capturing modifier `?:`
-  - `\A`, `\b`, `\B`, `\z`, `\Z`, `\G`
+  - Non-capturing group modifier `?:`
+  - Anchors:
+      - Word boundary `\b`
+      - Non-word boundary`\B`
+      - Start of string only `\A`
+      - End of string only `\Z`
+      - End of string only (not newline) `\z`
+      - Previous match end `\G`
 
 ### Parser Design
 

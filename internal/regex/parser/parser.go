@@ -6,7 +6,7 @@ type (
 	empty struct{}
 
 	// result is the result of parsing a production rule.
-	// It represents the left-side of a production rule.
+	// It represents a production rule.
 	result struct {
 		Val any
 		Pos int
@@ -35,7 +35,7 @@ type (
 	parser func(input) (output, bool)
 )
 
-// getAt returns the value of a symbol in the left-side of a production rule.
+// getAt returns the value of a symbol from the right-side of a production rule.
 //
 // Example:
 //
@@ -320,7 +320,7 @@ func flatten(res result) list {
 }
 
 // Flatten composes a parser that applies parser p to the input and flattens all results into a single list.
-// This can be used for accessing the values of symbols in the left-side of a production rule more intuitively.
+// This can be used for accessing the values of symbols in the right-side of a production rule more intuitively.
 func (p parser) Flatten() parser {
 	return func(in input) (output, bool) {
 		if out, ok := p(in); ok {
@@ -335,7 +335,7 @@ func (p parser) Flatten() parser {
 	}
 }
 
-// Select composes a parser that applies parser p to the input and returns a list of symbols in the left-side of the production rule.
+// Select composes a parser that applies parser p to the input and returns a list of symbols from the right-side of the production rule.
 // This will not have any effect if the result of parsing is not a list.
 // If indices are invalid, you will get an empty string (ε).
 func (p parser) Select(i ...int) parser {
@@ -374,7 +374,7 @@ func (p parser) Select(i ...int) parser {
 	}
 }
 
-// Get composes a parser that applies parser p to the input and returns the value of a symbol in the left-side of the production rule.
+// Get composes a parser that applies parser p to the input and returns the value of a symbol from the right-side of the production rule.
 // This can be used after CONCAT, REP, REP1, Flatten, and/or Select.
 // It will not have any effect if used after other operators and the result of parsing is not a list.
 // If index is invalid, you will get an empty string (ε).

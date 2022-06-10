@@ -31,6 +31,28 @@ func Parse(in input) (ast.Node, error) {
 	return root, nil
 }
 
+// setPositions backfills Pos field for all characters in an abstract syntaxt tree from left to right.
+func setPositions(n ast.Node, pos *int) {
+	switch v := n.(type) {
+	case *ast.Concat:
+		for _, e := range v.Exprs {
+			setPositions(e, pos)
+		}
+
+	case *ast.Alt:
+		for _, e := range v.Exprs {
+			setPositions(e, pos)
+		}
+
+	case *ast.Star:
+		setPositions(v.Expr, pos)
+
+	case *ast.Char:
+		*pos++
+		v.Pos = *pos
+	}
+}
+
 //================================================== PARSER COMBINATOR ==================================================
 
 // All characters from 0x00 to 0x7f
@@ -48,10 +70,7 @@ var alphabet = []rune{
 
 // regex is a parser combinator for parsing regular expressions.
 type regex struct {
-	sos    bool
-	eos    bool
 	errors error
-	symTab []ast.Node
 
 	char           parser
 	charInGroup    parser
@@ -73,7 +92,6 @@ type regex struct {
 	anyChar        parser
 	matchItem      parser
 	match          parser
-	backref        parser
 	anchor         parser
 	regex          parser
 }
@@ -168,8 +186,7 @@ func newRegex() *regex {
 	// match --> match_item quantifier?
 	r.match = r.matchItem.CONCAT(r.quantifier.OPT()).Convert(r.toMatch)
 
-	r.backref = expectRune('\\').CONCAT(r.num).Convert(r.toBackref) // backref --> "\" num
-	r.anchor = expectRune('$').Convert(r.toAnchor)                  // anchor --> "$"
+	r.anchor = expectRune('$').Convert(r.toAnchor) // anchor --> "$"
 
 	// regex --> start_of_string? expr
 	r.regex = expectRune('^').OPT().CONCAT(r.expr).Convert(r.toRegex)
@@ -188,9 +205,9 @@ func (r *regex) group(in input) (output, bool) {
 }
 
 // Recursive definition
-// subexpr_item --> group | anchor | backref | match
+// subexpr_item --> group | anchor | match
 func (r *regex) subexprItem(in input) (output, bool) {
-	return parser(r.group).ALT(r.anchor, r.backref, r.match).Convert(r.toSubexprItem)(in)
+	return parser(r.group).ALT(r.anchor, r.match).Convert(r.toSubexprItem)(in)
 }
 
 // Recursive definition
@@ -279,12 +296,12 @@ func runeRangesToAlt(neg bool, ranges ...[2]rune) *ast.Alt {
 
 func markAllChars(m []bool, n ast.Node) {
 	switch v := n.(type) {
-	case *ast.Alt:
+	case *ast.Concat:
 		for _, n := range v.Exprs {
 			markAllChars(m, n)
 		}
 
-	case *ast.Concat:
+	case *ast.Alt:
 		for _, n := range v.Exprs {
 			markAllChars(m, n)
 		}
@@ -297,6 +314,42 @@ func markAllChars(m []bool, n ast.Node) {
 	}
 }
 
+func cloneNode(n ast.Node) ast.Node {
+	switch v := n.(type) {
+	case *ast.Concat:
+		concat := new(ast.Concat)
+		for _, e := range v.Exprs {
+			concat.Exprs = append(concat.Exprs, cloneNode(e))
+		}
+		return concat
+
+	case *ast.Alt:
+		alt := new(ast.Alt)
+		for _, e := range v.Exprs {
+			alt.Exprs = append(alt.Exprs, cloneNode(e))
+		}
+		return alt
+
+	case *ast.Star:
+		return &ast.Star{
+			Expr: cloneNode(v.Expr),
+		}
+
+	case *ast.Empty:
+		return new(ast.Empty)
+
+	case *ast.Char:
+		return &ast.Char{
+			Val: v.Val,
+			Pos: v.Pos,
+		}
+
+	default:
+		return nil
+	}
+}
+
+// TODO:
 func quantifyNode(n ast.Node, t tuple[any, bool]) ast.Node {
 	var node ast.Node
 
@@ -307,22 +360,22 @@ func quantifyNode(n ast.Node, t tuple[any, bool]) ast.Node {
 		case '?':
 			node = &ast.Alt{
 				Exprs: []ast.Node{
-					n,
 					&ast.Empty{},
+					cloneNode(n),
 				},
 			}
 
 		case '*':
 			node = &ast.Star{
-				Expr: n,
+				Expr: cloneNode(n),
 			}
 
 		case '+':
 			node = &ast.Concat{
 				Exprs: []ast.Node{
-					n,
+					cloneNode(n),
 					&ast.Star{
-						Expr: n,
+						Expr: cloneNode(n),
 					},
 				},
 			}
@@ -334,19 +387,19 @@ func quantifyNode(n ast.Node, t tuple[any, bool]) ast.Node {
 		concat := new(ast.Concat)
 
 		for i := 0; i < low; i++ {
-			concat.Exprs = append(concat.Exprs, n)
+			concat.Exprs = append(concat.Exprs, cloneNode(n))
 		}
 
 		if up == nil {
 			concat.Exprs = append(concat.Exprs, &ast.Star{
-				Expr: n,
+				Expr: cloneNode(n),
 			})
 		} else {
 			for i := 0; i < *up-low; i++ {
 				concat.Exprs = append(concat.Exprs, &ast.Alt{
 					Exprs: []ast.Node{
-						n,
 						&ast.Empty{},
+						cloneNode(n),
 					},
 				})
 			}
@@ -355,48 +408,19 @@ func quantifyNode(n ast.Node, t tuple[any, bool]) ast.Node {
 		node = concat
 	}
 
-	// TODO:
 	// lazy := q.u
 
 	return node
 }
 
-// setPositions backfills Pos field for all characters in an abstract syntaxt tree from left to right.
-func setPositions(n ast.Node, pos *int) {
-	switch v := n.(type) {
-	case *ast.Concat:
-		for _, e := range v.Exprs {
-			setPositions(e, pos)
-		}
-
-	case *ast.Alt:
-		for _, e := range v.Exprs {
-			setPositions(e, pos)
-		}
-
-	case *ast.Star:
-		setPositions(v.Expr, pos)
-
-	case *ast.Char:
-		*pos++
-		v.Pos = *pos
-	}
-}
-
 func (r *regex) toChar(v any) (any, bool) {
-	c, ok := v.(rune)
-	if !ok {
-		return nil, false
-	}
+	c := v.(rune)
 
 	return runeToChar(c), true
 }
 
 func (r *regex) toNum(v any) (any, bool) {
-	digits, ok := v.(list)
-	if !ok {
-		return nil, false
-	}
+	digits := v.(list)
 
 	var num int
 	for _, d := range digits {
@@ -407,10 +431,7 @@ func (r *regex) toNum(v any) (any, bool) {
 }
 
 func (r *regex) toLetters(v any) (any, bool) {
-	letters, ok := v.(list)
-	if !ok {
-		return nil, false
-	}
+	letters := v.(list)
 
 	var s string
 	for _, l := range letters {
@@ -426,10 +447,7 @@ func (r *regex) toRepOp(v any) (any, bool) {
 }
 
 func (r *regex) toUpperBound(v any) (any, bool) {
-	v1, ok := getAt(v, 1)
-	if !ok {
-		return nil, false
-	}
+	v1, _ := getAt(v, 1)
 
 	var num *int
 	if v, ok := v1.(int); ok {
@@ -441,22 +459,11 @@ func (r *regex) toUpperBound(v any) (any, bool) {
 }
 
 func (r *regex) toRange(v any) (any, bool) {
-	v1, ok := getAt(v, 1)
-	if !ok {
-		return nil, false
-	}
-
-	v2, ok := getAt(v, 2)
-	if !ok {
-		return nil, false
-	}
-
-	low, ok := v1.(int)
-	if !ok {
-		return nil, false
-	}
+	v1, _ := getAt(v, 1)
+	v2, _ := getAt(v, 2)
 
 	// The upper bound is same as the lower bound if no upper bound is specified (default)
+	low := v1.(int)
 	up := &low
 
 	// If an upper bound is specified, it can be either bounded or unbounded
@@ -482,15 +489,8 @@ func (r *regex) toRepetition(v any) (any, bool) {
 }
 
 func (r *regex) toQuantifier(v any) (any, bool) {
-	v0, ok := getAt(v, 0)
-	if !ok {
-		return nil, false
-	}
-
-	v1, ok := getAt(v, 1)
-	if !ok {
-		return nil, false
-	}
+	v0, _ := getAt(v, 0)
+	v1, _ := getAt(v, 1)
 
 	// Check whether or not the lazy modifier is present
 	_, lazy := v1.(rune)
@@ -502,25 +502,11 @@ func (r *regex) toQuantifier(v any) (any, bool) {
 }
 
 func (r *regex) toCharRange(v any) (any, bool) {
-	v0, ok := getAt(v, 0)
-	if !ok {
-		return nil, false
-	}
+	v0, _ := getAt(v, 0)
+	v2, _ := getAt(v, 2)
 
-	v2, ok := getAt(v, 2)
-	if !ok {
-		return nil, false
-	}
-
-	low, ok := v0.(*ast.Char)
-	if !ok {
-		return nil, false
-	}
-
-	up, ok := v2.(*ast.Char)
-	if !ok {
-		return nil, false
-	}
+	low := v0.(*ast.Char)
+	up := v2.(*ast.Char)
 
 	if low.Val > up.Val {
 		r.errors = multierror.Append(r.errors,
@@ -540,26 +526,16 @@ func (r *regex) toCharGroupItem(v any) (any, bool) {
 }
 
 func (r *regex) toCharGroup(v any) (any, bool) {
-	v1, ok := getAt(v, 1)
-	if !ok {
-		return nil, false
-	}
-
-	v2, ok := getAt(v, 2)
-	if !ok {
-		return nil, false
-	}
+	v1, _ := getAt(v, 1)
+	v2, _ := getAt(v, 2)
 
 	// Check whether or not the negation modifier is present
 	_, neg := v1.(rune)
 
-	l, ok := v2.(list)
-	if !ok {
-		return nil, false
-	}
+	items := v2.(list)
 
 	charMap := make([]bool, len(alphabet))
-	for _, r := range l {
+	for _, r := range items {
 		if n, ok := r.Val.(ast.Node); ok {
 			markAllChars(charMap, n)
 		}
@@ -580,74 +556,56 @@ func (r *regex) toCharGroup(v any) (any, bool) {
 }
 
 func (r *regex) toCharClass(v any) (any, bool) {
-	class, ok := v.(string)
-	if !ok {
-		return nil, false
-	}
-
-	var alt *ast.Alt
+	class := v.(string)
 
 	switch class {
 	case `\d`:
-		alt = runeRangesToAlt(false, [2]rune{'0', '9'})
+		return runeRangesToAlt(false, [2]rune{'0', '9'}), true
 	case `\D`:
-		alt = runeRangesToAlt(true, [2]rune{'0', '9'})
+		return runeRangesToAlt(true, [2]rune{'0', '9'}), true
 	case `\s`:
-		alt = runesToAlt(false, ' ', '\t', '\n', '\r', '\f')
+		return runesToAlt(false, ' ', '\t', '\n', '\r', '\f'), true
 	case `\S`:
-		alt = runesToAlt(true, ' ', '\t', '\n', '\r', '\f')
+		return runesToAlt(true, ' ', '\t', '\n', '\r', '\f'), true
 	case `\w`:
-		alt = runeRangesToAlt(false, [2]rune{'0', '9'}, [2]rune{'A', 'Z'}, [2]rune{'_', '_'}, [2]rune{'a', 'z'})
+		return runeRangesToAlt(false, [2]rune{'0', '9'}, [2]rune{'A', 'Z'}, [2]rune{'_', '_'}, [2]rune{'a', 'z'}), true
 	case `\W`:
-		alt = runeRangesToAlt(true, [2]rune{'0', '9'}, [2]rune{'A', 'Z'}, [2]rune{'_', '_'}, [2]rune{'a', 'z'})
+		return runeRangesToAlt(true, [2]rune{'0', '9'}, [2]rune{'A', 'Z'}, [2]rune{'_', '_'}, [2]rune{'a', 'z'}), true
 	default:
 		return nil, false
 	}
-
-	return alt, true
 }
 
 func (r *regex) toASCIICharClass(v any) (any, bool) {
-	class, ok := v.(string)
-	if !ok {
-		return nil, false
-	}
-
-	var alt *ast.Alt
+	class := v.(string)
 
 	switch class {
 	case "[:blank:]":
-		alt = runesToAlt(false, ' ', '\t')
+		return runesToAlt(false, ' ', '\t'), true
 	case "[:space:]":
-		alt = runesToAlt(false, ' ', '\t', '\n', '\r', '\f', '\v')
+		return runesToAlt(false, ' ', '\t', '\n', '\r', '\f', '\v'), true
 	case "[:digit:]":
-		alt = runeRangesToAlt(false, [2]rune{'0', '9'})
+		return runeRangesToAlt(false, [2]rune{'0', '9'}), true
 	case "[:xdigit:]":
-		alt = runeRangesToAlt(false, [2]rune{'0', '9'}, [2]rune{'A', 'F'}, [2]rune{'a', 'f'})
+		return runeRangesToAlt(false, [2]rune{'0', '9'}, [2]rune{'A', 'F'}, [2]rune{'a', 'f'}), true
 	case "[:upper:]":
-		alt = runeRangesToAlt(false, [2]rune{'A', 'Z'})
+		return runeRangesToAlt(false, [2]rune{'A', 'Z'}), true
 	case "[:lower:]":
-		alt = runeRangesToAlt(false, [2]rune{'a', 'z'})
+		return runeRangesToAlt(false, [2]rune{'a', 'z'}), true
 	case "[:alpha:]":
-		alt = runeRangesToAlt(false, [2]rune{'A', 'Z'}, [2]rune{'a', 'z'})
+		return runeRangesToAlt(false, [2]rune{'A', 'Z'}, [2]rune{'a', 'z'}), true
 	case "[:alnum:]":
-		alt = runeRangesToAlt(false, [2]rune{'0', '9'}, [2]rune{'A', 'Z'}, [2]rune{'a', 'z'})
+		return runeRangesToAlt(false, [2]rune{'0', '9'}, [2]rune{'A', 'Z'}, [2]rune{'a', 'z'}), true
 	case "[:word:]":
-		alt = runeRangesToAlt(false, [2]rune{'0', '9'}, [2]rune{'A', 'Z'}, [2]rune{'_', '_'}, [2]rune{'a', 'z'})
+		return runeRangesToAlt(false, [2]rune{'0', '9'}, [2]rune{'A', 'Z'}, [2]rune{'_', '_'}, [2]rune{'a', 'z'}), true
 	case "[:ascii:]":
-		alt = runeRangesToAlt(false, [2]rune{0x00, 0x7f})
+		return runeRangesToAlt(false, [2]rune{0x00, 0x7f}), true
 	default:
 		return nil, false
 	}
-
-	return alt, true
 }
 
 func (r *regex) toAnyChar(v any) (any, bool) {
-	if _, ok := v.(rune); !ok {
-		return nil, false
-	}
-
 	alt := new(ast.Alt)
 	for _, r := range alphabet {
 		alt.Exprs = append(alt.Exprs, runeToChar(r))
@@ -662,20 +620,10 @@ func (r *regex) toMatchItem(v any) (any, bool) {
 }
 
 func (r *regex) toMatch(v any) (any, bool) {
-	v0, ok := getAt(v, 0)
-	if !ok {
-		return nil, false
-	}
+	v0, _ := getAt(v, 0)
+	v1, _ := getAt(v, 1)
 
-	v1, ok := getAt(v, 1)
-	if !ok {
-		return nil, false
-	}
-
-	node, ok := v0.(ast.Node)
-	if !ok {
-		return nil, false
-	}
+	node := v0.(ast.Node)
 
 	if q, ok := v1.(tuple[any, bool]); ok {
 		node = quantifyNode(node, q)
@@ -684,65 +632,25 @@ func (r *regex) toMatch(v any) (any, bool) {
 	return node, true
 }
 
-func (r *regex) toBackref(v any) (any, bool) {
-	v1, ok := getAt(v, 1)
-	if !ok {
-		return nil, false
-	}
-
-	num, ok := v1.(int)
-	if !ok {
-		return nil, false
-	}
-
-	var node ast.Node
-
-	// Look up the symbol table
-	if i := num - 1; 0 <= i && i < len(r.symTab) {
-		node = r.symTab[i]
-	} else {
-		r.errors = multierror.Append(r.errors, fmt.Errorf("invalid back reference \\%d", num))
-	}
-
-	// Backref is successfully parsed, but it is invalid
-	// If we return false, backref will be parsed by other parsers (match)
-	return node, true
-}
-
+// TODO: handle of end-of-string
 func (r *regex) toAnchor(v any) (any, bool) {
-	a, ok := v.(rune)
-	if !ok {
-		return nil, false
-	}
+	a := v.(rune)
 
 	// Check whether or not the anchor is end-of-string
-	r.eos = a == '$'
+	// eos := a == '$'
 
 	return a, true
 }
 
 func (r *regex) toGroup(v any) (any, bool) {
-	v1, ok := getAt(v, 1)
-	if !ok {
-		return nil, false
-	}
+	v1, _ := getAt(v, 1)
+	v3, _ := getAt(v, 3)
 
-	v3, ok := getAt(v, 3)
-	if !ok {
-		return nil, false
-	}
-
-	node, ok := v1.(ast.Node)
-	if !ok {
-		return nil, false
-	}
+	node := v1.(ast.Node)
 
 	if q, ok := v3.(tuple[any, bool]); ok {
 		node = quantifyNode(node, q)
 	}
-
-	// Adding the group to the symbol table
-	r.symTab = append(r.symTab, node)
 
 	return node, true
 }
@@ -753,13 +661,11 @@ func (r *regex) toSubexprItem(v any) (any, bool) {
 }
 
 func (r *regex) toSubexpr(v any) (any, bool) {
-	l, ok := v.(list)
-	if !ok {
-		return nil, false
-	}
+	items := v.(list)
 
 	concat := new(ast.Concat)
-	for _, r := range l {
+	for _, r := range items {
+		// Anchor result value is not a node
 		if n, ok := r.Val.(ast.Node); ok {
 			concat.Exprs = append(concat.Exprs, n)
 		}
@@ -769,34 +675,18 @@ func (r *regex) toSubexpr(v any) (any, bool) {
 }
 
 func (r *regex) toExpr(v any) (any, bool) {
-	v0, ok := getAt(v, 0)
-	if !ok {
-		return nil, false
-	}
+	v0, _ := getAt(v, 0)
+	v1, _ := getAt(v, 1)
 
-	v1, ok := getAt(v, 1)
-	if !ok {
-		return nil, false
-	}
-
-	subexpr, ok := v0.(ast.Node)
-	if !ok {
-		return nil, false
-	}
+	subexpr := v0.(ast.Node)
 
 	if _, ok := v1.(empty); ok {
 		return subexpr, true
 	}
 
-	v11, ok := getAt(v1, 1)
-	if !ok {
-		return nil, false
-	}
+	v11, _ := getAt(v1, 1)
 
-	expr, ok := v11.(ast.Node)
-	if !ok {
-		return nil, false
-	}
+	expr := v11.(ast.Node)
 
 	alt := &ast.Alt{
 		Exprs: []ast.Node{
@@ -808,24 +698,15 @@ func (r *regex) toExpr(v any) (any, bool) {
 	return alt, true
 }
 
+// TODO: handle start-of-string
 func (r *regex) toRegex(v any) (any, bool) {
-	v0, ok := getAt(v, 0)
-	if !ok {
-		return nil, false
-	}
-
-	v1, ok := getAt(v, 1)
-	if !ok {
-		return nil, false
-	}
+	// v0, _ := getAt(v, 0)
+	v1, _ := getAt(v, 1)
 
 	// Check whether or not the start-of-string is present
-	_, r.sos = v0.(rune)
+	// _, sos := v0.(rune)
 
-	expr, ok := v1.(ast.Node)
-	if !ok {
-		return nil, false
-	}
+	expr := v1.(ast.Node)
 
 	return expr, true
 }

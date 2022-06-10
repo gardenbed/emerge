@@ -21,9 +21,8 @@ we can define the regular expression language using the EBNF notation as well
 regex            = [ "^" ] expr
 expr             = subexpr [ "|" expr ]
 subexpr          = {{ subexpr_item }}
-subexpr_item     = group | anchor | backref | match
+subexpr_item     = group | anchor | match
 anchor           = "$"
-backref          = "\" num
 group            = "(" expr ")" [ quantifier ]
 match            = match_item [ quantifier ]
 match_item       = any_char | char_class | ascii_char_class | char_group | char /* excluding | ) */
