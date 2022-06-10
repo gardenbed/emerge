@@ -21,16 +21,16 @@ we can define the regular expression language using the EBNF notation as well
 regex            = [ "^" ] expr
 expr             = subexpr [ "|" expr ]
 subexpr          = {{ subexpr_item }}
-subexpr_item     = group | anchor | match
+subexpr_item     = anchor | group | match
 anchor           = "$"
 group            = "(" expr ")" [ quantifier ]
 match            = match_item [ quantifier ]
-match_item       = any_char | char_class | ascii_char_class | char_group | char /* excluding | ) */
+match_item       = any_char | unescaped_char | escaped_char | char_class | ascii_char_class | char_group
 any_char         = "."
 char_class       = "\d" | "\D" | "\s" | "\S" | "\w" | "\W"
 ascii_char_class = "[:blank:]" | "[:space:]" | "[:digit:]" | "[:xdigit:]" | "[:upper:]" | "[:lower:]" | "[:alpha:]" | "[:alnum:]" | "[:word:]" | "[:ascii:]"
 char_group       = "[" [ "^" ] {{ char_group_item }} "]"
-char_group_item  = char_class | ascii_char_class | char_range | char /* excluding ] */
+char_group_item  = char_class | ascii_char_class | char_range | escaped_char | unescaped_char
 char_range       = char "-" char
 quantifier       = repetition [ "?" ]
 repetition       = "?" | "*" | "+" | range
@@ -42,7 +42,9 @@ letters          = {{ letter }}
 digit            = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
 letter           = "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" | "K" | "L" | "M" | "N" | "O" | "P" | "Q" | "R" | "S" | "T" | "U" | "V" | "W" | "X" | "Y" | "Z"
                  | "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z"
-char             = /* all valid characters */
+escaped_char     = "\" ( "\" | "/" | "|" | "." | "?" | "*" | "+" | "(" | ")" | "[" | "]" | "{" | "}" )
+unescaped_char   = # all characters excluding the escaped ones
+char             = # all characters
 ```
 
 ## Extended Backus-Naur Form

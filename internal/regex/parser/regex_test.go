@@ -785,6 +785,11 @@ func TestParse(t *testing.T) {
 		expectedLastPos  []int
 	}{
 		{
+			name:          "InvalidRegex",
+			in:            newStringInput("["),
+			expectedError: "invalid regular expression",
+		},
+		{
 			name:          "InvalidCharRange",
 			in:            newStringInput("[9-0]"),
 			expectedError: "1 error occurred:\n\t* invalid character range 9-0\n\n",
@@ -999,11 +1004,41 @@ func TestRegexMappers(t *testing.T) {
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: &ast.Char{Val: '!'},
+					Val: '!',
 				},
 				Remaining: &stringInput{
 					pos:   1,
 					runes: []rune(`"#$%&'()*+,-./[\]^_{|}~`),
+				},
+			},
+		},
+		{
+			name:       "unescapedChar_Successful",
+			p:          r.unescapedChar,
+			in:         newStringInput("!tail"),
+			expectedOK: true,
+			expectedOut: output{
+				Result: result{
+					Val: &ast.Char{Val: '!'},
+				},
+				Remaining: &stringInput{
+					pos:   1,
+					runes: []rune("tail"),
+				},
+			},
+		},
+		{
+			name:       "escapedChar_Successful",
+			p:          r.escapedChar,
+			in:         newStringInput(`\+tail`),
+			expectedOK: true,
+			expectedOut: output{
+				Result: result{
+					Val: &ast.Char{Val: '+'},
+				},
+				Remaining: &stringInput{
+					pos:   2,
+					runes: []rune("tail"),
 				},
 			},
 		},
@@ -1296,7 +1331,7 @@ func TestRegexMappers(t *testing.T) {
 			},
 		},
 		{
-			name:       "quantifier_ZeroOrOne_Successful",
+			name:       "quantifier_Lazy_ZeroOrOne_Successful",
 			p:          r.quantifier,
 			in:         newStringInput("??tail"),
 			expectedOK: true,
@@ -1314,7 +1349,7 @@ func TestRegexMappers(t *testing.T) {
 			},
 		},
 		{
-			name:       "quantifier_ZeroOrMore_Successful",
+			name:       "quantifier_Lazy_ZeroOrMore_Successful",
 			p:          r.quantifier,
 			in:         newStringInput("*?tail"),
 			expectedOK: true,
@@ -1332,7 +1367,7 @@ func TestRegexMappers(t *testing.T) {
 			},
 		},
 		{
-			name:       "quantifier_OneOrMore_Successful",
+			name:       "quantifier_Lazy_OneOrMore_Successful",
 			p:          r.quantifier,
 			in:         newStringInput("+?tail"),
 			expectedOK: true,
@@ -1350,7 +1385,7 @@ func TestRegexMappers(t *testing.T) {
 			},
 		},
 		{
-			name:       "quantifier_range_Fixed_Successful",
+			name:       "quantifier_Lazy_range_Fixed_Successful",
 			p:          r.quantifier,
 			in:         newStringInput("{2}?tail"),
 			expectedOK: true,
@@ -1371,7 +1406,7 @@ func TestRegexMappers(t *testing.T) {
 			},
 		},
 		{
-			name:       "quantifier_range_upper_Unbounded_Successful",
+			name:       "quantifier_Lazy_range_upper_Unbounded_Successful",
 			p:          r.quantifier,
 			in:         newStringInput("{2,}?tail"),
 			expectedOK: true,
@@ -1392,7 +1427,7 @@ func TestRegexMappers(t *testing.T) {
 			},
 		},
 		{
-			name:       "quantifier_range_upper_Bounded_Successful",
+			name:       "quantifier_Lazy_range_upper_Bounded_Successful",
 			p:          r.quantifier,
 			in:         newStringInput("{2,4}?tail"),
 			expectedOK: true,
@@ -1428,68 +1463,8 @@ func TestRegexMappers(t *testing.T) {
 			},
 		},
 		{
-			name:       "charClass_Digit_Successful",
-			p:          r.charClass,
-			in:         newStringInput(`\dtail`),
-			expectedOK: true,
-			expectedOut: output{
-				Result: result{
-					Val: digit,
-				},
-				Remaining: &stringInput{
-					pos:   2,
-					runes: []rune("tail"),
-				},
-			},
-		},
-		{
-			name:       "charClass_NotDigit_Successful",
-			p:          r.charClass,
-			in:         newStringInput(`\Dtail`),
-			expectedOK: true,
-			expectedOut: output{
-				Result: result{
-					Val: nonDigit,
-				},
-				Remaining: &stringInput{
-					pos:   2,
-					runes: []rune("tail"),
-				},
-			},
-		},
-		{
-			name:       "charClass_Whitespace_Successful",
-			p:          r.charClass,
-			in:         newStringInput(`\stail`),
-			expectedOK: true,
-			expectedOut: output{
-				Result: result{
-					Val: whitespace,
-				},
-				Remaining: &stringInput{
-					pos:   2,
-					runes: []rune("tail"),
-				},
-			},
-		},
-		{
-			name:       "charClass_NotWhitespace_Successful",
-			p:          r.charClass,
-			in:         newStringInput(`\Stail`),
-			expectedOK: true,
-			expectedOut: output{
-				Result: result{
-					Val: nonWhitespace,
-				},
-				Remaining: &stringInput{
-					pos:   2,
-					runes: []rune("tail"),
-				},
-			},
-		},
-		{
-			name:       "charClass_Word_Successful",
-			p:          r.charClass,
+			name:       "charGroupItem_charClass_Successful",
+			p:          r.charGroupItem,
 			in:         newStringInput(`\wtail`),
 			expectedOK: true,
 			expectedOut: output{
@@ -1503,16 +1478,288 @@ func TestRegexMappers(t *testing.T) {
 			},
 		},
 		{
-			name:       "charClass_NotWord_Successful",
-			p:          r.charClass,
-			in:         newStringInput(`\Wtail`),
+			name:       "charGroupItem_asciiCharClass_Successful",
+			p:          r.charGroupItem,
+			in:         newStringInput("[:word:]tail"),
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: nonWord,
+					Val: word,
+				},
+				Remaining: &stringInput{
+					pos:   8,
+					runes: []rune("tail"),
+				},
+			},
+		},
+		{
+			name:       "charGroupItem_charRange_Successful",
+			p:          r.charGroupItem,
+			in:         newStringInput("0-9tail"),
+			expectedOK: true,
+			expectedOut: output{
+				Result: result{
+					Val: digit,
+				},
+				Remaining: &stringInput{
+					pos:   3,
+					runes: []rune("tail"),
+				},
+			},
+		},
+		{
+			name:       "charGroupItem_escapedChar_Successful",
+			p:          r.charGroupItem,
+			in:         newStringInput(`\+tail`),
+			expectedOK: true,
+			expectedOut: output{
+				Result: result{
+					Val: &ast.Char{Val: '+'},
 				},
 				Remaining: &stringInput{
 					pos:   2,
+					runes: []rune("tail"),
+				},
+			},
+		},
+		{
+			name:       "charGroupItem_unescapedChar_Successful",
+			p:          r.charGroupItem,
+			in:         newStringInput("!tail"),
+			expectedOK: true,
+			expectedOut: output{
+				Result: result{
+					Val: &ast.Char{Val: '!'},
+				},
+				Remaining: &stringInput{
+					pos:   1,
+					runes: []rune("tail"),
+				},
+			},
+		},
+		{
+			name:       "charGroup_charClass_Successful",
+			p:          r.charGroup,
+			in:         newStringInput(`[\w]tail`),
+			expectedOK: true,
+			expectedOut: output{
+				Result: result{
+					Val: word,
+				},
+				Remaining: &stringInput{
+					pos:   4,
+					runes: []rune("tail"),
+				},
+			},
+		},
+		{
+			name:       "charGroup_asciiCharClass_Successful",
+			p:          r.charGroup,
+			in:         newStringInput("[[:word:]]tail"),
+			expectedOK: true,
+			expectedOut: output{
+				Result: result{
+					Val: word,
+				},
+				Remaining: &stringInput{
+					pos:   10,
+					runes: []rune("tail"),
+				},
+			},
+		},
+		{
+			name:       "charGroup_charRange_Successful",
+			p:          r.charGroup,
+			in:         newStringInput("[0-9]tail"),
+			expectedOK: true,
+			expectedOut: output{
+				Result: result{
+					Val: digit,
+				},
+				Remaining: &stringInput{
+					pos:   5,
+					runes: []rune("tail"),
+				},
+			},
+		},
+		{
+			name:       "charGroup_escapedChar_Successful",
+			p:          r.charGroup,
+			in:         newStringInput(`[\+]tail`),
+			expectedOK: true,
+			expectedOut: output{
+				Result: result{
+					Val: &ast.Alt{
+						Exprs: []ast.Node{
+							&ast.Char{Val: '+'},
+						},
+					},
+				},
+				Remaining: &stringInput{
+					pos:   4,
+					runes: []rune("tail"),
+				},
+			},
+		},
+		{
+			name:       "charGroup_unescapedChar_Successful",
+			p:          r.charGroup,
+			in:         newStringInput("[!]tail"),
+			expectedOK: true,
+			expectedOut: output{
+				Result: result{
+					Val: &ast.Alt{
+						Exprs: []ast.Node{
+							&ast.Char{Val: '!'},
+						},
+					},
+				},
+				Remaining: &stringInput{
+					pos:   3,
+					runes: []rune("tail"),
+				},
+			},
+		},
+		{
+			name:       "charGroup_Negated_Successful",
+			p:          r.charGroup,
+			in:         newStringInput("[^#$]tail"),
+			expectedOK: true,
+			expectedOut: output{
+				Result: result{
+					Val: &ast.Alt{
+						Exprs: []ast.Node{
+							&ast.Char{Val: 0},
+							&ast.Char{Val: 1},
+							&ast.Char{Val: 2},
+							&ast.Char{Val: 3},
+							&ast.Char{Val: 4},
+							&ast.Char{Val: 5},
+							&ast.Char{Val: 6},
+							&ast.Char{Val: 7},
+							&ast.Char{Val: 8},
+							&ast.Char{Val: 9},
+							&ast.Char{Val: 10},
+							&ast.Char{Val: 11},
+							&ast.Char{Val: 12},
+							&ast.Char{Val: 13},
+							&ast.Char{Val: 14},
+							&ast.Char{Val: 15},
+							&ast.Char{Val: 16},
+							&ast.Char{Val: 17},
+							&ast.Char{Val: 18},
+							&ast.Char{Val: 19},
+							&ast.Char{Val: 20},
+							&ast.Char{Val: 21},
+							&ast.Char{Val: 22},
+							&ast.Char{Val: 23},
+							&ast.Char{Val: 24},
+							&ast.Char{Val: 25},
+							&ast.Char{Val: 26},
+							&ast.Char{Val: 27},
+							&ast.Char{Val: 28},
+							&ast.Char{Val: 29},
+							&ast.Char{Val: 30},
+							&ast.Char{Val: 31},
+							&ast.Char{Val: 32},
+							&ast.Char{Val: 33},
+							&ast.Char{Val: 34},
+							&ast.Char{Val: 37},
+							&ast.Char{Val: 38},
+							&ast.Char{Val: 39},
+							&ast.Char{Val: 40},
+							&ast.Char{Val: 41},
+							&ast.Char{Val: 42},
+							&ast.Char{Val: 43},
+							&ast.Char{Val: 44},
+							&ast.Char{Val: 45},
+							&ast.Char{Val: 46},
+							&ast.Char{Val: 47},
+							&ast.Char{Val: 48},
+							&ast.Char{Val: 49},
+							&ast.Char{Val: 50},
+							&ast.Char{Val: 51},
+							&ast.Char{Val: 52},
+							&ast.Char{Val: 53},
+							&ast.Char{Val: 54},
+							&ast.Char{Val: 55},
+							&ast.Char{Val: 56},
+							&ast.Char{Val: 57},
+							&ast.Char{Val: 58},
+							&ast.Char{Val: 59},
+							&ast.Char{Val: 60},
+							&ast.Char{Val: 61},
+							&ast.Char{Val: 62},
+							&ast.Char{Val: 63},
+							&ast.Char{Val: 64},
+							&ast.Char{Val: 65},
+							&ast.Char{Val: 66},
+							&ast.Char{Val: 67},
+							&ast.Char{Val: 68},
+							&ast.Char{Val: 69},
+							&ast.Char{Val: 70},
+							&ast.Char{Val: 71},
+							&ast.Char{Val: 72},
+							&ast.Char{Val: 73},
+							&ast.Char{Val: 74},
+							&ast.Char{Val: 75},
+							&ast.Char{Val: 76},
+							&ast.Char{Val: 77},
+							&ast.Char{Val: 78},
+							&ast.Char{Val: 79},
+							&ast.Char{Val: 80},
+							&ast.Char{Val: 81},
+							&ast.Char{Val: 82},
+							&ast.Char{Val: 83},
+							&ast.Char{Val: 84},
+							&ast.Char{Val: 85},
+							&ast.Char{Val: 86},
+							&ast.Char{Val: 87},
+							&ast.Char{Val: 88},
+							&ast.Char{Val: 89},
+							&ast.Char{Val: 90},
+							&ast.Char{Val: 91},
+							&ast.Char{Val: 92},
+							&ast.Char{Val: 93},
+							&ast.Char{Val: 94},
+							&ast.Char{Val: 95},
+							&ast.Char{Val: 96},
+							&ast.Char{Val: 97},
+							&ast.Char{Val: 98},
+							&ast.Char{Val: 99},
+							&ast.Char{Val: 100},
+							&ast.Char{Val: 101},
+							&ast.Char{Val: 102},
+							&ast.Char{Val: 103},
+							&ast.Char{Val: 104},
+							&ast.Char{Val: 105},
+							&ast.Char{Val: 106},
+							&ast.Char{Val: 107},
+							&ast.Char{Val: 108},
+							&ast.Char{Val: 109},
+							&ast.Char{Val: 110},
+							&ast.Char{Val: 111},
+							&ast.Char{Val: 112},
+							&ast.Char{Val: 113},
+							&ast.Char{Val: 114},
+							&ast.Char{Val: 115},
+							&ast.Char{Val: 116},
+							&ast.Char{Val: 117},
+							&ast.Char{Val: 118},
+							&ast.Char{Val: 119},
+							&ast.Char{Val: 120},
+							&ast.Char{Val: 121},
+							&ast.Char{Val: 122},
+							&ast.Char{Val: 123},
+							&ast.Char{Val: 124},
+							&ast.Char{Val: 125},
+							&ast.Char{Val: 126},
+							&ast.Char{Val: 127},
+						},
+					},
+				},
+				Remaining: &stringInput{
+					pos:   5,
 					runes: []rune("tail"),
 				},
 			},
@@ -1682,8 +1929,68 @@ func TestRegexMappers(t *testing.T) {
 			},
 		},
 		{
-			name:       "charGroupItem_charClass_Successful",
-			p:          r.charGroupItem,
+			name:       "charClass_Digit_Successful",
+			p:          r.charClass,
+			in:         newStringInput(`\dtail`),
+			expectedOK: true,
+			expectedOut: output{
+				Result: result{
+					Val: digit,
+				},
+				Remaining: &stringInput{
+					pos:   2,
+					runes: []rune("tail"),
+				},
+			},
+		},
+		{
+			name:       "charClass_NotDigit_Successful",
+			p:          r.charClass,
+			in:         newStringInput(`\Dtail`),
+			expectedOK: true,
+			expectedOut: output{
+				Result: result{
+					Val: nonDigit,
+				},
+				Remaining: &stringInput{
+					pos:   2,
+					runes: []rune("tail"),
+				},
+			},
+		},
+		{
+			name:       "charClass_Whitespace_Successful",
+			p:          r.charClass,
+			in:         newStringInput(`\stail`),
+			expectedOK: true,
+			expectedOut: output{
+				Result: result{
+					Val: whitespace,
+				},
+				Remaining: &stringInput{
+					pos:   2,
+					runes: []rune("tail"),
+				},
+			},
+		},
+		{
+			name:       "charClass_NotWhitespace_Successful",
+			p:          r.charClass,
+			in:         newStringInput(`\Stail`),
+			expectedOK: true,
+			expectedOut: output{
+				Result: result{
+					Val: nonWhitespace,
+				},
+				Remaining: &stringInput{
+					pos:   2,
+					runes: []rune("tail"),
+				},
+			},
+		},
+		{
+			name:       "charClass_Word_Successful",
+			p:          r.charClass,
 			in:         newStringInput(`\wtail`),
 			expectedOK: true,
 			expectedOut: output{
@@ -1697,254 +2004,16 @@ func TestRegexMappers(t *testing.T) {
 			},
 		},
 		{
-			name:       "charGroupItem_asciiCharClass_Successful",
-			p:          r.charGroupItem,
-			in:         newStringInput("[:word:]tail"),
+			name:       "charClass_NotWord_Successful",
+			p:          r.charClass,
+			in:         newStringInput(`\Wtail`),
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: word,
+					Val: nonWord,
 				},
 				Remaining: &stringInput{
-					pos:   8,
-					runes: []rune("tail"),
-				},
-			},
-		},
-		{
-			name:       "charGroupItem_charRange_Successful",
-			p:          r.charGroupItem,
-			in:         newStringInput("0-9tail"),
-			expectedOK: true,
-			expectedOut: output{
-				Result: result{
-					Val: digit,
-				},
-				Remaining: &stringInput{
-					pos:   3,
-					runes: []rune("tail"),
-				},
-			},
-		},
-		{
-			name:       "charGroupItem_char_Successful",
-			p:          r.charGroupItem,
-			in:         newStringInput("!tail"),
-			expectedOK: true,
-			expectedOut: output{
-				Result: result{
-					Val: &ast.Char{Val: '!'},
-				},
-				Remaining: &stringInput{
-					pos:   1,
-					runes: []rune("tail"),
-				},
-			},
-		},
-		{
-			name:       "charGroup_charClass_Successful",
-			p:          r.charGroup,
-			in:         newStringInput(`[\w]tail`),
-			expectedOK: true,
-			expectedOut: output{
-				Result: result{
-					Val: word,
-				},
-				Remaining: &stringInput{
-					pos:   4,
-					runes: []rune("tail"),
-				},
-			},
-		},
-		{
-			name:       "charGroup_asciiCharClass_Successful",
-			p:          r.charGroup,
-			in:         newStringInput("[[:word:]]tail"),
-			expectedOK: true,
-			expectedOut: output{
-				Result: result{
-					Val: word,
-				},
-				Remaining: &stringInput{
-					pos:   10,
-					runes: []rune("tail"),
-				},
-			},
-		},
-		{
-			name:       "charGroup_charRange_Successful",
-			p:          r.charGroup,
-			in:         newStringInput("[0-9]tail"),
-			expectedOK: true,
-			expectedOut: output{
-				Result: result{
-					Val: digit,
-				},
-				Remaining: &stringInput{
-					pos:   5,
-					runes: []rune("tail"),
-				},
-			},
-		},
-		{
-			name:       "charGroup_char_Successful",
-			p:          r.charGroup,
-			in:         newStringInput("[!]tail"),
-			expectedOK: true,
-			expectedOut: output{
-				Result: result{
-					Val: &ast.Alt{
-						Exprs: []ast.Node{
-							&ast.Char{Val: '!'},
-						},
-					},
-				},
-				Remaining: &stringInput{
-					pos:   3,
-					runes: []rune("tail"),
-				},
-			},
-		},
-		{
-			name:       "charGroup_Negated_Successful",
-			p:          r.charGroup,
-			in:         newStringInput("[^#$]tail"),
-			expectedOK: true,
-			expectedOut: output{
-				Result: result{
-					Val: &ast.Alt{
-						Exprs: []ast.Node{
-							&ast.Char{Val: 0},
-							&ast.Char{Val: 1},
-							&ast.Char{Val: 2},
-							&ast.Char{Val: 3},
-							&ast.Char{Val: 4},
-							&ast.Char{Val: 5},
-							&ast.Char{Val: 6},
-							&ast.Char{Val: 7},
-							&ast.Char{Val: 8},
-							&ast.Char{Val: 9},
-							&ast.Char{Val: 10},
-							&ast.Char{Val: 11},
-							&ast.Char{Val: 12},
-							&ast.Char{Val: 13},
-							&ast.Char{Val: 14},
-							&ast.Char{Val: 15},
-							&ast.Char{Val: 16},
-							&ast.Char{Val: 17},
-							&ast.Char{Val: 18},
-							&ast.Char{Val: 19},
-							&ast.Char{Val: 20},
-							&ast.Char{Val: 21},
-							&ast.Char{Val: 22},
-							&ast.Char{Val: 23},
-							&ast.Char{Val: 24},
-							&ast.Char{Val: 25},
-							&ast.Char{Val: 26},
-							&ast.Char{Val: 27},
-							&ast.Char{Val: 28},
-							&ast.Char{Val: 29},
-							&ast.Char{Val: 30},
-							&ast.Char{Val: 31},
-							&ast.Char{Val: 32},
-							&ast.Char{Val: 33},
-							&ast.Char{Val: 34},
-							&ast.Char{Val: 37},
-							&ast.Char{Val: 38},
-							&ast.Char{Val: 39},
-							&ast.Char{Val: 40},
-							&ast.Char{Val: 41},
-							&ast.Char{Val: 42},
-							&ast.Char{Val: 43},
-							&ast.Char{Val: 44},
-							&ast.Char{Val: 45},
-							&ast.Char{Val: 46},
-							&ast.Char{Val: 47},
-							&ast.Char{Val: 48},
-							&ast.Char{Val: 49},
-							&ast.Char{Val: 50},
-							&ast.Char{Val: 51},
-							&ast.Char{Val: 52},
-							&ast.Char{Val: 53},
-							&ast.Char{Val: 54},
-							&ast.Char{Val: 55},
-							&ast.Char{Val: 56},
-							&ast.Char{Val: 57},
-							&ast.Char{Val: 58},
-							&ast.Char{Val: 59},
-							&ast.Char{Val: 60},
-							&ast.Char{Val: 61},
-							&ast.Char{Val: 62},
-							&ast.Char{Val: 63},
-							&ast.Char{Val: 64},
-							&ast.Char{Val: 65},
-							&ast.Char{Val: 66},
-							&ast.Char{Val: 67},
-							&ast.Char{Val: 68},
-							&ast.Char{Val: 69},
-							&ast.Char{Val: 70},
-							&ast.Char{Val: 71},
-							&ast.Char{Val: 72},
-							&ast.Char{Val: 73},
-							&ast.Char{Val: 74},
-							&ast.Char{Val: 75},
-							&ast.Char{Val: 76},
-							&ast.Char{Val: 77},
-							&ast.Char{Val: 78},
-							&ast.Char{Val: 79},
-							&ast.Char{Val: 80},
-							&ast.Char{Val: 81},
-							&ast.Char{Val: 82},
-							&ast.Char{Val: 83},
-							&ast.Char{Val: 84},
-							&ast.Char{Val: 85},
-							&ast.Char{Val: 86},
-							&ast.Char{Val: 87},
-							&ast.Char{Val: 88},
-							&ast.Char{Val: 89},
-							&ast.Char{Val: 90},
-							&ast.Char{Val: 91},
-							&ast.Char{Val: 92},
-							&ast.Char{Val: 93},
-							&ast.Char{Val: 94},
-							&ast.Char{Val: 95},
-							&ast.Char{Val: 96},
-							&ast.Char{Val: 97},
-							&ast.Char{Val: 98},
-							&ast.Char{Val: 99},
-							&ast.Char{Val: 100},
-							&ast.Char{Val: 101},
-							&ast.Char{Val: 102},
-							&ast.Char{Val: 103},
-							&ast.Char{Val: 104},
-							&ast.Char{Val: 105},
-							&ast.Char{Val: 106},
-							&ast.Char{Val: 107},
-							&ast.Char{Val: 108},
-							&ast.Char{Val: 109},
-							&ast.Char{Val: 110},
-							&ast.Char{Val: 111},
-							&ast.Char{Val: 112},
-							&ast.Char{Val: 113},
-							&ast.Char{Val: 114},
-							&ast.Char{Val: 115},
-							&ast.Char{Val: 116},
-							&ast.Char{Val: 117},
-							&ast.Char{Val: 118},
-							&ast.Char{Val: 119},
-							&ast.Char{Val: 120},
-							&ast.Char{Val: 121},
-							&ast.Char{Val: 122},
-							&ast.Char{Val: 123},
-							&ast.Char{Val: 124},
-							&ast.Char{Val: 125},
-							&ast.Char{Val: 126},
-							&ast.Char{Val: 127},
-						},
-					},
-				},
-				Remaining: &stringInput{
-					pos:   5,
+					pos:   2,
 					runes: []rune("tail"),
 				},
 			},
@@ -1975,6 +2044,36 @@ func TestRegexMappers(t *testing.T) {
 				},
 				Remaining: &stringInput{
 					pos:   1,
+					runes: []rune("tail"),
+				},
+			},
+		},
+		{
+			name:       "matchItem_unescapedChar_Successful",
+			p:          r.matchItem,
+			in:         newStringInput("!tail"),
+			expectedOK: true,
+			expectedOut: output{
+				Result: result{
+					Val: &ast.Char{Val: '!'},
+				},
+				Remaining: &stringInput{
+					pos:   1,
+					runes: []rune("tail"),
+				},
+			},
+		},
+		{
+			name:       "matchItem_escapedChar_Successful",
+			p:          r.matchItem,
+			in:         newStringInput(`\+tail`),
+			expectedOK: true,
+			expectedOut: output{
+				Result: result{
+					Val: &ast.Char{Val: '+'},
+				},
+				Remaining: &stringInput{
+					pos:   2,
 					runes: []rune("tail"),
 				},
 			},
@@ -2025,16 +2124,65 @@ func TestRegexMappers(t *testing.T) {
 			},
 		},
 		{
-			name:       "matchItem_char_Successful",
-			p:          r.matchItem,
-			in:         newStringInput("!tail"),
+			name:       "match_unescapedChar_quantifier_Successful",
+			p:          r.match,
+			in:         newStringInput("#{2,4}tail"),
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
-					Val: &ast.Char{Val: '!'},
+					Val: &ast.Concat{
+						Exprs: []ast.Node{
+							&ast.Char{Val: '#'},
+							&ast.Char{Val: '#'},
+							&ast.Alt{
+								Exprs: []ast.Node{
+									&ast.Empty{},
+									&ast.Char{Val: '#'},
+								},
+							},
+							&ast.Alt{
+								Exprs: []ast.Node{
+									&ast.Empty{},
+									&ast.Char{Val: '#'},
+								},
+							},
+						},
+					},
 				},
 				Remaining: &stringInput{
-					pos:   1,
+					pos:   6,
+					runes: []rune("tail"),
+				},
+			},
+		},
+		{
+			name:       "match_escapedChar_quantifier_Successful",
+			p:          r.match,
+			in:         newStringInput(`\+{2,4}tail`),
+			expectedOK: true,
+			expectedOut: output{
+				Result: result{
+					Val: &ast.Concat{
+						Exprs: []ast.Node{
+							&ast.Char{Val: '+'},
+							&ast.Char{Val: '+'},
+							&ast.Alt{
+								Exprs: []ast.Node{
+									&ast.Empty{},
+									&ast.Char{Val: '+'},
+								},
+							},
+							&ast.Alt{
+								Exprs: []ast.Node{
+									&ast.Empty{},
+									&ast.Char{Val: '+'},
+								},
+							},
+						},
+					},
+				},
+				Remaining: &stringInput{
+					pos:   7,
 					runes: []rune("tail"),
 				},
 			},
@@ -2097,38 +2245,6 @@ func TestRegexMappers(t *testing.T) {
 				},
 				Remaining: &stringInput{
 					pos:   10,
-					runes: []rune("tail"),
-				},
-			},
-		},
-		{
-			name:       "match_char_quantifier_Successful",
-			p:          r.match,
-			in:         newStringInput("#{2,4}tail"),
-			expectedOK: true,
-			expectedOut: output{
-				Result: result{
-					Val: &ast.Concat{
-						Exprs: []ast.Node{
-							&ast.Char{Val: '#'},
-							&ast.Char{Val: '#'},
-							&ast.Alt{
-								Exprs: []ast.Node{
-									&ast.Empty{},
-									&ast.Char{Val: '#'},
-								},
-							},
-							&ast.Alt{
-								Exprs: []ast.Node{
-									&ast.Empty{},
-									&ast.Char{Val: '#'},
-								},
-							},
-						},
-					},
-				},
-				Remaining: &stringInput{
-					pos:   6,
 					runes: []rune("tail"),
 				},
 			},
@@ -2212,16 +2328,25 @@ func TestRegexMappers(t *testing.T) {
 		{
 			name:       "anchor_Successful",
 			p:          r.anchor,
-			in:         newStringInput("$tail"),
+			in:         newStringInput("$"),
 			expectedOK: true,
 			expectedOut: output{
 				Result: result{
 					Val: '$',
 				},
-				Remaining: &stringInput{
-					pos:   1,
-					runes: []rune("tail"),
+				Remaining: nil,
+			},
+		},
+		{
+			name:       "subexprItem_anchor_Successful",
+			p:          r.subexprItem,
+			in:         newStringInput("$"),
+			expectedOK: true,
+			expectedOut: output{
+				Result: result{
+					Val: '$',
 				},
+				Remaining: nil,
 			},
 		},
 		{
@@ -2254,18 +2379,6 @@ func TestRegexMappers(t *testing.T) {
 					pos:   5,
 					runes: []rune("tail"),
 				},
-			},
-		},
-		{
-			name:       "subexprItem_anchor_Successful",
-			p:          r.subexprItem,
-			in:         newStringInput("$"),
-			expectedOK: true,
-			expectedOut: output{
-				Result: result{
-					Val: '$',
-				},
-				Remaining: nil,
 			},
 		},
 		{
