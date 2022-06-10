@@ -982,7 +982,7 @@ func TestParse(t *testing.T) {
 	}
 }
 
-func TestRegexConverters(t *testing.T) {
+func TestRegexMappers(t *testing.T) {
 	r := newRegex()
 
 	tests := []struct {

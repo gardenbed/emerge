@@ -407,12 +407,12 @@ func (p parser) Get(i int) parser {
 	}
 }
 
-// converter is the type for a function that receives a parsing result and returns a new value for the result.
-type converter func(any) (any, bool)
+// mapper is the type for a function that receives a parsing result and returns a new value for the result.
+type mapper func(any) (any, bool)
 
-// Convert composes a parser that uses parser p to parse the input and applies a converter function to the result of parsing.
-// If the parser does not succeed, the converter function will not be applied.
-func (p parser) Convert(f converter) parser {
+// Map composes a parser that uses parser p to parse the input and applies a mapper function to the result of parsing.
+// If the parser does not succeed, the mapper function will not be applied.
+func (p parser) Map(f mapper) parser {
 	return func(in input) (output, bool) {
 		if out, ok := p(in); ok {
 			if val, ok := f(out.Result.Val); ok {

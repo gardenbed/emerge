@@ -100,54 +100,54 @@ type regex struct {
 func newRegex() *regex {
 	r := new(regex)
 
-	r.char = expectRuneInRange(0x20, 0x7E).Convert(r.toChar)                                     // char --> /* all valid characters */
-	r.charInGroup = expectRuneInRange(0x20, 0x7E).Bind(excludeRunes(']')).Convert(r.toChar)      // char --> /* all valid characters except ] */
-	r.charInMatch = expectRuneInRange(0x20, 0x7E).Bind(excludeRunes(')', '|')).Convert(r.toChar) // char --> /* all valid characters except ) and | */
-	r.digit = expectRuneInRange('0', '9')                                                        // digit --> "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
-	r.letter = expectRuneInRange('A', 'Z').ALT(expectRuneInRange('a', 'z'))                      // letter --> "A" | ... | "Z" | "a" | ... | "z"
-	r.num = r.digit.REP1().Convert(r.toNum)                                                      // num --> digit+
-	r.letters = r.letter.REP1().Convert(r.toLetters)                                             // letters --> letter+
+	r.char = expectRuneInRange(0x20, 0x7E).Map(r.toChar)                                     // char --> /* all valid characters */
+	r.charInGroup = expectRuneInRange(0x20, 0x7E).Bind(excludeRunes(']')).Map(r.toChar)      // char --> /* all valid characters except ] */
+	r.charInMatch = expectRuneInRange(0x20, 0x7E).Bind(excludeRunes(')', '|')).Map(r.toChar) // char --> /* all valid characters except ) and | */
+	r.digit = expectRuneInRange('0', '9')                                                    // digit --> "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+	r.letter = expectRuneInRange('A', 'Z').ALT(expectRuneInRange('a', 'z'))                  // letter --> "A" | ... | "Z" | "a" | ... | "z"
+	r.num = r.digit.REP1().Map(r.toNum)                                                      // num --> digit+
+	r.letters = r.letter.REP1().Map(r.toLetters)                                             // letters --> letter+
 
 	// rep_op --> "?" | "*" | "+"
 	r.repOp = expectRune('?').ALT(
 		expectRune('*'),
 		expectRune('+'),
-	).Convert(r.toRepOp)
+	).Map(r.toRepOp)
 
 	// upper_bound --> "," num?
 	r.upperBound = expectRune(',').CONCAT(
 		r.num.OPT(),
-	).Convert(r.toUpperBound)
+	).Map(r.toUpperBound)
 
 	// range --> "{" num upper_bound? "}"
 	r.range_ = expectRune('{').CONCAT(
 		r.num,
 		r.upperBound.OPT(),
 		expectRune('}'),
-	).Convert(r.toRange)
+	).Map(r.toRange)
 
 	// repetition --> rep_op | range
 	r.repetition = r.repOp.ALT(
 		r.range_,
-	).Convert(r.toRepetition)
+	).Map(r.toRepetition)
 
 	// quantifier --> repetition lazy_modifier?
 	r.quantifier = r.repetition.CONCAT(
 		expectRune('?').OPT(),
-	).Convert(r.toQuantifier)
+	).Map(r.toQuantifier)
 
 	// char_range --> char "-" char
 	r.charRange = r.char.CONCAT(
 		expectRune('-'),
 		r.char,
-	).Convert(r.toCharRange)
+	).Map(r.toCharRange)
 
 	// char_class --> "\d" | "\D" | "\s" | "\S" | "\w" | "\W"
 	r.charClass = expectString(`\d`).ALT(
 		expectString(`\D`),
 		expectString(`\s`), expectString(`\S`),
 		expectString(`\w`), expectString(`\W`),
-	).Convert(r.toCharClass)
+	).Map(r.toCharClass)
 
 	// ascii_char_class --> "[:blank:]" | "[:space:]" | "[:digit:]" | "[:xdigit:]" | "[:upper:]" | "[:lower:]" | "[:alpha:]" | "[:alnum:]" | "[:word:]" | "[:ascii:]"
 	r.asciiCharClass = expectString("[:blank:]").ALT(
@@ -156,24 +156,24 @@ func newRegex() *regex {
 		expectString("[:upper:]"), expectString("[:lower:]"),
 		expectString("[:alpha:]"), expectString("[:alnum:]"),
 		expectString("[:word:]"), expectString("[:ascii:]"),
-	).Convert(r.toASCIICharClass)
+	).Map(r.toASCIICharClass)
 
 	// char_group_item -->  char_class | ascii_char_class | char_range | char /* excluding ] */
 	r.charGroupItem = r.charClass.ALT(
 		r.asciiCharClass,
 		r.charRange,
 		r.charInGroup,
-	).Convert(r.toCharGroupItem)
+	).Map(r.toCharGroupItem)
 
 	// char_group --> "[" "^"? char_group_item+ "]"
 	r.charGroup = expectRune('[').CONCAT(
 		expectRune('^').OPT(),
 		r.charGroupItem.REP1(),
 		expectRune(']'),
-	).Convert(r.toCharGroup)
+	).Map(r.toCharGroup)
 
 	// any_char --> "."
-	r.anyChar = expectRune('.').Convert(r.toAnyChar)
+	r.anyChar = expectRune('.').Map(r.toAnyChar)
 
 	// match_item --> any_char | char_class | ascii_char_class | char_group | char /* excluding | ) */
 	r.matchItem = r.anyChar.ALT(
@@ -181,15 +181,15 @@ func newRegex() *regex {
 		r.asciiCharClass,
 		r.charGroup,
 		r.charInMatch,
-	).Convert(r.toMatchItem)
+	).Map(r.toMatchItem)
 
 	// match --> match_item quantifier?
-	r.match = r.matchItem.CONCAT(r.quantifier.OPT()).Convert(r.toMatch)
+	r.match = r.matchItem.CONCAT(r.quantifier.OPT()).Map(r.toMatch)
 
-	r.anchor = expectRune('$').Convert(r.toAnchor) // anchor --> "$"
+	r.anchor = expectRune('$').Map(r.toAnchor) // anchor --> "$"
 
 	// regex --> start_of_string? expr
-	r.regex = expectRune('^').OPT().CONCAT(r.expr).Convert(r.toRegex)
+	r.regex = expectRune('^').OPT().CONCAT(r.expr).Map(r.toRegex)
 
 	return r
 }
@@ -201,19 +201,19 @@ func (r *regex) group(in input) (output, bool) {
 		r.expr,
 		expectRune(')'),
 		r.quantifier.OPT(),
-	).Convert(r.toGroup)(in)
+	).Map(r.toGroup)(in)
 }
 
 // Recursive definition
 // subexpr_item --> group | anchor | match
 func (r *regex) subexprItem(in input) (output, bool) {
-	return parser(r.group).ALT(r.anchor, r.match).Convert(r.toSubexprItem)(in)
+	return parser(r.group).ALT(r.anchor, r.match).Map(r.toSubexprItem)(in)
 }
 
 // Recursive definition
 // subexpr --> subexpr_item+
 func (r *regex) subexpr(in input) (output, bool) {
-	return parser(r.subexprItem).REP1().Convert(r.toSubexpr)(in)
+	return parser(r.subexprItem).REP1().Map(r.toSubexpr)(in)
 }
 
 // Recursive definition
@@ -221,10 +221,10 @@ func (r *regex) subexpr(in input) (output, bool) {
 func (r *regex) expr(in input) (output, bool) {
 	return parser(r.subexpr).CONCAT(
 		expectRune('|').CONCAT(r.expr).OPT(),
-	).Convert(r.toExpr)(in)
+	).Map(r.toExpr)(in)
 }
 
-//================================================== CONVERTERS ==================================================
+//================================================== MAPPERS ==================================================
 
 type tuple[P, Q any] struct {
 	p P

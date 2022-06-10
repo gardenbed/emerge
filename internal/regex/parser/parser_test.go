@@ -1160,7 +1160,7 @@ func TestParser_Get(t *testing.T) {
 	}
 }
 
-func TestParser_Convert(t *testing.T) {
+func TestParser_Map(t *testing.T) {
 	toUpper := func(v any) (any, bool) {
 		return strings.ToUpper(v.(string)), true
 	}
@@ -1169,7 +1169,7 @@ func TestParser_Convert(t *testing.T) {
 		name        string
 		in          input
 		p           parser
-		f           converter
+		f           mapper
 		expectedOK  bool
 		expectedOut output
 	}{
@@ -1216,7 +1216,7 @@ func TestParser_Convert(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			out, ok := tc.p.Convert(tc.f)(tc.in)
+			out, ok := tc.p.Map(tc.f)(tc.in)
 
 			assert.Equal(t, tc.expectedOK, ok)
 			assert.Equal(t, tc.expectedOut, out)
