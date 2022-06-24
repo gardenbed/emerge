@@ -6,7 +6,7 @@ require (
 	github.com/gardenbed/charm v0.1.3
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/mitchellh/cli v1.1.4
-	github.com/stretchr/testify v1.7.4
+	github.com/stretchr/testify v1.7.5
 )
 
 require (
