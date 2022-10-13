@@ -1,41 +1,49 @@
-// package parser provides all data types and primitive constructs for building a parser combinator.
-package parser
+// package combinator provides all data types and primitive constructs for building a parser combinator.
+package combinator
 
 type (
-	// empty is the empty string ε.
-	empty struct{}
+	// Empty is the empty string ε.
+	Empty struct{}
 
-	// result is the result of parsing a production rule.
+	// Result is the result of parsing a production rule.
 	// It represents a production rule result.
-	result struct {
+	Result struct {
 		Val any
 		Pos int
 	}
 
-	// list is the type for the result of concatenation or repetition.
-	list []result
+	// List is the type for the result of concatenation or repetition.
+	List []Result
 )
 
 type (
-	// input is the input to a parser function.
-	input interface {
+	// Input is the input to a parser function.
+	Input interface {
 		// Current returns the current rune from input along with its position in the input.
 		Current() (rune, int)
 		// Remaining returns the remaining of input. If no input left, it returns nil.
-		Remaining() input
+		Remaining() Input
 	}
 
-	// output is the output of a parser function.
-	output struct {
-		Result    result
-		Remaining input
+	// Output is the output of a parser function.
+	Output struct {
+		Result    Result
+		Remaining Input
 	}
 
-	// parser is the type for a function that receives a parsing input and returns a parsing output.
-	parser func(input) (output, bool)
+	// Parser is the type for a function that receives a parsing input and returns a parsing output.
+	Parser func(Input) (Output, bool)
 )
 
-// getAt returns the value of a symbol from the right-side of a production rule.
+type (
+	// mapper is the type for a function that receives a parsing result and returns a new value for the result.
+	Mapper func(any) (any, bool)
+
+	// binder is the type for a function that receives a parsing result and returns a new parser.
+	Binder func(Result) Parser
+)
+
+// GetAt returns the value of a symbol from the right-side of a production rule.
 //
 // Example:
 //
@@ -43,10 +51,9 @@ type (
 //
 // • in = {2,4}
 //
-// • getAt(in, 1) = 2, get(in, 3) = 4
-//
-func getAt(v any, i int) (any, bool) {
-	if l, ok := v.(list); ok {
+// • GetAt(in, 1) = 2, get(in, 3) = 4
+func GetAt(v any, i int) (any, bool) {
+	if l, ok := v.(List); ok {
 		if 0 <= i && i < len(l) {
 			return l[i].Val, true
 		}
@@ -55,75 +62,75 @@ func getAt(v any, i int) (any, bool) {
 	return nil, false
 }
 
-// expectRune creates a parser that returns a successful result only if the input starts with the given rune.
-func expectRune(r rune) parser {
-	return func(in input) (output, bool) {
+// ExpectRune creates a parser that returns a successful result only if the input starts with the given rune.
+func ExpectRune(r rune) Parser {
+	return func(in Input) (Output, bool) {
 		if in == nil {
-			return output{}, false
+			return Output{}, false
 		}
 
 		if curr, pos := in.Current(); curr == r {
-			return output{
-				Result:    result{r, pos},
+			return Output{
+				Result:    Result{r, pos},
 				Remaining: in.Remaining(),
 			}, true
 		}
 
-		return output{}, false
+		return Output{}, false
 	}
 }
 
-// expectRuneIn creates a parser that returns a successful result only if the input starts with one of the given runes.
-func expectRuneIn(runes ...rune) parser {
-	return func(in input) (output, bool) {
+// ExpectRuneIn creates a parser that returns a successful result only if the input starts with one of the given runes.
+func ExpectRuneIn(runes ...rune) Parser {
+	return func(in Input) (Output, bool) {
 		if in == nil {
-			return output{}, false
+			return Output{}, false
 		}
 
 		for _, r := range runes {
 			if curr, pos := in.Current(); curr == r {
-				return output{
-					Result:    result{r, pos},
+				return Output{
+					Result:    Result{r, pos},
 					Remaining: in.Remaining(),
 				}, true
 			}
 		}
 
-		return output{}, false
+		return Output{}, false
 	}
 }
 
-// expectRuneInRange creates a parser that returns a successful result only if the input starts with a rune in the given range.
-func expectRuneInRange(low, up rune) parser {
-	return func(in input) (output, bool) {
+// ExpectRuneInRange creates a parser that returns a successful result only if the input starts with a rune in the given range.
+func ExpectRuneInRange(low, up rune) Parser {
+	return func(in Input) (Output, bool) {
 		if in == nil {
-			return output{}, false
+			return Output{}, false
 		}
 
 		if r, pos := in.Current(); low <= r && r <= up {
-			return output{
-				Result:    result{r, pos},
+			return Output{
+				Result:    Result{r, pos},
 				Remaining: in.Remaining(),
 			}, true
 		}
 
-		return output{}, false
+		return Output{}, false
 	}
 }
 
-// expectRunes creates a parser that returns a successful result only if the input starts with the given runes in the given order.
-func expectRunes(runes ...rune) parser {
-	return func(in input) (output, bool) {
+// ExpectRunes creates a parser that returns a successful result only if the input starts with the given runes in the given order.
+func ExpectRunes(runes ...rune) Parser {
+	return func(in Input) (Output, bool) {
 		var pos int
 
 		for i, r := range runes {
 			if in == nil {
-				return output{}, false
+				return Output{}, false
 			}
 
 			curr, p := in.Current()
 			if curr != r {
-				return output{}, false
+				return Output{}, false
 			}
 
 			// Save only the first position
@@ -134,40 +141,40 @@ func expectRunes(runes ...rune) parser {
 			in = in.Remaining()
 		}
 
-		return output{
-			Result:    result{runes, pos},
+		return Output{
+			Result:    Result{runes, pos},
 			Remaining: in,
 		}, true
 	}
 }
 
-// expectString creates a parser that returns a successful result only if the input starts with the given string.
-func expectString(s string) parser {
-	return func(in input) (output, bool) {
-		if out, ok := expectRunes([]rune(s)...)(in); ok {
-			return output{
-				Result:    result{s, out.Result.Pos},
+// ExpectString creates a parser that returns a successful result only if the input starts with the given string.
+func ExpectString(s string) Parser {
+	return func(in Input) (Output, bool) {
+		if out, ok := ExpectRunes([]rune(s)...)(in); ok {
+			return Output{
+				Result:    Result{s, out.Result.Pos},
 				Remaining: out.Remaining,
 			}, true
 		}
 
-		return output{}, false
+		return Output{}, false
 	}
 }
 
-// excludeRunes can be bound on a rune parser to exclude certain runes.
-func excludeRunes(r ...rune) constructor {
-	return func(res result) parser {
-		return func(in input) (output, bool) {
+// ExcludeRunes can be bound on a rune parser to exclude certain runes.
+func ExcludeRunes(r ...rune) Binder {
+	return func(res Result) Parser {
+		return func(in Input) (Output, bool) {
 			if a, ok := res.Val.(rune); ok {
 				for _, b := range r {
 					if a == b {
-						return output{}, false
+						return Output{}, false
 					}
 				}
 			}
 
-			return output{
+			return Output{
 				Result:    res,
 				Remaining: in,
 			}, true
@@ -182,23 +189,23 @@ func excludeRunes(r ...rune) constructor {
 // • EBNF Operator: Concatenation
 //
 // • EBNF Notation: p q
-func (p parser) CONCAT(q ...parser) parser {
-	return func(in input) (output, bool) {
-		var l list
+func (p Parser) CONCAT(q ...Parser) Parser {
+	return func(in Input) (Output, bool) {
+		var l List
 
-		all := append([]parser{p}, q...)
+		all := append([]Parser{p}, q...)
 		for _, parse := range all {
 			out, ok := parse(in)
 			if !ok {
-				return output{}, false
+				return Output{}, false
 			}
 
 			l = append(l, out.Result)
 			in = out.Remaining
 		}
 
-		return output{
-			Result:    result{l, l[0].Pos},
+		return Output{
+			Result:    Result{l, l[0].Pos},
 			Remaining: in,
 		}, true
 	}
@@ -212,16 +219,16 @@ func (p parser) CONCAT(q ...parser) parser {
 // • EBNF Operator: Alternation
 //
 // • EBNF Notation: p | q
-func (p parser) ALT(q ...parser) parser {
-	return func(in input) (output, bool) {
-		all := append([]parser{p}, q...)
+func (p Parser) ALT(q ...Parser) Parser {
+	return func(in Input) (Output, bool) {
+		all := append([]Parser{p}, q...)
 		for _, parse := range all {
 			if out, ok := parse(in); ok {
 				return out, true
 			}
 		}
 
-		return output{}, false
+		return Output{}, false
 	}
 }
 
@@ -231,16 +238,16 @@ func (p parser) ALT(q ...parser) parser {
 // • EBNF Operator: Optional
 //
 // • EBNF Notation: [ p ] or p?
-func (p parser) OPT() parser {
-	return func(in input) (output, bool) {
+func (p Parser) OPT() Parser {
+	return func(in Input) (Output, bool) {
 		if out, ok := p(in); ok {
 			return out, true
 		}
 
-		return output{
-			Result: result{
+		return Output{
+			Result: Result{
 				// Position for empty string ε is not defined
-				Val: empty{},
+				Val: Empty{},
 			},
 			Remaining: in,
 		}, true
@@ -253,9 +260,9 @@ func (p parser) OPT() parser {
 // • EBNF Operator: Repetition (Kleene Star)
 //
 // • EBNF Notation: { p } or p*
-func (p parser) REP() parser {
-	return func(in input) (output, bool) {
-		var l list
+func (p Parser) REP() Parser {
+	return func(in Input) (Output, bool) {
+		var l List
 
 		for i := 0; in != nil; i++ {
 			out, ok := p(in)
@@ -267,17 +274,17 @@ func (p parser) REP() parser {
 			in = out.Remaining
 		}
 
-		out := output{
+		out := Output{
 			Remaining: in,
 		}
 
 		if len(l) == 0 {
-			out.Result = result{
+			out.Result = Result{
 				// Position for empty string ε is not defined
-				Val: empty{},
+				Val: Empty{},
 			}
 		} else {
-			out.Result = result{l, l[0].Pos}
+			out.Result = Result{l, l[0].Pos}
 		}
 
 		return out, true
@@ -290,84 +297,84 @@ func (p parser) REP() parser {
 // • EBNF Operator: Kleene Plus
 //
 // • EBNF Notation: p+
-func (p parser) REP1() parser {
-	return func(in input) (output, bool) {
+func (p Parser) REP1() Parser {
+	return func(in Input) (Output, bool) {
 		if out, ok := p.REP()(in); ok {
-			if res, ok := out.Result.Val.(list); ok && len(res) > 0 {
+			if res, ok := out.Result.Val.(List); ok && len(res) > 0 {
 				return out, true
 			}
 		}
 
-		return output{}, false
+		return Output{}, false
 	}
 }
 
-func flatten(res result) list {
+func flatten(res Result) List {
 	switch v := res.Val.(type) {
-	case empty:
-		return list{}
+	case Empty:
+		return List{}
 
-	case list:
-		var l list
+	case List:
+		var l List
 		for _, v := range v {
 			l = append(l, flatten(v)...)
 		}
 		return l
 
 	default:
-		return list{res}
+		return List{res}
 	}
 }
 
 // Flatten composes a parser that applies parser p to the input and flattens all results into a single list.
 // This can be used for accessing the values of symbols in the right-side of a production rule more intuitively.
-func (p parser) Flatten() parser {
-	return func(in input) (output, bool) {
+func (p Parser) Flatten() Parser {
+	return func(in Input) (Output, bool) {
 		if out, ok := p(in); ok {
 			val := flatten(out.Result)
-			return output{
-				Result:    result{val, out.Result.Pos},
+			return Output{
+				Result:    Result{val, out.Result.Pos},
 				Remaining: out.Remaining,
 			}, true
 		}
 
-		return output{}, false
+		return Output{}, false
 	}
 }
 
 // Select composes a parser that applies parser p to the input and returns a list of symbols from the right-side of the production rule.
 // This will not have any effect if the result of parsing is not a list.
 // If indices are invalid, you will get an empty string (ε).
-func (p parser) Select(i ...int) parser {
-	return func(in input) (output, bool) {
+func (p Parser) Select(i ...int) Parser {
+	return func(in Input) (Output, bool) {
 		out, ok := p(in)
 		if !ok {
-			return output{}, false
+			return Output{}, false
 		}
 
-		l, ok := out.Result.Val.(list)
+		l, ok := out.Result.Val.(List)
 		if !ok {
 			return out, true
 		}
 
-		var sub list
+		var sub List
 		for _, j := range i {
 			if 0 <= j && j < len(l) {
 				sub = append(sub, l[j])
 			}
 		}
 
-		var res result
+		var res Result
 		if len(sub) > 0 {
-			res = result{sub, sub[0].Pos}
+			res = Result{sub, sub[0].Pos}
 		} else {
-			res = result{
+			res = Result{
 				// Position for empty string ε is not defined
-				Val: empty{},
+				Val: Empty{},
 			}
 		}
 
-		return output{
+		return Output{
 			Result:    res,
 			Remaining: out.Remaining,
 		}, true
@@ -378,66 +385,60 @@ func (p parser) Select(i ...int) parser {
 // This can be used after CONCAT, REP, REP1, Flatten, and/or Select.
 // It will not have any effect if used after other operators and the result of parsing is not a list.
 // If index is invalid, you will get an empty string (ε).
-func (p parser) Get(i int) parser {
-	return func(in input) (output, bool) {
+func (p Parser) Get(i int) Parser {
+	return func(in Input) (Output, bool) {
 		out, ok := p(in)
 		if !ok {
-			return output{}, false
+			return Output{}, false
 		}
 
-		l, ok := out.Result.Val.(list)
+		l, ok := out.Result.Val.(List)
 		if !ok {
 			return out, true
 		}
 
-		var res result
+		var res Result
 		if 0 <= i && i < len(l) {
 			res = l[i]
 		} else {
-			res = result{
+			res = Result{
 				// Position for empty string ε is not defined
-				Val: empty{},
+				Val: Empty{},
 			}
 		}
 
-		return output{
+		return Output{
 			Result:    res,
 			Remaining: out.Remaining,
 		}, ok
 	}
 }
 
-// mapper is the type for a function that receives a parsing result and returns a new value for the result.
-type mapper func(any) (any, bool)
-
 // Map composes a parser that uses parser p to parse the input and applies a mapper function to the result of parsing.
 // If the parser does not succeed, the mapper function will not be applied.
-func (p parser) Map(f mapper) parser {
-	return func(in input) (output, bool) {
+func (p Parser) Map(f Mapper) Parser {
+	return func(in Input) (Output, bool) {
 		if out, ok := p(in); ok {
 			if val, ok := f(out.Result.Val); ok {
-				return output{
-					Result:    result{val, out.Result.Pos},
+				return Output{
+					Result:    Result{val, out.Result.Pos},
 					Remaining: out.Remaining,
 				}, true
 			}
 		}
 
-		return output{}, false
+		return Output{}, false
 	}
 }
 
-// constructor is the type for a function that receives a parsing result and returns a new one.
-type constructor func(result) parser
-
-// Bind composes a parser that uses parser p to parse the input and constructs a second parser from the result of parsing.
+// Bind composes a parser that uses parser p to parse the input and builds a second parser from the result of parsing.
 // It then applies the new parser to the remaining input from the first parser.
 // You can use this to implement syntax annotations.
-func (p parser) Bind(f constructor) parser {
-	return func(in input) (output, bool) {
+func (p Parser) Bind(f Binder) Parser {
+	return func(in Input) (Output, bool) {
 		out, ok := p(in)
 		if !ok {
-			return output{}, false
+			return Output{}, false
 		}
 
 		return f(out.Result)(out.Remaining)
