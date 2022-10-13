@@ -1,5 +1,7 @@
 // Package ast implements a minimal abstract syntax tree for regular expressions.
 // The functions computed on each node are required by the construction alogorithm for finite state automata.
+//
+// It also provides a combinator parser for parsing regular expression into an abstract syntax tree.
 package ast
 
 // Node is the interface for all nodes in an abstract syntax tree.
