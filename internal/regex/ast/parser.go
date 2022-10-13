@@ -1,4 +1,4 @@
-package parser
+package ast
 
 import (
 	"errors"
@@ -6,10 +6,10 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 
-	"github.com/gardenbed/emerge/internal/regex/ast"
+	comb "github.com/gardenbed/emerge/internal/combinator"
 )
 
-func Parse(in input) (ast.Node, error) {
+func Parse(in comb.Input) (Node, error) {
 	r := newRegex()
 
 	out, ok := r.regex(in)
@@ -22,7 +22,7 @@ func Parse(in input) (ast.Node, error) {
 		return nil, r.errors
 	}
 
-	root := out.Result.Val.(ast.Node)
+	root := out.Result.Val.(Node)
 
 	// Backfill Pos fields
 	pos := 0
@@ -32,22 +32,22 @@ func Parse(in input) (ast.Node, error) {
 }
 
 // setPositions backfills Pos field for all characters in an abstract syntaxt tree from left to right.
-func setPositions(n ast.Node, pos *int) {
+func setPositions(n Node, pos *int) {
 	switch v := n.(type) {
-	case *ast.Concat:
+	case *Concat:
 		for _, e := range v.Exprs {
 			setPositions(e, pos)
 		}
 
-	case *ast.Alt:
+	case *Alt:
 		for _, e := range v.Exprs {
 			setPositions(e, pos)
 		}
 
-	case *ast.Star:
+	case *Star:
 		setPositions(v.Expr, pos)
 
-	case *ast.Char:
+	case *Char:
 		*pos++
 		v.Pos = *pos
 	}
@@ -72,28 +72,28 @@ var alphabet = []rune{
 type regex struct {
 	errors error
 
-	char           parser
-	unescapedChar  parser
-	escapedChar    parser
-	digit          parser
-	letter         parser
-	num            parser
-	letters        parser
-	repOp          parser
-	upperBound     parser
-	range_         parser
-	repetition     parser
-	quantifier     parser
-	charRange      parser
-	charGroupItem  parser
-	charGroup      parser
-	charClass      parser
-	asciiCharClass parser
-	anyChar        parser
-	matchItem      parser
-	match          parser
-	anchor         parser
-	regex          parser
+	char           comb.Parser
+	unescapedChar  comb.Parser
+	escapedChar    comb.Parser
+	digit          comb.Parser
+	letter         comb.Parser
+	num            comb.Parser
+	letters        comb.Parser
+	repOp          comb.Parser
+	upperBound     comb.Parser
+	range_         comb.Parser
+	repetition     comb.Parser
+	quantifier     comb.Parser
+	charRange      comb.Parser
+	charGroupItem  comb.Parser
+	charGroup      comb.Parser
+	charClass      comb.Parser
+	asciiCharClass comb.Parser
+	anyChar        comb.Parser
+	matchItem      comb.Parser
+	match          comb.Parser
+	anchor         comb.Parser
+	regex          comb.Parser
 }
 
 // newRegex creates a parser combinator for parsing regular expressions.
@@ -101,34 +101,34 @@ func newRegex() *regex {
 	r := new(regex)
 
 	// char --> /* all valid characters */
-	r.char = expectRuneInRange(0x20, 0x7E)
+	r.char = comb.ExpectRuneInRange(0x20, 0x7E)
 	// all characters excluding the escaped ones
-	r.unescapedChar = r.char.Bind(excludeRunes('\\', '/', '|', '.', '?', '*', '+', '(', ')', '[', ']', '{', '}')).Map(r.toUnescapedChar)
+	r.unescapedChar = r.char.Bind(comb.ExcludeRunes('\\', '/', '|', '.', '?', '*', '+', '(', ')', '[', ']', '{', '}')).Map(r.toUnescapedChar)
 	// escaped_char --> "\" ( "\" | "/" | "|" | "." | "?" | "*" | "+" | "(" | ")" | "[" | "]" | "{" | "}" )
-	r.escapedChar = expectRune('\\').CONCAT(expectRuneIn('\\', '/', '|', '.', '?', '*', '+', '(', ')', '[', ']', '{', '}')).Map(r.toEscapedChar)
+	r.escapedChar = comb.ExpectRune('\\').CONCAT(comb.ExpectRuneIn('\\', '/', '|', '.', '?', '*', '+', '(', ')', '[', ']', '{', '}')).Map(r.toEscapedChar)
 
-	r.digit = expectRuneInRange('0', '9')                                   // digit --> "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
-	r.letter = expectRuneInRange('A', 'Z').ALT(expectRuneInRange('a', 'z')) // letter --> "A" | ... | "Z" | "a" | ... | "z"
+	r.digit = comb.ExpectRuneInRange('0', '9')                                        // digit --> "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+	r.letter = comb.ExpectRuneInRange('A', 'Z').ALT(comb.ExpectRuneInRange('a', 'z')) // letter --> "A" | ... | "Z" | "a" | ... | "z"
 
 	r.num = r.digit.REP1().Map(r.toNum)          // num --> digit+
 	r.letters = r.letter.REP1().Map(r.toLetters) // letters --> letter+
 
 	// rep_op --> "?" | "*" | "+"
-	r.repOp = expectRune('?').ALT(
-		expectRune('*'),
-		expectRune('+'),
+	r.repOp = comb.ExpectRune('?').ALT(
+		comb.ExpectRune('*'),
+		comb.ExpectRune('+'),
 	).Map(r.toRepOp)
 
 	// upper_bound --> "," num?
-	r.upperBound = expectRune(',').CONCAT(
+	r.upperBound = comb.ExpectRune(',').CONCAT(
 		r.num.OPT(),
 	).Map(r.toUpperBound)
 
 	// range --> "{" num upper_bound? "}"
-	r.range_ = expectRune('{').CONCAT(
+	r.range_ = comb.ExpectRune('{').CONCAT(
 		r.num,
 		r.upperBound.OPT(),
-		expectRune('}'),
+		comb.ExpectRune('}'),
 	).Map(r.toRange)
 
 	// repetition --> rep_op | range
@@ -138,29 +138,29 @@ func newRegex() *regex {
 
 	// quantifier --> repetition lazy_modifier?
 	r.quantifier = r.repetition.CONCAT(
-		expectRune('?').OPT(),
+		comb.ExpectRune('?').OPT(),
 	).Map(r.toQuantifier)
 
 	// char_range --> char "-" char
 	r.charRange = r.char.CONCAT(
-		expectRune('-'),
+		comb.ExpectRune('-'),
 		r.char,
 	).Map(r.toCharRange)
 
 	// char_class --> "\d" | "\D" | "\s" | "\S" | "\w" | "\W"
-	r.charClass = expectString(`\d`).ALT(
-		expectString(`\D`),
-		expectString(`\s`), expectString(`\S`),
-		expectString(`\w`), expectString(`\W`),
+	r.charClass = comb.ExpectString(`\d`).ALT(
+		comb.ExpectString(`\D`),
+		comb.ExpectString(`\s`), comb.ExpectString(`\S`),
+		comb.ExpectString(`\w`), comb.ExpectString(`\W`),
 	).Map(r.toCharClass)
 
 	// ascii_char_class --> "[:blank:]" | "[:space:]" | "[:digit:]" | "[:xdigit:]" | "[:upper:]" | "[:lower:]" | "[:alpha:]" | "[:alnum:]" | "[:word:]" | "[:ascii:]"
-	r.asciiCharClass = expectString("[:blank:]").ALT(
-		expectString("[:space:]"),
-		expectString("[:digit:]"), expectString("[:xdigit:]"),
-		expectString("[:upper:]"), expectString("[:lower:]"),
-		expectString("[:alpha:]"), expectString("[:alnum:]"),
-		expectString("[:word:]"), expectString("[:ascii:]"),
+	r.asciiCharClass = comb.ExpectString("[:blank:]").ALT(
+		comb.ExpectString("[:space:]"),
+		comb.ExpectString("[:digit:]"), comb.ExpectString("[:xdigit:]"),
+		comb.ExpectString("[:upper:]"), comb.ExpectString("[:lower:]"),
+		comb.ExpectString("[:alpha:]"), comb.ExpectString("[:alnum:]"),
+		comb.ExpectString("[:word:]"), comb.ExpectString("[:ascii:]"),
 	).Map(r.toASCIICharClass)
 
 	// char_group_item --> char_class | ascii_char_class | char_range | escaped_char | unescaped_char
@@ -172,14 +172,14 @@ func newRegex() *regex {
 	).Map(r.toCharGroupItem)
 
 	// char_group --> "[" "^"? char_group_item+ "]"
-	r.charGroup = expectRune('[').CONCAT(
-		expectRune('^').OPT(),
+	r.charGroup = comb.ExpectRune('[').CONCAT(
+		comb.ExpectRune('^').OPT(),
 		r.charGroupItem.REP1(),
-		expectRune(']'),
+		comb.ExpectRune(']'),
 	).Map(r.toCharGroup)
 
 	// any_char --> "."
-	r.anyChar = expectRune('.').Map(r.toAnyChar)
+	r.anyChar = comb.ExpectRune('.').Map(r.toAnyChar)
 
 	// match_item --> any_char | unescaped_char | escaped_char | char_class | ascii_char_class | char_group
 	r.matchItem = r.anyChar.ALT(
@@ -193,41 +193,41 @@ func newRegex() *regex {
 	// match --> match_item quantifier?
 	r.match = r.matchItem.CONCAT(r.quantifier.OPT()).Map(r.toMatch)
 
-	r.anchor = expectRune('$').Map(r.toAnchor) // anchor --> "$"
+	r.anchor = comb.ExpectRune('$').Map(r.toAnchor) // anchor --> "$"
 
 	// regex --> start_of_string? expr
-	r.regex = expectRune('^').OPT().CONCAT(r.expr).Map(r.toRegex)
+	r.regex = comb.ExpectRune('^').OPT().CONCAT(r.expr).Map(r.toRegex)
 
 	return r
 }
 
 // Recursive definition
 // group --> "(" expr ")" quantifier?
-func (r *regex) group(in input) (output, bool) {
-	return expectRune('(').CONCAT(
+func (r *regex) group(in comb.Input) (comb.Output, bool) {
+	return comb.ExpectRune('(').CONCAT(
 		r.expr,
-		expectRune(')'),
+		comb.ExpectRune(')'),
 		r.quantifier.OPT(),
 	).Map(r.toGroup)(in)
 }
 
 // Recursive definition
 // subexpr_item --> anchor | group | match
-func (r *regex) subexprItem(in input) (output, bool) {
-	return parser(r.anchor).ALT(r.group, r.match).Map(r.toSubexprItem)(in)
+func (r *regex) subexprItem(in comb.Input) (comb.Output, bool) {
+	return comb.Parser(r.anchor).ALT(r.group, r.match).Map(r.toSubexprItem)(in)
 }
 
 // Recursive definition
 // subexpr --> subexpr_item+
-func (r *regex) subexpr(in input) (output, bool) {
-	return parser(r.subexprItem).REP1().Map(r.toSubexpr)(in)
+func (r *regex) subexpr(in comb.Input) (comb.Output, bool) {
+	return comb.Parser(r.subexprItem).REP1().Map(r.toSubexpr)(in)
 }
 
 // Recursive definition
 // expr --> subexpr ("|" expr)?
-func (r *regex) expr(in input) (output, bool) {
-	return parser(r.subexpr).CONCAT(
-		expectRune('|').CONCAT(r.expr).OPT(),
+func (r *regex) expr(in comb.Input) (comb.Output, bool) {
+	return comb.Parser(r.subexpr).CONCAT(
+		comb.ExpectRune('|').CONCAT(r.expr).OPT(),
 	).Map(r.toExpr)(in)
 }
 
@@ -238,9 +238,9 @@ type tuple[P, Q any] struct {
 	q Q
 }
 
-func runeToChar(r rune) *ast.Char {
+func runeToChar(r rune) *Char {
 	// Pos will be set after the entire abstract syntax tree is constructed.
-	return &ast.Char{
+	return &Char{
 		Val: r,
 	}
 }
@@ -254,8 +254,8 @@ func containsRune(r rune, runes []rune) bool {
 	return false
 }
 
-func runesToAlt(neg bool, runes ...rune) *ast.Alt {
-	alt := new(ast.Alt)
+func runesToAlt(neg bool, runes ...rune) *Alt {
+	alt := new(Alt)
 
 	if neg {
 		for _, r := range alphabet {
@@ -281,8 +281,8 @@ func includesRune(r rune, ranges ...[2]rune) bool {
 	return false
 }
 
-func runeRangesToAlt(neg bool, ranges ...[2]rune) *ast.Alt {
-	alt := new(ast.Alt)
+func runeRangesToAlt(neg bool, ranges ...[2]rune) *Alt {
+	alt := new(Alt)
 
 	if neg {
 		for _, r := range alphabet {
@@ -301,52 +301,52 @@ func runeRangesToAlt(neg bool, ranges ...[2]rune) *ast.Alt {
 	return alt
 }
 
-func markAllChars(m []bool, n ast.Node) {
+func markAllChars(m []bool, n Node) {
 	switch v := n.(type) {
-	case *ast.Concat:
+	case *Concat:
 		for _, n := range v.Exprs {
 			markAllChars(m, n)
 		}
 
-	case *ast.Alt:
+	case *Alt:
 		for _, n := range v.Exprs {
 			markAllChars(m, n)
 		}
 
-	case *ast.Star:
+	case *Star:
 		markAllChars(m, v)
 
-	case *ast.Char:
+	case *Char:
 		m[v.Val] = true
 	}
 }
 
-func cloneNode(n ast.Node) ast.Node {
+func cloneNode(n Node) Node {
 	switch v := n.(type) {
-	case *ast.Concat:
-		concat := new(ast.Concat)
+	case *Concat:
+		concat := new(Concat)
 		for _, e := range v.Exprs {
 			concat.Exprs = append(concat.Exprs, cloneNode(e))
 		}
 		return concat
 
-	case *ast.Alt:
-		alt := new(ast.Alt)
+	case *Alt:
+		alt := new(Alt)
 		for _, e := range v.Exprs {
 			alt.Exprs = append(alt.Exprs, cloneNode(e))
 		}
 		return alt
 
-	case *ast.Star:
-		return &ast.Star{
+	case *Star:
+		return &Star{
 			Expr: cloneNode(v.Expr),
 		}
 
-	case *ast.Empty:
-		return new(ast.Empty)
+	case *Empty:
+		return new(Empty)
 
-	case *ast.Char:
-		return &ast.Char{
+	case *Char:
+		return &Char{
 			Val: v.Val,
 			Pos: v.Pos,
 		}
@@ -357,31 +357,31 @@ func cloneNode(n ast.Node) ast.Node {
 }
 
 // TODO:
-func quantifyNode(n ast.Node, t tuple[any, bool]) ast.Node {
-	var node ast.Node
+func quantifyNode(n Node, t tuple[any, bool]) Node {
+	var node Node
 
 	switch rep := t.p.(type) {
 	// Simple repetition
 	case rune:
 		switch rep {
 		case '?':
-			node = &ast.Alt{
-				Exprs: []ast.Node{
-					&ast.Empty{},
+			node = &Alt{
+				Exprs: []Node{
+					&Empty{},
 					cloneNode(n),
 				},
 			}
 
 		case '*':
-			node = &ast.Star{
+			node = &Star{
 				Expr: cloneNode(n),
 			}
 
 		case '+':
-			node = &ast.Concat{
-				Exprs: []ast.Node{
+			node = &Concat{
+				Exprs: []Node{
 					cloneNode(n),
-					&ast.Star{
+					&Star{
 						Expr: cloneNode(n),
 					},
 				},
@@ -391,21 +391,21 @@ func quantifyNode(n ast.Node, t tuple[any, bool]) ast.Node {
 	// Range repetition
 	case tuple[int, *int]:
 		low, up := rep.p, rep.q
-		concat := new(ast.Concat)
+		concat := new(Concat)
 
 		for i := 0; i < low; i++ {
 			concat.Exprs = append(concat.Exprs, cloneNode(n))
 		}
 
 		if up == nil {
-			concat.Exprs = append(concat.Exprs, &ast.Star{
+			concat.Exprs = append(concat.Exprs, &Star{
 				Expr: cloneNode(n),
 			})
 		} else {
 			for i := 0; i < *up-low; i++ {
-				concat.Exprs = append(concat.Exprs, &ast.Alt{
-					Exprs: []ast.Node{
-						&ast.Empty{},
+				concat.Exprs = append(concat.Exprs, &Alt{
+					Exprs: []Node{
+						&Empty{},
 						cloneNode(n),
 					},
 				})
@@ -427,7 +427,7 @@ func (r *regex) toUnescapedChar(v any) (any, bool) {
 }
 
 func (r *regex) toEscapedChar(v any) (any, bool) {
-	v1, _ := getAt(v, 1)
+	v1, _ := comb.GetAt(v, 1)
 
 	c := v1.(rune)
 
@@ -435,7 +435,7 @@ func (r *regex) toEscapedChar(v any) (any, bool) {
 }
 
 func (r *regex) toNum(v any) (any, bool) {
-	digits := v.(list)
+	digits := v.(comb.List)
 
 	var num int
 	for _, d := range digits {
@@ -446,7 +446,7 @@ func (r *regex) toNum(v any) (any, bool) {
 }
 
 func (r *regex) toLetters(v any) (any, bool) {
-	letters := v.(list)
+	letters := v.(comb.List)
 
 	var s string
 	for _, l := range letters {
@@ -462,7 +462,7 @@ func (r *regex) toRepOp(v any) (any, bool) {
 }
 
 func (r *regex) toUpperBound(v any) (any, bool) {
-	v1, _ := getAt(v, 1)
+	v1, _ := comb.GetAt(v, 1)
 
 	var num *int
 	if v, ok := v1.(int); ok {
@@ -474,8 +474,8 @@ func (r *regex) toUpperBound(v any) (any, bool) {
 }
 
 func (r *regex) toRange(v any) (any, bool) {
-	v1, _ := getAt(v, 1)
-	v2, _ := getAt(v, 2)
+	v1, _ := comb.GetAt(v, 1)
+	v2, _ := comb.GetAt(v, 2)
 
 	// The upper bound is same as the lower bound if no upper bound is specified (default)
 	low := v1.(int)
@@ -504,8 +504,8 @@ func (r *regex) toRepetition(v any) (any, bool) {
 }
 
 func (r *regex) toQuantifier(v any) (any, bool) {
-	v0, _ := getAt(v, 0)
-	v1, _ := getAt(v, 1)
+	v0, _ := comb.GetAt(v, 0)
+	v1, _ := comb.GetAt(v, 1)
 
 	// Check whether or not the lazy modifier is present
 	_, lazy := v1.(rune)
@@ -517,8 +517,8 @@ func (r *regex) toQuantifier(v any) (any, bool) {
 }
 
 func (r *regex) toCharRange(v any) (any, bool) {
-	v0, _ := getAt(v, 0)
-	v2, _ := getAt(v, 2)
+	v0, _ := comb.GetAt(v, 0)
+	v2, _ := comb.GetAt(v, 2)
 
 	low, up := v0.(rune), v2.(rune)
 
@@ -540,31 +540,31 @@ func (r *regex) toCharGroupItem(v any) (any, bool) {
 }
 
 func (r *regex) toCharGroup(v any) (any, bool) {
-	v1, _ := getAt(v, 1)
-	v2, _ := getAt(v, 2)
+	v1, _ := comb.GetAt(v, 1)
+	v2, _ := comb.GetAt(v, 2)
 
 	// Check whether or not the negation modifier is present
 	_, neg := v1.(rune)
 
-	items := v2.(list)
+	items := v2.(comb.List)
 
 	charMap := make([]bool, len(alphabet))
 	for _, r := range items {
-		if n, ok := r.Val.(ast.Node); ok {
+		if n, ok := r.Val.(Node); ok {
 			markAllChars(charMap, n)
 		}
 	}
 
-	var exprs []ast.Node
+	var exprs []Node
 	for i, exist := range charMap {
 		if (!neg && exist) || (neg && !exist) {
-			exprs = append(exprs, &ast.Char{
+			exprs = append(exprs, &Char{
 				Val: rune(i),
 			})
 		}
 	}
 
-	return &ast.Alt{
+	return &Alt{
 		Exprs: exprs,
 	}, true
 }
@@ -620,7 +620,7 @@ func (r *regex) toCharClass(v any) (any, bool) {
 }
 
 func (r *regex) toAnyChar(v any) (any, bool) {
-	alt := new(ast.Alt)
+	alt := new(Alt)
 	for _, r := range alphabet {
 		alt.Exprs = append(alt.Exprs, runeToChar(r))
 	}
@@ -634,10 +634,10 @@ func (r *regex) toMatchItem(v any) (any, bool) {
 }
 
 func (r *regex) toMatch(v any) (any, bool) {
-	v0, _ := getAt(v, 0)
-	v1, _ := getAt(v, 1)
+	v0, _ := comb.GetAt(v, 0)
+	v1, _ := comb.GetAt(v, 1)
 
-	node := v0.(ast.Node)
+	node := v0.(Node)
 
 	if q, ok := v1.(tuple[any, bool]); ok {
 		node = quantifyNode(node, q)
@@ -657,10 +657,10 @@ func (r *regex) toAnchor(v any) (any, bool) {
 }
 
 func (r *regex) toGroup(v any) (any, bool) {
-	v1, _ := getAt(v, 1)
-	v3, _ := getAt(v, 3)
+	v1, _ := comb.GetAt(v, 1)
+	v3, _ := comb.GetAt(v, 3)
 
-	node := v1.(ast.Node)
+	node := v1.(Node)
 
 	if q, ok := v3.(tuple[any, bool]); ok {
 		node = quantifyNode(node, q)
@@ -675,12 +675,12 @@ func (r *regex) toSubexprItem(v any) (any, bool) {
 }
 
 func (r *regex) toSubexpr(v any) (any, bool) {
-	items := v.(list)
+	items := v.(comb.List)
 
-	concat := new(ast.Concat)
+	concat := new(Concat)
 	for _, r := range items {
 		// Anchor result value is not a node
-		if n, ok := r.Val.(ast.Node); ok {
+		if n, ok := r.Val.(Node); ok {
 			concat.Exprs = append(concat.Exprs, n)
 		}
 	}
@@ -689,21 +689,21 @@ func (r *regex) toSubexpr(v any) (any, bool) {
 }
 
 func (r *regex) toExpr(v any) (any, bool) {
-	v0, _ := getAt(v, 0)
-	v1, _ := getAt(v, 1)
+	v0, _ := comb.GetAt(v, 0)
+	v1, _ := comb.GetAt(v, 1)
 
-	subexpr := v0.(ast.Node)
+	subexpr := v0.(Node)
 
-	if _, ok := v1.(empty); ok {
+	if _, ok := v1.(comb.Empty); ok {
 		return subexpr, true
 	}
 
-	v11, _ := getAt(v1, 1)
+	v11, _ := comb.GetAt(v1, 1)
 
-	expr := v11.(ast.Node)
+	expr := v11.(Node)
 
-	alt := &ast.Alt{
-		Exprs: []ast.Node{
+	alt := &Alt{
+		Exprs: []Node{
 			subexpr,
 			expr,
 		},
@@ -715,12 +715,12 @@ func (r *regex) toExpr(v any) (any, bool) {
 // TODO: handle start-of-string
 func (r *regex) toRegex(v any) (any, bool) {
 	// v0, _ := getAt(v, 0)
-	v1, _ := getAt(v, 1)
+	v1, _ := comb.GetAt(v, 1)
 
 	// Check whether or not the start-of-string is present
 	// _, sos := v0.(rune)
 
-	expr := v1.(ast.Node)
+	expr := v1.(Node)
 
 	return expr, true
 }
