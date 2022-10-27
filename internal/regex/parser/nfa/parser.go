@@ -1,10 +1,11 @@
-package ast
+package nfa
 
 import (
 	"errors"
 	"fmt"
 
 	"github.com/hashicorp/go-multierror"
+	auto "github.com/moorara/algo/automata"
 
 	comb "github.com/gardenbed/emerge/internal/combinator"
 	"github.com/gardenbed/emerge/internal/regex/parser"
@@ -24,7 +25,7 @@ const (
 	BagKeyStartOfString  comb.BagKey = "start_of_string"
 )
 
-func Parse(in comb.Input) (Node, error) {
+func Parse(in comb.Input) (*auto.NFA, error) {
 	m := new(mappers)
 	p := parser.New(m)
 
@@ -37,13 +38,9 @@ func Parse(in comb.Input) (Node, error) {
 		return nil, m.errors
 	}
 
-	root := out.Result.Val.(Node)
+	nfa := out.Result.Val.(*auto.NFA)
 
-	// Backfill Pos fields for Char nodes
-	pos := 0
-	setCharPos(root, &pos)
-
-	return root, nil
+	return nfa, nil
 }
 
 // mappers implements the parser.Mappers interface.
@@ -51,11 +48,13 @@ type mappers struct {
 	errors error
 }
 
+//==================================================< MAPPERS >==================================================
+
 func (m *mappers) ToUnescapedChar(r comb.Result) (comb.Result, bool) {
 	c := r.Val.(rune)
 
 	return comb.Result{
-		Val: runeToChar(c),
+		Val: runeToNFA(c),
 		Pos: r.Pos,
 		Bag: comb.Bag{
 			bagKeyChars: []rune{c},
@@ -70,7 +69,7 @@ func (m *mappers) ToEscapedChar(r comb.Result) (comb.Result, bool) {
 	c := r1.Val.(rune)
 
 	return comb.Result{
-		Val: runeToChar(c),
+		Val: runeToNFA(c),
 		Pos: r0.Pos,
 		Bag: comb.Bag{
 			bagKeyChars: []rune{c},
@@ -160,10 +159,10 @@ func (m *mappers) ToCharRange(r comb.Result) (comb.Result, bool) {
 		m.errors = multierror.Append(m.errors, fmt.Errorf("invalid character range %s-%s", string(low), string(up)))
 	}
 
-	node, chars := runeRangesToAlt(false, [2]rune{low, up})
+	nfa, chars := runeRangesToNFA(false, [2]rune{low, up})
 
 	return comb.Result{
-		Val: node,
+		Val: nfa,
 		Pos: r0.Pos,
 		Bag: comb.Bag{
 			bagKeyChars: chars,
@@ -195,17 +194,15 @@ func (m *mappers) ToCharGroup(r comb.Result) (comb.Result, bool) {
 		}
 	}
 
-	alt := new(Alt)
+	nfa := auto.NewNFA(0, auto.States{1})
 	for i, marked := range charMap {
 		if (!neg && marked) || (neg && !marked) {
-			alt.Exprs = append(alt.Exprs, &Char{
-				Val: rune(i),
-			})
+			nfa.Add(0, auto.Symbol(rune(i)), auto.States{1})
 		}
 	}
 
 	return comb.Result{
-		Val: alt,
+		Val: nfa,
 		Pos: r0.Pos,
 	}, true
 }
@@ -213,36 +210,36 @@ func (m *mappers) ToCharGroup(r comb.Result) (comb.Result, bool) {
 func (m *mappers) ToASCIICharClass(r comb.Result) (comb.Result, bool) {
 	class := r.Val.(string)
 
-	var node *Alt
+	var nfa *auto.NFA
 	var chars []rune
 
 	switch class {
 	case "[:blank:]":
-		node, chars = runesToAlt(false, ' ', '\t')
+		nfa, chars = runesToNFA(false, ' ', '\t')
 	case "[:space:]":
-		node, chars = runesToAlt(false, ' ', '\t', '\n', '\r', '\f', '\v')
+		nfa, chars = runesToNFA(false, ' ', '\t', '\n', '\r', '\f', '\v')
 	case "[:digit:]":
-		node, chars = runeRangesToAlt(false, [2]rune{'0', '9'})
+		nfa, chars = runeRangesToNFA(false, [2]rune{'0', '9'})
 	case "[:xdigit:]":
-		node, chars = runeRangesToAlt(false, [2]rune{'0', '9'}, [2]rune{'A', 'F'}, [2]rune{'a', 'f'})
+		nfa, chars = runeRangesToNFA(false, [2]rune{'0', '9'}, [2]rune{'A', 'F'}, [2]rune{'a', 'f'})
 	case "[:upper:]":
-		node, chars = runeRangesToAlt(false, [2]rune{'A', 'Z'})
+		nfa, chars = runeRangesToNFA(false, [2]rune{'A', 'Z'})
 	case "[:lower:]":
-		node, chars = runeRangesToAlt(false, [2]rune{'a', 'z'})
+		nfa, chars = runeRangesToNFA(false, [2]rune{'a', 'z'})
 	case "[:alpha:]":
-		node, chars = runeRangesToAlt(false, [2]rune{'A', 'Z'}, [2]rune{'a', 'z'})
+		nfa, chars = runeRangesToNFA(false, [2]rune{'A', 'Z'}, [2]rune{'a', 'z'})
 	case "[:alnum:]":
-		node, chars = runeRangesToAlt(false, [2]rune{'0', '9'}, [2]rune{'A', 'Z'}, [2]rune{'a', 'z'})
+		nfa, chars = runeRangesToNFA(false, [2]rune{'0', '9'}, [2]rune{'A', 'Z'}, [2]rune{'a', 'z'})
 	case "[:word:]":
-		node, chars = runeRangesToAlt(false, [2]rune{'0', '9'}, [2]rune{'A', 'Z'}, [2]rune{'_', '_'}, [2]rune{'a', 'z'})
+		nfa, chars = runeRangesToNFA(false, [2]rune{'0', '9'}, [2]rune{'A', 'Z'}, [2]rune{'_', '_'}, [2]rune{'a', 'z'})
 	case "[:ascii:]":
-		node, chars = runeRangesToAlt(false, [2]rune{0x00, 0x7f})
+		nfa, chars = runeRangesToNFA(false, [2]rune{0x00, 0x7f})
 	default:
 		return comb.Result{}, false
 	}
 
 	return comb.Result{
-		Val: node,
+		Val: nfa,
 		Pos: r.Pos,
 		Bag: comb.Bag{
 			bagKeyChars: chars,
@@ -253,28 +250,28 @@ func (m *mappers) ToASCIICharClass(r comb.Result) (comb.Result, bool) {
 func (m *mappers) ToCharClass(r comb.Result) (comb.Result, bool) {
 	class := r.Val.(string)
 
-	var node *Alt
+	var nfa *auto.NFA
 	var chars []rune
 
 	switch class {
 	case `\d`:
-		node, chars = runeRangesToAlt(false, [2]rune{'0', '9'})
+		nfa, chars = runeRangesToNFA(false, [2]rune{'0', '9'})
 	case `\D`:
-		node, chars = runeRangesToAlt(true, [2]rune{'0', '9'})
+		nfa, chars = runeRangesToNFA(true, [2]rune{'0', '9'})
 	case `\s`:
-		node, chars = runesToAlt(false, ' ', '\t', '\n', '\r', '\f')
+		nfa, chars = runesToNFA(false, ' ', '\t', '\n', '\r', '\f')
 	case `\S`:
-		node, chars = runesToAlt(true, ' ', '\t', '\n', '\r', '\f')
+		nfa, chars = runesToNFA(true, ' ', '\t', '\n', '\r', '\f')
 	case `\w`:
-		node, chars = runeRangesToAlt(false, [2]rune{'0', '9'}, [2]rune{'A', 'Z'}, [2]rune{'_', '_'}, [2]rune{'a', 'z'})
+		nfa, chars = runeRangesToNFA(false, [2]rune{'0', '9'}, [2]rune{'A', 'Z'}, [2]rune{'_', '_'}, [2]rune{'a', 'z'})
 	case `\W`:
-		node, chars = runeRangesToAlt(true, [2]rune{'0', '9'}, [2]rune{'A', 'Z'}, [2]rune{'_', '_'}, [2]rune{'a', 'z'})
+		nfa, chars = runeRangesToNFA(true, [2]rune{'0', '9'}, [2]rune{'A', 'Z'}, [2]rune{'_', '_'}, [2]rune{'a', 'z'})
 	default:
 		return comb.Result{}, false
 	}
 
 	return comb.Result{
-		Val: node,
+		Val: nfa,
 		Pos: r.Pos,
 		Bag: comb.Bag{
 			bagKeyChars: chars,
@@ -283,13 +280,13 @@ func (m *mappers) ToCharClass(r comb.Result) (comb.Result, bool) {
 }
 
 func (m *mappers) ToAnyChar(r comb.Result) (comb.Result, bool) {
-	alt := new(Alt)
+	nfa := auto.NewNFA(0, auto.States{1})
 	for _, r := range parser.Alphabet {
-		alt.Exprs = append(alt.Exprs, runeToChar(r))
+		nfa.Add(0, auto.Symbol(r), auto.States{1})
 	}
 
 	return comb.Result{
-		Val: alt,
+		Val: nfa,
 		Pos: r.Pos,
 	}, true
 }
@@ -303,11 +300,11 @@ func (m *mappers) ToMatch(r comb.Result) (comb.Result, bool) {
 	r0, _ := r.Get(0)
 	r1, _ := r.Get(1)
 
-	node := r0.Val.(Node)
+	nfa := r0.Val.(*auto.NFA)
 	var bag comb.Bag
 
 	if t, ok := r1.Val.(tuple[any, bool]); ok {
-		node = quantifyNode(node, t.p)
+		nfa = quantifyNFA(nfa, t.p)
 		if lazy := t.q; lazy {
 			bag = comb.Bag{
 				bagKeyLazyQuantifier: true,
@@ -316,7 +313,7 @@ func (m *mappers) ToMatch(r comb.Result) (comb.Result, bool) {
 	}
 
 	return comb.Result{
-		Val: node,
+		Val: nfa,
 		Pos: r0.Pos,
 		Bag: bag,
 	}, true
@@ -342,11 +339,11 @@ func (m *mappers) ToGroup(r comb.Result) (comb.Result, bool) {
 	r1, _ := r.Get(1)
 	r3, _ := r.Get(3)
 
-	node := r1.Val.(Node)
+	nfa := r1.Val.(*auto.NFA)
 	var bag comb.Bag
 
 	if t, ok := r3.Val.(tuple[any, bool]); ok {
-		node = quantifyNode(node, t.p)
+		nfa = quantifyNFA(nfa, t.p)
 		if lazy := t.q; lazy {
 			bag = comb.Bag{
 				bagKeyLazyQuantifier: true,
@@ -355,7 +352,7 @@ func (m *mappers) ToGroup(r comb.Result) (comb.Result, bool) {
 	}
 
 	return comb.Result{
-		Val: node,
+		Val: nfa,
 		Pos: r0.Pos,
 		Bag: bag,
 	}, true
@@ -369,16 +366,18 @@ func (m *mappers) ToSubexprItem(r comb.Result) (comb.Result, bool) {
 func (m *mappers) ToSubexpr(r comb.Result) (comb.Result, bool) {
 	items := r.Val.(comb.List)
 
-	concat := new(Concat)
+	ns := []*auto.NFA{}
 	for _, r := range items {
 		// TODO: Anchor result value is not a node
-		if n, ok := r.Val.(Node); ok {
-			concat.Exprs = append(concat.Exprs, n)
+		if n, ok := r.Val.(*auto.NFA); ok {
+			ns = append(ns, n)
 		}
 	}
 
+	nfa := Concat(ns...)
+
 	return comb.Result{
-		Val: concat,
+		Val: nfa,
 		Pos: r.Pos,
 	}, true
 }
@@ -387,18 +386,16 @@ func (m *mappers) ToExpr(r comb.Result) (comb.Result, bool) {
 	r0, _ := r.Get(0)
 	r1, _ := r.Get(1)
 
-	node := r0.Val.(Node)
+	nfa := r0.Val.(*auto.NFA)
 
 	if _, ok := r1.Val.(comb.List); ok {
 		r11, _ := r1.Get(1)
-		expr := r11.Val.(Node)
-		node = &Alt{
-			Exprs: []Node{node, expr},
-		}
+		expr := r11.Val.(*auto.NFA)
+		nfa = Alt(nfa, expr)
 	}
 
 	return comb.Result{
-		Val: node,
+		Val: nfa,
 		Pos: r0.Pos,
 	}, true
 }
@@ -418,10 +415,10 @@ func (m *mappers) ToRegex(r comb.Result) (comb.Result, bool) {
 		}
 	}
 
-	expr := r1.Val.(Node)
+	nfa := r1.Val.(*auto.NFA)
 
 	return comb.Result{
-		Val: expr,
+		Val: nfa,
 		Pos: pos,
 		Bag: bag,
 	}, true
@@ -434,32 +431,32 @@ type tuple[P, Q any] struct {
 	q Q
 }
 
-func runeToChar(r rune) *Char {
-	return &Char{
-		Val: r,
-		// Pos will be set after the entire abstract syntax tree is constructed.
-	}
+func runeToNFA(r rune) *auto.NFA {
+	nfa := auto.NewNFA(0, auto.States{1})
+	nfa.Add(0, auto.Symbol(r), auto.States{1})
+
+	return nfa
 }
 
-func runesToAlt(neg bool, runes ...rune) (*Alt, []rune) {
-	alt := new(Alt)
+func runesToNFA(neg bool, runes ...rune) (*auto.NFA, []rune) {
+	nfa := auto.NewNFA(0, auto.States{1})
 	chars := []rune{}
 
 	if neg {
 		for _, r := range parser.Alphabet {
 			if !containsRune(r, runes) {
-				alt.Exprs = append(alt.Exprs, runeToChar(r))
+				nfa.Add(0, auto.Symbol(r), auto.States{1})
 				chars = append(chars, r)
 			}
 		}
 	} else {
 		for _, r := range runes {
-			alt.Exprs = append(alt.Exprs, runeToChar(r))
+			nfa.Add(0, auto.Symbol(r), auto.States{1})
 			chars = append(chars, r)
 		}
 	}
 
-	return alt, chars
+	return nfa, chars
 }
 
 func containsRune(r rune, runes []rune) bool {
@@ -471,27 +468,27 @@ func containsRune(r rune, runes []rune) bool {
 	return false
 }
 
-func runeRangesToAlt(neg bool, ranges ...[2]rune) (*Alt, []rune) {
-	alt := new(Alt)
+func runeRangesToNFA(neg bool, ranges ...[2]rune) (*auto.NFA, []rune) {
+	nfa := auto.NewNFA(0, auto.States{1})
 	chars := []rune{}
 
 	if neg {
 		for _, r := range parser.Alphabet {
 			if !includesRune(r, ranges...) {
-				alt.Exprs = append(alt.Exprs, runeToChar(r))
+				nfa.Add(0, auto.Symbol(r), auto.States{1})
 				chars = append(chars, r)
 			}
 		}
 	} else {
 		for _, g := range ranges {
 			for r := g[0]; r <= g[1]; r++ {
-				alt.Exprs = append(alt.Exprs, runeToChar(r))
+				nfa.Add(0, auto.Symbol(r), auto.States{1})
 				chars = append(chars, r)
 			}
 		}
 	}
 
-	return alt, chars
+	return nfa, chars
 }
 
 func includesRune(r rune, ranges ...[2]rune) bool {
@@ -503,123 +500,40 @@ func includesRune(r rune, ranges ...[2]rune) bool {
 	return false
 }
 
-func quantifyNode(n Node, q any) Node {
-	var node Node
+func quantifyNFA(n *auto.NFA, q any) *auto.NFA {
+	var nfa *auto.NFA
 
 	switch rep := q.(type) {
 	// Simple repetition
 	case rune:
 		switch rep {
 		case '?':
-			node = &Alt{
-				Exprs: []Node{
-					&Empty{},
-					cloneNode(n),
-				},
-			}
-
+			nfa = Alt(Empty(), n)
 		case '*':
-			node = &Star{
-				Expr: cloneNode(n),
-			}
-
+			nfa = Star(n)
 		case '+':
-			node = &Concat{
-				Exprs: []Node{
-					cloneNode(n),
-					&Star{
-						Expr: cloneNode(n),
-					},
-				},
-			}
+			nfa = Concat(n, Star(n))
 		}
 
 	// Range repetition
 	case tuple[int, *int]:
 		low, up := rep.p, rep.q
-		concat := new(Concat)
+		ns := []*auto.NFA{}
 
 		for i := 0; i < low; i++ {
-			concat.Exprs = append(concat.Exprs, cloneNode(n))
+			ns = append(ns, n)
 		}
 
 		if up == nil {
-			concat.Exprs = append(concat.Exprs, &Star{
-				Expr: cloneNode(n),
-			})
+			ns = append(ns, Star(n))
 		} else {
 			for i := 0; i < *up-low; i++ {
-				concat.Exprs = append(concat.Exprs, &Alt{
-					Exprs: []Node{
-						&Empty{},
-						cloneNode(n),
-					},
-				})
+				ns = append(ns, Alt(Empty(), n))
 			}
 		}
 
-		node = concat
+		nfa = Concat(ns...)
 	}
 
-	return node
-}
-
-// Clonig is required since each instance of Char will have a distinct value for Pos field.
-func cloneNode(n Node) Node {
-	switch v := n.(type) {
-	case *Concat:
-		concat := new(Concat)
-		for _, e := range v.Exprs {
-			concat.Exprs = append(concat.Exprs, cloneNode(e))
-		}
-		return concat
-
-	case *Alt:
-		alt := new(Alt)
-		for _, e := range v.Exprs {
-			alt.Exprs = append(alt.Exprs, cloneNode(e))
-		}
-		return alt
-
-	case *Star:
-		return &Star{
-			Expr: cloneNode(v.Expr),
-		}
-
-	case *Empty:
-		return new(Empty)
-
-	case *Char:
-		return &Char{
-			Val: v.Val,
-			Pos: v.Pos,
-		}
-
-	default:
-		return nil
-	}
-}
-
-// setCharPos backfills Pos field for all Char nodes in the abstract syntaxt tree from left to right.
-// These positions are one-based and used for directly converting a regular expression to a DFA.
-// They are semantically different from the zero-based positions set by parsers (in the mappers).
-func setCharPos(n Node, pos *int) {
-	switch v := n.(type) {
-	case *Concat:
-		for _, e := range v.Exprs {
-			setCharPos(e, pos)
-		}
-
-	case *Alt:
-		for _, e := range v.Exprs {
-			setCharPos(e, pos)
-		}
-
-	case *Star:
-		setCharPos(v.Expr, pos)
-
-	case *Char:
-		*pos++
-		v.Pos = *pos
-	}
+	return nfa
 }
