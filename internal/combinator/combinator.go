@@ -1,5 +1,20 @@
-// package combinator provides all data types and primitive constructs for building a parser combinator.
+// package combinator provides all data types and primitive constructs for building a parser combinator in Go.
+//
+// A parser combinator is a higher-order function that accepts several parsers as input and returns a new parser as its output.
+// A parser is a function accepting an input stream of characters and returning an output structure
+// (an abstract syntax tree, a finite automata, etc.).
+//
+// Parser combinators enable a top-down recursive descent parsing strategy that facilitates modular construction and testing.
 package combinator
+
+type (
+	// BagKey is the type for the keys in Bag type.
+	BagKey string
+	// BagKey is the type for the values in Bag type.
+	BagVal any
+	// Bag is the type for a collection of key-value pairs.
+	Bag map[BagKey]BagVal
+)
 
 type (
 	// Empty is the empty string ε.
@@ -8,8 +23,14 @@ type (
 	// Result is the result of parsing a production rule.
 	// It represents a production rule result.
 	Result struct {
+		// Val is the actual result of a parser function.
+		// It can be an abstract syntax tree, a finite automata, or any other data structure.
 		Val any
+		// Pos is the first position in the source corresponding to the parsing result.
 		Pos int
+		// Bag is an optional collection of key-value pairs holding extra information and metadata about the parsing result.
+		// You should always check this field to be not nil before using it.
+		Bag Bag
 	}
 
 	// List is the type for the result of concatenation or repetition.
@@ -32,34 +53,37 @@ type (
 	}
 
 	// Parser is the type for a function that receives a parsing input and returns a parsing output.
+	// The second return value determines whether or not the parsing was successful and the output is valid.
 	Parser func(Input) (Output, bool)
 )
 
 type (
-	// mapper is the type for a function that receives a parsing result and returns a new value for the result.
-	Mapper func(any) (any, bool)
+	// Mapper is a function that receives a parsing result and returns a new result.
+	// The second return value determines whether or not the mapping was successful and the first value is valid.
+	Mapper func(Result) (Result, bool)
 
-	// binder is the type for a function that receives a parsing result and returns a new parser.
+	// Binder is a function that receives a parsing result and returns a new parser.
+	// It is often used for modifying the behavior of previous parsers in the chain.
 	Binder func(Result) Parser
 )
 
-// GetAt returns the value of a symbol from the right-side of a production rule.
+// Get returns the parsing result of a symbol from the right-side of a production rule.
 //
 // Example:
 //
 // • Production Rule: range --> "{" num ( "," num? )? "}"
 //
-// • in = {2,4}
+// • r = {2,4}
 //
-// • GetAt(in, 1) = 2, get(in, 3) = 4
-func GetAt(v any, i int) (any, bool) {
-	if l, ok := v.(List); ok {
+// • r.Get(1) = 2, r.Get(3) = 4
+func (r *Result) Get(i int) (Result, bool) {
+	if l, ok := r.Val.(List); ok {
 		if 0 <= i && i < len(l) {
-			return l[i].Val, true
+			return l[i], true
 		}
 	}
 
-	return nil, false
+	return Result{}, false
 }
 
 // ExpectRune creates a parser that returns a successful result only if the input starts with the given rune.
@@ -71,7 +95,7 @@ func ExpectRune(r rune) Parser {
 
 		if curr, pos := in.Current(); curr == r {
 			return Output{
-				Result:    Result{r, pos},
+				Result:    Result{r, pos, nil},
 				Remaining: in.Remaining(),
 			}, true
 		}
@@ -90,7 +114,7 @@ func ExpectRuneIn(runes ...rune) Parser {
 		for _, r := range runes {
 			if curr, pos := in.Current(); curr == r {
 				return Output{
-					Result:    Result{r, pos},
+					Result:    Result{r, pos, nil},
 					Remaining: in.Remaining(),
 				}, true
 			}
@@ -109,7 +133,7 @@ func ExpectRuneInRange(low, up rune) Parser {
 
 		if r, pos := in.Current(); low <= r && r <= up {
 			return Output{
-				Result:    Result{r, pos},
+				Result:    Result{r, pos, nil},
 				Remaining: in.Remaining(),
 			}, true
 		}
@@ -142,7 +166,7 @@ func ExpectRunes(runes ...rune) Parser {
 		}
 
 		return Output{
-			Result:    Result{runes, pos},
+			Result:    Result{runes, pos, nil},
 			Remaining: in,
 		}, true
 	}
@@ -152,10 +176,8 @@ func ExpectRunes(runes ...rune) Parser {
 func ExpectString(s string) Parser {
 	return func(in Input) (Output, bool) {
 		if out, ok := ExpectRunes([]rune(s)...)(in); ok {
-			return Output{
-				Result:    Result{s, out.Result.Pos},
-				Remaining: out.Remaining,
-			}, true
+			out.Result.Val = s
+			return out, true
 		}
 
 		return Output{}, false
@@ -205,7 +227,7 @@ func (p Parser) CONCAT(q ...Parser) Parser {
 		}
 
 		return Output{
-			Result:    Result{l, l[0].Pos},
+			Result:    Result{l, l[0].Pos, nil},
 			Remaining: in,
 		}, true
 	}
@@ -246,7 +268,6 @@ func (p Parser) OPT() Parser {
 
 		return Output{
 			Result: Result{
-				// Position for empty string ε is not defined
 				Val: Empty{},
 			},
 			Remaining: in,
@@ -280,11 +301,10 @@ func (p Parser) REP() Parser {
 
 		if len(l) == 0 {
 			out.Result = Result{
-				// Position for empty string ε is not defined
 				Val: Empty{},
 			}
 		} else {
-			out.Result = Result{l, l[0].Pos}
+			out.Result = Result{l, l[0].Pos, nil}
 		}
 
 		return out, true
@@ -309,20 +329,20 @@ func (p Parser) REP1() Parser {
 	}
 }
 
-func flatten(res Result) List {
-	switch v := res.Val.(type) {
+func flatten(r Result) List {
+	switch v := r.Val.(type) {
 	case Empty:
 		return List{}
 
 	case List:
 		var l List
-		for _, v := range v {
-			l = append(l, flatten(v)...)
+		for _, w := range v {
+			l = append(l, flatten(w)...)
 		}
 		return l
 
 	default:
-		return List{res}
+		return List{r}
 	}
 }
 
@@ -331,11 +351,8 @@ func flatten(res Result) List {
 func (p Parser) Flatten() Parser {
 	return func(in Input) (Output, bool) {
 		if out, ok := p(in); ok {
-			val := flatten(out.Result)
-			return Output{
-				Result:    Result{val, out.Result.Pos},
-				Remaining: out.Remaining,
-			}, true
+			out.Result.Val = flatten(out.Result)
+			return out, true
 		}
 
 		return Output{}, false
@@ -344,7 +361,7 @@ func (p Parser) Flatten() Parser {
 
 // Select composes a parser that applies parser p to the input and returns a list of symbols from the right-side of the production rule.
 // This will not have any effect if the result of parsing is not a list.
-// If indices are invalid, you will get an empty string (ε).
+// If indices are invalid, you will get the empty string ε.
 func (p Parser) Select(i ...int) Parser {
 	return func(in Input) (Output, bool) {
 		out, ok := p(in)
@@ -366,10 +383,9 @@ func (p Parser) Select(i ...int) Parser {
 
 		var res Result
 		if len(sub) > 0 {
-			res = Result{sub, sub[0].Pos}
+			res = Result{sub, sub[0].Pos, nil}
 		} else {
 			res = Result{
-				// Position for empty string ε is not defined
 				Val: Empty{},
 			}
 		}
@@ -384,7 +400,7 @@ func (p Parser) Select(i ...int) Parser {
 // Get composes a parser that applies parser p to the input and returns the value of a symbol from the right-side of the production rule.
 // This can be used after CONCAT, REP, REP1, Flatten, and/or Select.
 // It will not have any effect if used after other operators and the result of parsing is not a list.
-// If index is invalid, you will get an empty string (ε).
+// If index is invalid, you will get the empty string ε.
 func (p Parser) Get(i int) Parser {
 	return func(in Input) (Output, bool) {
 		out, ok := p(in)
@@ -402,7 +418,6 @@ func (p Parser) Get(i int) Parser {
 			res = l[i]
 		} else {
 			res = Result{
-				// Position for empty string ε is not defined
 				Val: Empty{},
 			}
 		}
@@ -419,11 +434,9 @@ func (p Parser) Get(i int) Parser {
 func (p Parser) Map(f Mapper) Parser {
 	return func(in Input) (Output, bool) {
 		if out, ok := p(in); ok {
-			if val, ok := f(out.Result.Val); ok {
-				return Output{
-					Result:    Result{val, out.Result.Pos},
-					Remaining: out.Remaining,
-				}, true
+			if res, ok := f(out.Result); ok {
+				out.Result = res
+				return out, true
 			}
 		}
 
