@@ -149,6 +149,7 @@ func (n *Empty) LastPos() []int {
 // Char represents a Character leaf node.
 type Char struct {
 	Val rune
+	// Pos is one-based.
 	Pos int
 }
 
