@@ -1,22 +1,22 @@
-package ast
+package nfa
 
 import (
 	"testing"
 
+	auto "github.com/moorara/algo/automata"
 	"github.com/stretchr/testify/assert"
 
 	comb "github.com/gardenbed/emerge/internal/combinator"
 )
 
 func TestParse(t *testing.T) {
+	nfas := createTestNFAs()
+
 	tests := []struct {
-		name             string
-		in               comb.Input
-		expectedError    string
-		expectedAST      Node
-		expectedNullable bool
-		expectedFirstPos []int
-		expectedLastPos  []int
+		name          string
+		in            comb.Input
+		expectedError string
+		expectedNFA   *auto.NFA
 	}{
 		{
 			name:          "InvalidRegex",
@@ -35,193 +35,34 @@ func TestParse(t *testing.T) {
 		},
 		{
 			name: "Success",
-			in:   newStringInput(`^[A-Z]?[a-z][0-9a-z]{1,}$`),
-			expectedAST: &Concat{
-				Exprs: []Node{
-					&Alt{
-						Exprs: []Node{
-							&Empty{},
-							&Alt{
-								Exprs: []Node{
-									&Char{Val: 'A', Pos: 1},
-									&Char{Val: 'B', Pos: 2},
-									&Char{Val: 'C', Pos: 3},
-									&Char{Val: 'D', Pos: 4},
-									&Char{Val: 'E', Pos: 5},
-									&Char{Val: 'F', Pos: 6},
-									&Char{Val: 'G', Pos: 7},
-									&Char{Val: 'H', Pos: 8},
-									&Char{Val: 'I', Pos: 9},
-									&Char{Val: 'J', Pos: 10},
-									&Char{Val: 'K', Pos: 11},
-									&Char{Val: 'L', Pos: 12},
-									&Char{Val: 'M', Pos: 13},
-									&Char{Val: 'N', Pos: 14},
-									&Char{Val: 'O', Pos: 15},
-									&Char{Val: 'P', Pos: 16},
-									&Char{Val: 'Q', Pos: 17},
-									&Char{Val: 'R', Pos: 18},
-									&Char{Val: 'S', Pos: 19},
-									&Char{Val: 'T', Pos: 20},
-									&Char{Val: 'U', Pos: 21},
-									&Char{Val: 'V', Pos: 22},
-									&Char{Val: 'W', Pos: 23},
-									&Char{Val: 'X', Pos: 24},
-									&Char{Val: 'Y', Pos: 25},
-									&Char{Val: 'Z', Pos: 26},
-								},
-							},
-						},
-					},
-					&Alt{
-						Exprs: []Node{
-							&Char{Val: 'a', Pos: 27},
-							&Char{Val: 'b', Pos: 28},
-							&Char{Val: 'c', Pos: 29},
-							&Char{Val: 'd', Pos: 30},
-							&Char{Val: 'e', Pos: 31},
-							&Char{Val: 'f', Pos: 32},
-							&Char{Val: 'g', Pos: 33},
-							&Char{Val: 'h', Pos: 34},
-							&Char{Val: 'i', Pos: 35},
-							&Char{Val: 'j', Pos: 36},
-							&Char{Val: 'k', Pos: 37},
-							&Char{Val: 'l', Pos: 38},
-							&Char{Val: 'm', Pos: 39},
-							&Char{Val: 'n', Pos: 40},
-							&Char{Val: 'o', Pos: 41},
-							&Char{Val: 'p', Pos: 42},
-							&Char{Val: 'q', Pos: 43},
-							&Char{Val: 'r', Pos: 44},
-							&Char{Val: 's', Pos: 45},
-							&Char{Val: 't', Pos: 46},
-							&Char{Val: 'u', Pos: 47},
-							&Char{Val: 'v', Pos: 48},
-							&Char{Val: 'w', Pos: 49},
-							&Char{Val: 'x', Pos: 50},
-							&Char{Val: 'y', Pos: 51},
-							&Char{Val: 'z', Pos: 52},
-						},
-					},
-					&Concat{
-						Exprs: []Node{
-							&Alt{
-								Exprs: []Node{
-									&Char{Val: '0', Pos: 53},
-									&Char{Val: '1', Pos: 54},
-									&Char{Val: '2', Pos: 55},
-									&Char{Val: '3', Pos: 56},
-									&Char{Val: '4', Pos: 57},
-									&Char{Val: '5', Pos: 58},
-									&Char{Val: '6', Pos: 59},
-									&Char{Val: '7', Pos: 60},
-									&Char{Val: '8', Pos: 61},
-									&Char{Val: '9', Pos: 62},
-									&Char{Val: 'a', Pos: 63},
-									&Char{Val: 'b', Pos: 64},
-									&Char{Val: 'c', Pos: 65},
-									&Char{Val: 'd', Pos: 66},
-									&Char{Val: 'e', Pos: 67},
-									&Char{Val: 'f', Pos: 68},
-									&Char{Val: 'g', Pos: 69},
-									&Char{Val: 'h', Pos: 70},
-									&Char{Val: 'i', Pos: 71},
-									&Char{Val: 'j', Pos: 72},
-									&Char{Val: 'k', Pos: 73},
-									&Char{Val: 'l', Pos: 74},
-									&Char{Val: 'm', Pos: 75},
-									&Char{Val: 'n', Pos: 76},
-									&Char{Val: 'o', Pos: 77},
-									&Char{Val: 'p', Pos: 78},
-									&Char{Val: 'q', Pos: 79},
-									&Char{Val: 'r', Pos: 80},
-									&Char{Val: 's', Pos: 81},
-									&Char{Val: 't', Pos: 82},
-									&Char{Val: 'u', Pos: 83},
-									&Char{Val: 'v', Pos: 84},
-									&Char{Val: 'w', Pos: 85},
-									&Char{Val: 'x', Pos: 86},
-									&Char{Val: 'y', Pos: 87},
-									&Char{Val: 'z', Pos: 88},
-								},
-							},
-							&Star{
-								Expr: &Alt{
-									Exprs: []Node{
-										&Char{Val: '0', Pos: 89},
-										&Char{Val: '1', Pos: 90},
-										&Char{Val: '2', Pos: 91},
-										&Char{Val: '3', Pos: 92},
-										&Char{Val: '4', Pos: 93},
-										&Char{Val: '5', Pos: 94},
-										&Char{Val: '6', Pos: 95},
-										&Char{Val: '7', Pos: 96},
-										&Char{Val: '8', Pos: 97},
-										&Char{Val: '9', Pos: 98},
-										&Char{Val: 'a', Pos: 99},
-										&Char{Val: 'b', Pos: 100},
-										&Char{Val: 'c', Pos: 101},
-										&Char{Val: 'd', Pos: 102},
-										&Char{Val: 'e', Pos: 103},
-										&Char{Val: 'f', Pos: 104},
-										&Char{Val: 'g', Pos: 105},
-										&Char{Val: 'h', Pos: 106},
-										&Char{Val: 'i', Pos: 107},
-										&Char{Val: 'j', Pos: 108},
-										&Char{Val: 'k', Pos: 109},
-										&Char{Val: 'l', Pos: 110},
-										&Char{Val: 'm', Pos: 111},
-										&Char{Val: 'n', Pos: 112},
-										&Char{Val: 'o', Pos: 113},
-										&Char{Val: 'p', Pos: 114},
-										&Char{Val: 'q', Pos: 115},
-										&Char{Val: 'r', Pos: 116},
-										&Char{Val: 's', Pos: 117},
-										&Char{Val: 't', Pos: 118},
-										&Char{Val: 'u', Pos: 119},
-										&Char{Val: 'v', Pos: 120},
-										&Char{Val: 'w', Pos: 121},
-										&Char{Val: 'x', Pos: 122},
-										&Char{Val: 'y', Pos: 123},
-										&Char{Val: 'z', Pos: 124},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			expectedNullable: false,
-			expectedFirstPos: []int{
-				1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
-				27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52,
-			},
-			expectedLastPos: []int{
-				53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88,
-				89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124,
-			},
+			in:   newStringInput(`^[A-Z]?[a-z][0-9A-Za-z]{1,}$`),
+			expectedNFA: Concat(
+				Alt(Empty(), nfas["upper"]),
+				nfas["lower"],
+				Concat(nfas["alnum"], Star(nfas["alnum"])),
+			),
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			ast, err := Parse(tc.in)
+			nfa, err := Parse(tc.in)
 
 			if tc.expectedError != "" {
-				assert.Nil(t, ast)
+				assert.Nil(t, nfa)
 				assert.EqualError(t, err, tc.expectedError)
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, tc.expectedAST, ast)
-				assert.Equal(t, tc.expectedNullable, ast.Nullable())
-				assert.Equal(t, tc.expectedFirstPos, ast.FirstPos())
-				assert.Equal(t, tc.expectedLastPos, ast.LastPos())
+				assert.True(t, nfa.Equals(tc.expectedNFA))
 			}
 		})
 	}
 }
 
 func TestMappers_ToUnescapedChar(t *testing.T) {
+	xNFA := auto.NewNFA(0, auto.States{1})
+	xNFA.Add(0, 'x', auto.States{1})
+
 	tests := []MapperTest{
 		{
 			name: "Success",
@@ -230,7 +71,7 @@ func TestMappers_ToUnescapedChar(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: &Char{Val: 'x'},
+				Val: xNFA,
 				Pos: 2,
 				Bag: comb.Bag{
 					bagKeyChars: []rune{'x'},
@@ -245,7 +86,7 @@ func TestMappers_ToUnescapedChar(t *testing.T) {
 			m := new(mappers)
 			res, ok := m.ToUnescapedChar(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
+			EqualResults(t, tc.expectedResult, res)
 			assert.Equal(t, tc.expectedOK, ok)
 
 			if tc.expectedError != "" {
@@ -256,6 +97,9 @@ func TestMappers_ToUnescapedChar(t *testing.T) {
 }
 
 func TestMappers_ToEscapedChar(t *testing.T) {
+	asteriskNFA := auto.NewNFA(0, auto.States{1})
+	asteriskNFA.Add(0, '*', auto.States{1})
+
 	tests := []MapperTest{
 		{
 			name: "Success",
@@ -267,7 +111,7 @@ func TestMappers_ToEscapedChar(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: &Char{Val: '*'},
+				Val: asteriskNFA,
 				Pos: 2,
 				Bag: comb.Bag{
 					bagKeyChars: []rune{'*'},
@@ -282,7 +126,7 @@ func TestMappers_ToEscapedChar(t *testing.T) {
 			m := new(mappers)
 			res, ok := m.ToEscapedChar(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
+			EqualResults(t, tc.expectedResult, res)
 			assert.Equal(t, tc.expectedOK, ok)
 
 			if tc.expectedError != "" {
@@ -313,7 +157,7 @@ func TestMappers_ToRepOp(t *testing.T) {
 			m := new(mappers)
 			res, ok := m.ToRepOp(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
+			EqualResults(t, tc.expectedResult, res)
 			assert.Equal(t, tc.expectedOK, ok)
 
 			if tc.expectedError != "" {
@@ -362,7 +206,7 @@ func TestMappers_ToUpperBound(t *testing.T) {
 			m := new(mappers)
 			res, ok := m.ToUpperBound(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
+			EqualResults(t, tc.expectedResult, res)
 			assert.Equal(t, tc.expectedOK, ok)
 
 			if tc.expectedError != "" {
@@ -471,7 +315,7 @@ func TestMappers_ToRange(t *testing.T) {
 			m := new(mappers)
 			res, ok := m.ToRange(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
+			EqualResults(t, tc.expectedResult, res)
 			assert.Equal(t, tc.expectedOK, ok)
 
 			if tc.expectedError != "" {
@@ -502,7 +346,7 @@ func TestMappers_ToRepetition(t *testing.T) {
 			m := new(mappers)
 			res, ok := m.ToRepetition(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
+			EqualResults(t, tc.expectedResult, res)
 			assert.Equal(t, tc.expectedOK, ok)
 
 			if tc.expectedError != "" {
@@ -557,7 +401,7 @@ func TestMappers_ToQuantifier(t *testing.T) {
 			m := new(mappers)
 			res, ok := m.ToQuantifier(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
+			EqualResults(t, tc.expectedResult, res)
 			assert.Equal(t, tc.expectedOK, ok)
 
 			if tc.expectedError != "" {
@@ -568,6 +412,14 @@ func TestMappers_ToQuantifier(t *testing.T) {
 }
 
 func TestMappers_ToCharRange(t *testing.T) {
+	aTofNFA := auto.NewNFA(0, auto.States{1})
+	aTofNFA.Add(0, 'a', auto.States{1})
+	aTofNFA.Add(0, 'b', auto.States{1})
+	aTofNFA.Add(0, 'c', auto.States{1})
+	aTofNFA.Add(0, 'd', auto.States{1})
+	aTofNFA.Add(0, 'e', auto.States{1})
+	aTofNFA.Add(0, 'f', auto.States{1})
+
 	tests := []MapperTest{
 		{
 			name: "Success",
@@ -580,16 +432,7 @@ func TestMappers_ToCharRange(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: &Alt{
-					Exprs: []Node{
-						&Char{Val: 'a'},
-						&Char{Val: 'b'},
-						&Char{Val: 'c'},
-						&Char{Val: 'd'},
-						&Char{Val: 'e'},
-						&Char{Val: 'f'},
-					},
-				},
+				Val: aTofNFA,
 				Pos: 2,
 				Bag: comb.Bag{
 					bagKeyChars: []rune{'a', 'b', 'c', 'd', 'e', 'f'},
@@ -608,7 +451,7 @@ func TestMappers_ToCharRange(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: &Alt{},
+				Val: auto.NewNFA(0, auto.States{1}),
 				Pos: 2,
 				Bag: comb.Bag{
 					bagKeyChars: []rune{},
@@ -624,7 +467,7 @@ func TestMappers_ToCharRange(t *testing.T) {
 			m := new(mappers)
 			res, ok := m.ToCharRange(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
+			EqualResults(t, tc.expectedResult, res)
 			assert.Equal(t, tc.expectedOK, ok)
 
 			if tc.expectedError != "" {
@@ -635,18 +478,20 @@ func TestMappers_ToCharRange(t *testing.T) {
 }
 
 func TestMappers_ToCharGroupItem(t *testing.T) {
+	nfas := createTestNFAs()
+
 	tests := []MapperTest{
 		{
 			name: "Success",
 			r: comb.Result{
-				Val: digit,
+				Val: nfas["digit"],
 				Pos: 2,
 				Bag: comb.Bag{
 					bagKeyChars: digitChars,
 				},
 			},
 			expectedResult: comb.Result{
-				Val: digit,
+				Val: nfas["digit"],
 				Pos: 2,
 				Bag: comb.Bag{
 					bagKeyChars: digitChars,
@@ -661,7 +506,7 @@ func TestMappers_ToCharGroupItem(t *testing.T) {
 			m := new(mappers)
 			res, ok := m.ToCharGroupItem(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
+			EqualResults(t, tc.expectedResult, res)
 			assert.Equal(t, tc.expectedOK, ok)
 
 			if tc.expectedError != "" {
@@ -672,6 +517,37 @@ func TestMappers_ToCharGroupItem(t *testing.T) {
 }
 
 func TestMappers_ToCharGroup(t *testing.T) {
+	nfas := createTestNFAs()
+
+	hyphenNFA := auto.NewNFA(0, auto.States{1})
+	hyphenNFA.Add(0, '-', auto.States{1})
+
+	uuidNFA := auto.NewNFA(0, auto.States{1})
+	uuidNFA.Add(0, '-', auto.States{1})
+	for r := '0'; r <= '9'; r++ {
+		uuidNFA.Add(0, auto.Symbol(r), auto.States{1})
+	}
+	for r := 'A'; r <= 'F'; r++ {
+		uuidNFA.Add(0, auto.Symbol(r), auto.States{1})
+	}
+	for r := 'a'; r <= 'f'; r++ {
+		uuidNFA.Add(0, auto.Symbol(r), auto.States{1})
+	}
+
+	notAlnumNFA := auto.NewNFA(0, auto.States{1})
+	for r := 0; r <= 47; r++ {
+		notAlnumNFA.Add(0, auto.Symbol(r), auto.States{1})
+	}
+	for r := 58; r <= 64; r++ {
+		notAlnumNFA.Add(0, auto.Symbol(r), auto.States{1})
+	}
+	for r := 91; r <= 96; r++ {
+		notAlnumNFA.Add(0, auto.Symbol(r), auto.States{1})
+	}
+	for r := 123; r <= 127; r++ {
+		notAlnumNFA.Add(0, auto.Symbol(r), auto.States{1})
+	}
+
 	tests := []MapperTest{
 		{
 			name: "Success",
@@ -682,14 +558,14 @@ func TestMappers_ToCharGroup(t *testing.T) {
 					{
 						Val: comb.List{
 							{
-								Val: xdigit,
+								Val: nfas["xdigit"],
 								Pos: 3,
 								Bag: comb.Bag{
 									bagKeyChars: xdigitChars,
 								},
 							},
 							{
-								Val: &Char{Val: '-'},
+								Val: hyphenNFA,
 								Pos: 12,
 								Bag: comb.Bag{
 									bagKeyChars: []rune{'-'},
@@ -703,33 +579,7 @@ func TestMappers_ToCharGroup(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: &Alt{
-					Exprs: []Node{
-						&Char{Val: '-'},
-						&Char{Val: '0'},
-						&Char{Val: '1'},
-						&Char{Val: '2'},
-						&Char{Val: '3'},
-						&Char{Val: '4'},
-						&Char{Val: '5'},
-						&Char{Val: '6'},
-						&Char{Val: '7'},
-						&Char{Val: '8'},
-						&Char{Val: '9'},
-						&Char{Val: 'A'},
-						&Char{Val: 'B'},
-						&Char{Val: 'C'},
-						&Char{Val: 'D'},
-						&Char{Val: 'E'},
-						&Char{Val: 'F'},
-						&Char{Val: 'a'},
-						&Char{Val: 'b'},
-						&Char{Val: 'c'},
-						&Char{Val: 'd'},
-						&Char{Val: 'e'},
-						&Char{Val: 'f'},
-					},
-				},
+				Val: uuidNFA,
 				Pos: 2,
 			},
 			expectedOK: true,
@@ -743,7 +593,7 @@ func TestMappers_ToCharGroup(t *testing.T) {
 					{
 						Val: comb.List{
 							{
-								Val: alnum,
+								Val: nfas["alnum"],
 								Pos: 4,
 								Bag: comb.Bag{
 									bagKeyChars: alnumChars,
@@ -757,76 +607,7 @@ func TestMappers_ToCharGroup(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: &Alt{
-					Exprs: []Node{
-						&Char{Val: 0},
-						&Char{Val: 1},
-						&Char{Val: 2},
-						&Char{Val: 3},
-						&Char{Val: 4},
-						&Char{Val: 5},
-						&Char{Val: 6},
-						&Char{Val: 7},
-						&Char{Val: 8},
-						&Char{Val: 9},
-						&Char{Val: 10},
-						&Char{Val: 11},
-						&Char{Val: 12},
-						&Char{Val: 13},
-						&Char{Val: 14},
-						&Char{Val: 15},
-						&Char{Val: 16},
-						&Char{Val: 17},
-						&Char{Val: 18},
-						&Char{Val: 19},
-						&Char{Val: 20},
-						&Char{Val: 21},
-						&Char{Val: 22},
-						&Char{Val: 23},
-						&Char{Val: 24},
-						&Char{Val: 25},
-						&Char{Val: 26},
-						&Char{Val: 27},
-						&Char{Val: 28},
-						&Char{Val: 29},
-						&Char{Val: 30},
-						&Char{Val: 31},
-						&Char{Val: 32},
-						&Char{Val: 33},
-						&Char{Val: 34},
-						&Char{Val: 35},
-						&Char{Val: 36},
-						&Char{Val: 37},
-						&Char{Val: 38},
-						&Char{Val: 39},
-						&Char{Val: 40},
-						&Char{Val: 41},
-						&Char{Val: 42},
-						&Char{Val: 43},
-						&Char{Val: 44},
-						&Char{Val: 45},
-						&Char{Val: 46},
-						&Char{Val: 47},
-						&Char{Val: 58},
-						&Char{Val: 59},
-						&Char{Val: 60},
-						&Char{Val: 61},
-						&Char{Val: 62},
-						&Char{Val: 63},
-						&Char{Val: 64},
-						&Char{Val: 91},
-						&Char{Val: 92},
-						&Char{Val: 93},
-						&Char{Val: 94},
-						&Char{Val: 95},
-						&Char{Val: 96},
-						&Char{Val: 123},
-						&Char{Val: 124},
-						&Char{Val: 125},
-						&Char{Val: 126},
-						&Char{Val: 127},
-					},
-				},
+				Val: notAlnumNFA,
 				Pos: 2,
 			},
 			expectedOK: true,
@@ -838,7 +619,7 @@ func TestMappers_ToCharGroup(t *testing.T) {
 			m := new(mappers)
 			res, ok := m.ToCharGroup(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
+			EqualResults(t, tc.expectedResult, res)
 			assert.Equal(t, tc.expectedOK, ok)
 
 			if tc.expectedError != "" {
@@ -849,6 +630,8 @@ func TestMappers_ToCharGroup(t *testing.T) {
 }
 
 func TestMappers_ToASCIICharClass(t *testing.T) {
+	nfas := createTestNFAs()
+
 	tests := []MapperTest{
 		{
 			name: "Success_Blank",
@@ -857,7 +640,7 @@ func TestMappers_ToASCIICharClass(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: blank,
+				Val: nfas["blank"],
 				Pos: 2,
 				Bag: comb.Bag{
 					bagKeyChars: blankChars,
@@ -872,7 +655,7 @@ func TestMappers_ToASCIICharClass(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: space,
+				Val: nfas["space"],
 				Pos: 2,
 				Bag: comb.Bag{
 					bagKeyChars: spaceChars,
@@ -887,7 +670,7 @@ func TestMappers_ToASCIICharClass(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: digit,
+				Val: nfas["digit"],
 				Pos: 2,
 				Bag: comb.Bag{
 					bagKeyChars: digitChars,
@@ -902,7 +685,7 @@ func TestMappers_ToASCIICharClass(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: xdigit,
+				Val: nfas["xdigit"],
 				Pos: 2,
 				Bag: comb.Bag{
 					bagKeyChars: xdigitChars,
@@ -917,7 +700,7 @@ func TestMappers_ToASCIICharClass(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: upper,
+				Val: nfas["upper"],
 				Pos: 2,
 				Bag: comb.Bag{
 					bagKeyChars: upperChars,
@@ -932,7 +715,7 @@ func TestMappers_ToASCIICharClass(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: lower,
+				Val: nfas["lower"],
 				Pos: 2,
 				Bag: comb.Bag{
 					bagKeyChars: lowerChars,
@@ -947,7 +730,7 @@ func TestMappers_ToASCIICharClass(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: alpha,
+				Val: nfas["alpha"],
 				Pos: 2,
 				Bag: comb.Bag{
 					bagKeyChars: alphaChars,
@@ -962,7 +745,7 @@ func TestMappers_ToASCIICharClass(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: alnum,
+				Val: nfas["alnum"],
 				Pos: 2,
 				Bag: comb.Bag{
 					bagKeyChars: alnumChars,
@@ -977,7 +760,7 @@ func TestMappers_ToASCIICharClass(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: word,
+				Val: nfas["word"],
 				Pos: 2,
 				Bag: comb.Bag{
 					bagKeyChars: wordChars,
@@ -992,7 +775,7 @@ func TestMappers_ToASCIICharClass(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: ascii,
+				Val: nfas["ascii"],
 				Pos: 2,
 				Bag: comb.Bag{
 					bagKeyChars: asciiChars,
@@ -1007,7 +790,7 @@ func TestMappers_ToASCIICharClass(t *testing.T) {
 			m := new(mappers)
 			res, ok := m.ToASCIICharClass(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
+			EqualResults(t, tc.expectedResult, res)
 			assert.Equal(t, tc.expectedOK, ok)
 
 			if tc.expectedError != "" {
@@ -1018,6 +801,8 @@ func TestMappers_ToASCIICharClass(t *testing.T) {
 }
 
 func TestMappers_ToCharClass(t *testing.T) {
+	nfas := createTestNFAs()
+
 	tests := []MapperTest{
 		{
 			name: "Success_Digit",
@@ -1026,7 +811,7 @@ func TestMappers_ToCharClass(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: digit,
+				Val: nfas["digit"],
 				Pos: 2,
 				Bag: comb.Bag{
 					bagKeyChars: digitChars,
@@ -1041,7 +826,7 @@ func TestMappers_ToCharClass(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: notDigit,
+				Val: nfas["notDigit"],
 				Pos: 2,
 				Bag: comb.Bag{
 					bagKeyChars: notDigitChars,
@@ -1056,7 +841,7 @@ func TestMappers_ToCharClass(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: whitespace,
+				Val: nfas["whitespace"],
 				Pos: 2,
 				Bag: comb.Bag{
 					bagKeyChars: whitespaceChars,
@@ -1071,7 +856,7 @@ func TestMappers_ToCharClass(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: notWhitespace,
+				Val: nfas["notWhitespace"],
 				Pos: 2,
 				Bag: comb.Bag{
 					bagKeyChars: notWhitespaceChars,
@@ -1086,7 +871,7 @@ func TestMappers_ToCharClass(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: word,
+				Val: nfas["word"],
 				Pos: 2,
 				Bag: comb.Bag{
 					bagKeyChars: wordChars,
@@ -1101,7 +886,7 @@ func TestMappers_ToCharClass(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: notWord,
+				Val: nfas["notWord"],
 				Pos: 2,
 				Bag: comb.Bag{
 					bagKeyChars: notWordChars,
@@ -1116,7 +901,7 @@ func TestMappers_ToCharClass(t *testing.T) {
 			m := new(mappers)
 			res, ok := m.ToCharClass(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
+			EqualResults(t, tc.expectedResult, res)
 			assert.Equal(t, tc.expectedOK, ok)
 
 			if tc.expectedError != "" {
@@ -1127,6 +912,8 @@ func TestMappers_ToCharClass(t *testing.T) {
 }
 
 func TestMappers_ToAnyChar(t *testing.T) {
+	nfas := createTestNFAs()
+
 	tests := []MapperTest{
 		{
 			name: "Success",
@@ -1135,7 +922,7 @@ func TestMappers_ToAnyChar(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: ascii,
+				Val: nfas["ascii"],
 				Pos: 2,
 			},
 			expectedOK: true,
@@ -1147,7 +934,7 @@ func TestMappers_ToAnyChar(t *testing.T) {
 			m := new(mappers)
 			res, ok := m.ToAnyChar(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
+			EqualResults(t, tc.expectedResult, res)
 			assert.Equal(t, tc.expectedOK, ok)
 
 			if tc.expectedError != "" {
@@ -1158,18 +945,20 @@ func TestMappers_ToAnyChar(t *testing.T) {
 }
 
 func TestMappers_ToMatchItem(t *testing.T) {
+	nfas := createTestNFAs()
+
 	tests := []MapperTest{
 		{
 			name: "Success",
 			r: comb.Result{
-				Val: digit,
+				Val: nfas["digit"],
 				Pos: 2,
 				Bag: comb.Bag{
 					bagKeyChars: digitChars,
 				},
 			},
 			expectedResult: comb.Result{
-				Val: digit,
+				Val: nfas["digit"],
 				Pos: 2,
 				Bag: comb.Bag{
 					bagKeyChars: digitChars,
@@ -1184,7 +973,7 @@ func TestMappers_ToMatchItem(t *testing.T) {
 			m := new(mappers)
 			res, ok := m.ToMatchItem(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
+			EqualResults(t, tc.expectedResult, res)
 			assert.Equal(t, tc.expectedOK, ok)
 
 			if tc.expectedError != "" {
@@ -1195,13 +984,16 @@ func TestMappers_ToMatchItem(t *testing.T) {
 }
 
 func TestMappers_ToMatch(t *testing.T) {
+	xNFA := auto.NewNFA(0, auto.States{1})
+	xNFA.Add(0, 'x', auto.States{1})
+
 	tests := []MapperTest{
 		{
 			name: "Success",
 			r: comb.Result{
 				Val: comb.List{
 					{
-						Val: &Char{Val: 'x'},
+						Val: xNFA,
 						Pos: 2,
 						Bag: comb.Bag{
 							bagKeyChars: []rune{'x'},
@@ -1212,7 +1004,7 @@ func TestMappers_ToMatch(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: &Char{Val: 'x'},
+				Val: xNFA,
 				Pos: 2,
 			},
 			expectedOK: true,
@@ -1222,7 +1014,7 @@ func TestMappers_ToMatch(t *testing.T) {
 			r: comb.Result{
 				Val: comb.List{
 					{
-						Val: &Char{Val: 'x'},
+						Val: xNFA,
 						Pos: 2,
 						Bag: comb.Bag{
 							bagKeyChars: []rune{'x'},
@@ -1239,12 +1031,7 @@ func TestMappers_ToMatch(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: &Alt{
-					Exprs: []Node{
-						&Empty{},
-						&Char{Val: 'x'},
-					},
-				},
+				Val: Alt(Empty(), xNFA),
 				Pos: 2,
 			},
 			expectedOK: true,
@@ -1254,7 +1041,7 @@ func TestMappers_ToMatch(t *testing.T) {
 			r: comb.Result{
 				Val: comb.List{
 					{
-						Val: &Char{Val: 'x'},
+						Val: xNFA,
 						Pos: 2,
 						Bag: comb.Bag{
 							bagKeyChars: []rune{'x'},
@@ -1271,9 +1058,7 @@ func TestMappers_ToMatch(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: &Star{
-					Expr: &Char{Val: 'x'},
-				},
+				Val: Star(xNFA),
 				Pos: 2,
 			},
 			expectedOK: true,
@@ -1283,7 +1068,7 @@ func TestMappers_ToMatch(t *testing.T) {
 			r: comb.Result{
 				Val: comb.List{
 					{
-						Val: &Char{Val: 'x'},
+						Val: xNFA,
 						Pos: 2,
 						Bag: comb.Bag{
 							bagKeyChars: []rune{'x'},
@@ -1300,14 +1085,7 @@ func TestMappers_ToMatch(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: &Concat{
-					Exprs: []Node{
-						&Char{Val: 'x'},
-						&Star{
-							Expr: &Char{Val: 'x'},
-						},
-					},
-				},
+				Val: Concat(xNFA, Star(xNFA)),
 				Pos: 2,
 			},
 			expectedOK: true,
@@ -1317,7 +1095,7 @@ func TestMappers_ToMatch(t *testing.T) {
 			r: comb.Result{
 				Val: comb.List{
 					{
-						Val: &Char{Val: 'x'},
+						Val: xNFA,
 						Pos: 2,
 						Bag: comb.Bag{
 							bagKeyChars: []rune{'x'},
@@ -1337,12 +1115,7 @@ func TestMappers_ToMatch(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: &Concat{
-					Exprs: []Node{
-						&Char{Val: 'x'},
-						&Char{Val: 'x'},
-					},
-				},
+				Val: Concat(xNFA, xNFA),
 				Pos: 2,
 			},
 			expectedOK: true,
@@ -1352,7 +1125,7 @@ func TestMappers_ToMatch(t *testing.T) {
 			r: comb.Result{
 				Val: comb.List{
 					{
-						Val: &Char{Val: 'x'},
+						Val: xNFA,
 						Pos: 2,
 						Bag: comb.Bag{
 							bagKeyChars: []rune{'x'},
@@ -1372,15 +1145,7 @@ func TestMappers_ToMatch(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: &Concat{
-					Exprs: []Node{
-						&Char{Val: 'x'},
-						&Char{Val: 'x'},
-						&Star{
-							Expr: &Char{Val: 'x'},
-						},
-					},
-				},
+				Val: Concat(xNFA, xNFA, Star(xNFA)),
 				Pos: 2,
 			},
 			expectedOK: true,
@@ -1390,7 +1155,7 @@ func TestMappers_ToMatch(t *testing.T) {
 			r: comb.Result{
 				Val: comb.List{
 					{
-						Val: &Char{Val: 'x'},
+						Val: xNFA,
 						Pos: 2,
 						Bag: comb.Bag{
 							bagKeyChars: []rune{'x'},
@@ -1410,24 +1175,12 @@ func TestMappers_ToMatch(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: &Concat{
-					Exprs: []Node{
-						&Char{Val: 'x'},
-						&Char{Val: 'x'},
-						&Alt{
-							Exprs: []Node{
-								&Empty{},
-								&Char{Val: 'x'},
-							},
-						},
-						&Alt{
-							Exprs: []Node{
-								&Empty{},
-								&Char{Val: 'x'},
-							},
-						},
-					},
-				},
+				Val: Concat(
+					xNFA,
+					xNFA,
+					Alt(Empty(), xNFA),
+					Alt(Empty(), xNFA),
+				),
 				Pos: 2,
 			},
 			expectedOK: true,
@@ -1437,7 +1190,7 @@ func TestMappers_ToMatch(t *testing.T) {
 			r: comb.Result{
 				Val: comb.List{
 					{
-						Val: &Char{Val: 'x'},
+						Val: xNFA,
 						Pos: 2,
 						Bag: comb.Bag{
 							bagKeyChars: []rune{'x'},
@@ -1454,14 +1207,7 @@ func TestMappers_ToMatch(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: &Concat{
-					Exprs: []Node{
-						&Char{Val: 'x'},
-						&Star{
-							Expr: &Char{Val: 'x'},
-						},
-					},
-				},
+				Val: Concat(xNFA, Star(xNFA)),
 				Pos: 2,
 				Bag: comb.Bag{
 					bagKeyLazyQuantifier: true,
@@ -1476,7 +1222,7 @@ func TestMappers_ToMatch(t *testing.T) {
 			m := new(mappers)
 			res, ok := m.ToMatch(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
+			EqualResults(t, tc.expectedResult, res)
 			assert.Equal(t, tc.expectedOK, ok)
 
 			if tc.expectedError != "" {
@@ -1507,7 +1253,7 @@ func TestMappers_ToAnchor(t *testing.T) {
 			m := new(mappers)
 			res, ok := m.ToAnchor(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
+			EqualResults(t, tc.expectedResult, res)
 			assert.Equal(t, tc.expectedOK, ok)
 
 			if tc.expectedError != "" {
@@ -1518,6 +1264,9 @@ func TestMappers_ToAnchor(t *testing.T) {
 }
 
 func TestMappers_ToGroup(t *testing.T) {
+	xNFA := auto.NewNFA(0, auto.States{1})
+	xNFA.Add(0, 'x', auto.States{1})
+
 	tests := []MapperTest{
 		{
 			name: "Success",
@@ -1525,7 +1274,7 @@ func TestMappers_ToGroup(t *testing.T) {
 				Val: comb.List{
 					{Val: '(', Pos: 2},
 					{
-						Val: &Char{Val: 'x'},
+						Val: xNFA,
 						Pos: 3,
 						Bag: comb.Bag{
 							bagKeyChars: []rune{'x'},
@@ -1537,7 +1286,7 @@ func TestMappers_ToGroup(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: &Char{Val: 'x'},
+				Val: xNFA,
 				Pos: 2,
 			},
 			expectedOK: true,
@@ -1548,7 +1297,7 @@ func TestMappers_ToGroup(t *testing.T) {
 				Val: comb.List{
 					{Val: '(', Pos: 2},
 					{
-						Val: &Char{Val: 'x'},
+						Val: xNFA,
 						Pos: 3,
 						Bag: comb.Bag{
 							bagKeyChars: []rune{'x'},
@@ -1566,12 +1315,7 @@ func TestMappers_ToGroup(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: &Alt{
-					Exprs: []Node{
-						&Empty{},
-						&Char{Val: 'x'},
-					},
-				},
+				Val: Alt(Empty(), xNFA),
 				Pos: 2,
 			},
 			expectedOK: true,
@@ -1582,7 +1326,7 @@ func TestMappers_ToGroup(t *testing.T) {
 				Val: comb.List{
 					{Val: '(', Pos: 2},
 					{
-						Val: &Char{Val: 'x'},
+						Val: xNFA,
 						Pos: 3,
 						Bag: comb.Bag{
 							bagKeyChars: []rune{'x'},
@@ -1600,9 +1344,7 @@ func TestMappers_ToGroup(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: &Star{
-					Expr: &Char{Val: 'x'},
-				},
+				Val: Star(xNFA),
 				Pos: 2,
 			},
 			expectedOK: true,
@@ -1613,7 +1355,7 @@ func TestMappers_ToGroup(t *testing.T) {
 				Val: comb.List{
 					{Val: '(', Pos: 2},
 					{
-						Val: &Char{Val: 'x'},
+						Val: xNFA,
 						Pos: 3,
 						Bag: comb.Bag{
 							bagKeyChars: []rune{'x'},
@@ -1631,14 +1373,7 @@ func TestMappers_ToGroup(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: &Concat{
-					Exprs: []Node{
-						&Char{Val: 'x'},
-						&Star{
-							Expr: &Char{Val: 'x'},
-						},
-					},
-				},
+				Val: Concat(xNFA, Star(xNFA)),
 				Pos: 2,
 			},
 			expectedOK: true,
@@ -1649,7 +1384,7 @@ func TestMappers_ToGroup(t *testing.T) {
 				Val: comb.List{
 					{Val: '(', Pos: 2},
 					{
-						Val: &Char{Val: 'x'},
+						Val: xNFA,
 						Pos: 3,
 						Bag: comb.Bag{
 							bagKeyChars: []rune{'x'},
@@ -1670,12 +1405,7 @@ func TestMappers_ToGroup(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: &Concat{
-					Exprs: []Node{
-						&Char{Val: 'x'},
-						&Char{Val: 'x'},
-					},
-				},
+				Val: Concat(xNFA, xNFA),
 				Pos: 2,
 			},
 			expectedOK: true,
@@ -1686,7 +1416,7 @@ func TestMappers_ToGroup(t *testing.T) {
 				Val: comb.List{
 					{Val: '(', Pos: 2},
 					{
-						Val: &Char{Val: 'x'},
+						Val: xNFA,
 						Pos: 3,
 						Bag: comb.Bag{
 							bagKeyChars: []rune{'x'},
@@ -1707,15 +1437,7 @@ func TestMappers_ToGroup(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: &Concat{
-					Exprs: []Node{
-						&Char{Val: 'x'},
-						&Char{Val: 'x'},
-						&Star{
-							Expr: &Char{Val: 'x'},
-						},
-					},
-				},
+				Val: Concat(xNFA, xNFA, Star(xNFA)),
 				Pos: 2,
 			},
 			expectedOK: true,
@@ -1726,7 +1448,7 @@ func TestMappers_ToGroup(t *testing.T) {
 				Val: comb.List{
 					{Val: '(', Pos: 2},
 					{
-						Val: &Char{Val: 'x'},
+						Val: xNFA,
 						Pos: 3,
 						Bag: comb.Bag{
 							bagKeyChars: []rune{'x'},
@@ -1747,24 +1469,12 @@ func TestMappers_ToGroup(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: &Concat{
-					Exprs: []Node{
-						&Char{Val: 'x'},
-						&Char{Val: 'x'},
-						&Alt{
-							Exprs: []Node{
-								&Empty{},
-								&Char{Val: 'x'},
-							},
-						},
-						&Alt{
-							Exprs: []Node{
-								&Empty{},
-								&Char{Val: 'x'},
-							},
-						},
-					},
-				},
+				Val: Concat(
+					xNFA,
+					xNFA,
+					Alt(Empty(), xNFA),
+					Alt(Empty(), xNFA),
+				),
 				Pos: 2,
 			},
 			expectedOK: true,
@@ -1775,7 +1485,7 @@ func TestMappers_ToGroup(t *testing.T) {
 				Val: comb.List{
 					{Val: '(', Pos: 2},
 					{
-						Val: &Char{Val: 'x'},
+						Val: xNFA,
 						Pos: 3,
 						Bag: comb.Bag{
 							bagKeyChars: []rune{'x'},
@@ -1793,14 +1503,7 @@ func TestMappers_ToGroup(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: &Concat{
-					Exprs: []Node{
-						&Char{Val: 'x'},
-						&Star{
-							Expr: &Char{Val: 'x'},
-						},
-					},
-				},
+				Val: Concat(xNFA, Star(xNFA)),
 				Pos: 2,
 				Bag: comb.Bag{
 					bagKeyLazyQuantifier: true,
@@ -1815,7 +1518,7 @@ func TestMappers_ToGroup(t *testing.T) {
 			m := new(mappers)
 			res, ok := m.ToGroup(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
+			EqualResults(t, tc.expectedResult, res)
 			assert.Equal(t, tc.expectedOK, ok)
 
 			if tc.expectedError != "" {
@@ -1826,15 +1529,17 @@ func TestMappers_ToGroup(t *testing.T) {
 }
 
 func TestMappers_ToSubexprItem(t *testing.T) {
+	nfas := createTestNFAs()
+
 	tests := []MapperTest{
 		{
 			name: "Success",
 			r: comb.Result{
-				Val: &Char{Val: 'x'},
+				Val: nfas["digit"],
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: &Char{Val: 'x'},
+				Val: nfas["digit"],
 				Pos: 2,
 			},
 			expectedOK: true,
@@ -1846,7 +1551,7 @@ func TestMappers_ToSubexprItem(t *testing.T) {
 			m := new(mappers)
 			res, ok := m.ToSubexprItem(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
+			EqualResults(t, tc.expectedResult, res)
 			assert.Equal(t, tc.expectedOK, ok)
 
 			if tc.expectedError != "" {
@@ -1857,13 +1562,15 @@ func TestMappers_ToSubexprItem(t *testing.T) {
 }
 
 func TestMappers_ToSubexpr(t *testing.T) {
+	nfas := createTestNFAs()
+
 	tests := []MapperTest{
 		{
 			name: "Success",
 			r: comb.Result{
 				Val: comb.List{
 					{
-						Val: &Char{Val: 'x'},
+						Val: nfas["digit"],
 						Pos: 2,
 					},
 					{
@@ -1874,11 +1581,7 @@ func TestMappers_ToSubexpr(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: &Concat{
-					Exprs: []Node{
-						&Char{Val: 'x'},
-					},
-				},
+				Val: Concat(nfas["digit"]),
 				Pos: 2,
 			},
 			expectedOK: true,
@@ -1890,7 +1593,7 @@ func TestMappers_ToSubexpr(t *testing.T) {
 			m := new(mappers)
 			res, ok := m.ToSubexpr(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
+			EqualResults(t, tc.expectedResult, res)
 			assert.Equal(t, tc.expectedOK, ok)
 
 			if tc.expectedError != "" {
@@ -1901,17 +1604,15 @@ func TestMappers_ToSubexpr(t *testing.T) {
 }
 
 func TestMappers_ToExpr(t *testing.T) {
+	nfas := createTestNFAs()
+
 	tests := []MapperTest{
 		{
 			name: "Success",
 			r: comb.Result{
 				Val: comb.List{
 					{
-						Val: &Concat{
-							Exprs: []Node{
-								&Char{Val: 'x'},
-							},
-						},
+						Val: Concat(nfas["upper"]),
 						Pos: 2,
 					},
 					{Val: comb.Empty{}},
@@ -1919,11 +1620,7 @@ func TestMappers_ToExpr(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: &Concat{
-					Exprs: []Node{
-						&Char{Val: 'x'},
-					},
-				},
+				Val: Concat(nfas["upper"]),
 				Pos: 2,
 			},
 			expectedOK: true,
@@ -1933,22 +1630,14 @@ func TestMappers_ToExpr(t *testing.T) {
 			r: comb.Result{
 				Val: comb.List{
 					{
-						Val: &Concat{
-							Exprs: []Node{
-								&Char{Val: 'x'},
-							},
-						},
+						Val: Concat(nfas["upper"]),
 						Pos: 2,
 					},
 					{
 						Val: comb.List{
 							{Val: '|', Pos: 3},
 							{
-								Val: &Concat{
-									Exprs: []Node{
-										&Char{Val: 'y'},
-									},
-								},
+								Val: Concat(nfas["lower"]),
 								Pos: 4,
 							},
 						},
@@ -1957,20 +1646,10 @@ func TestMappers_ToExpr(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: &Alt{
-					Exprs: []Node{
-						&Concat{
-							Exprs: []Node{
-								&Char{Val: 'x'},
-							},
-						},
-						&Concat{
-							Exprs: []Node{
-								&Char{Val: 'y'},
-							},
-						},
-					},
-				},
+				Val: Alt(
+					Concat(nfas["upper"]),
+					Concat(nfas["lower"]),
+				),
 				Pos: 2,
 			},
 			expectedOK: true,
@@ -1982,7 +1661,7 @@ func TestMappers_ToExpr(t *testing.T) {
 			m := new(mappers)
 			res, ok := m.ToExpr(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
+			EqualResults(t, tc.expectedResult, res)
 			assert.Equal(t, tc.expectedOK, ok)
 
 			if tc.expectedError != "" {
@@ -1993,6 +1672,8 @@ func TestMappers_ToExpr(t *testing.T) {
 }
 
 func TestMappers_ToRegex(t *testing.T) {
+	nfas := createTestNFAs()
+
 	tests := []MapperTest{
 		{
 			name: "Success",
@@ -2000,22 +1681,14 @@ func TestMappers_ToRegex(t *testing.T) {
 				Val: comb.List{
 					{Val: comb.Empty{}},
 					{
-						Val: &Concat{
-							Exprs: []Node{
-								&Char{Val: 's'},
-							},
-						},
+						Val: Concat(nfas["digit"]),
 						Pos: 0,
 					},
 				},
 				Pos: 0,
 			},
 			expectedResult: comb.Result{
-				Val: &Concat{
-					Exprs: []Node{
-						&Char{Val: 's'},
-					},
-				},
+				Val: Concat(nfas["digit"]),
 				Pos: 0,
 			},
 			expectedOK: true,
@@ -2026,22 +1699,14 @@ func TestMappers_ToRegex(t *testing.T) {
 				Val: comb.List{
 					{Val: '^', Pos: 0},
 					{
-						Val: &Concat{
-							Exprs: []Node{
-								&Char{Val: 's'},
-							},
-						},
+						Val: Concat(nfas["digit"]),
 						Pos: 1,
 					},
 				},
 				Pos: 0,
 			},
 			expectedResult: comb.Result{
-				Val: &Concat{
-					Exprs: []Node{
-						&Char{Val: 's'},
-					},
-				},
+				Val: Concat(nfas["digit"]),
 				Pos: 0,
 				Bag: comb.Bag{
 					BagKeyStartOfString: true,
@@ -2056,7 +1721,7 @@ func TestMappers_ToRegex(t *testing.T) {
 			m := new(mappers)
 			res, ok := m.ToRegex(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
+			EqualResults(t, tc.expectedResult, res)
 			assert.Equal(t, tc.expectedOK, ok)
 
 			if tc.expectedError != "" {
@@ -2069,146 +1734,8 @@ func TestMappers_ToRegex(t *testing.T) {
 //==================================================< HELPERS >==================================================
 
 var (
-	digit = &Alt{
-		Exprs: []Node{
-			&Char{Val: '0'},
-			&Char{Val: '1'},
-			&Char{Val: '2'},
-			&Char{Val: '3'},
-			&Char{Val: '4'},
-			&Char{Val: '5'},
-			&Char{Val: '6'},
-			&Char{Val: '7'},
-			&Char{Val: '8'},
-			&Char{Val: '9'},
-		},
-	}
-
 	digitChars = []rune{
 		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-	}
-
-	notDigit = &Alt{
-		Exprs: []Node{
-			&Char{Val: 0},
-			&Char{Val: 1},
-			&Char{Val: 2},
-			&Char{Val: 3},
-			&Char{Val: 4},
-			&Char{Val: 5},
-			&Char{Val: 6},
-			&Char{Val: 7},
-			&Char{Val: 8},
-			&Char{Val: 9},
-			&Char{Val: 10},
-			&Char{Val: 11},
-			&Char{Val: 12},
-			&Char{Val: 13},
-			&Char{Val: 14},
-			&Char{Val: 15},
-			&Char{Val: 16},
-			&Char{Val: 17},
-			&Char{Val: 18},
-			&Char{Val: 19},
-			&Char{Val: 20},
-			&Char{Val: 21},
-			&Char{Val: 22},
-			&Char{Val: 23},
-			&Char{Val: 24},
-			&Char{Val: 25},
-			&Char{Val: 26},
-			&Char{Val: 27},
-			&Char{Val: 28},
-			&Char{Val: 29},
-			&Char{Val: 30},
-			&Char{Val: 31},
-			&Char{Val: 32},
-			&Char{Val: 33},
-			&Char{Val: 34},
-			&Char{Val: 35},
-			&Char{Val: 36},
-			&Char{Val: 37},
-			&Char{Val: 38},
-			&Char{Val: 39},
-			&Char{Val: 40},
-			&Char{Val: 41},
-			&Char{Val: 42},
-			&Char{Val: 43},
-			&Char{Val: 44},
-			&Char{Val: 45},
-			&Char{Val: 46},
-			&Char{Val: 47},
-			&Char{Val: 58},
-			&Char{Val: 59},
-			&Char{Val: 60},
-			&Char{Val: 61},
-			&Char{Val: 62},
-			&Char{Val: 63},
-			&Char{Val: 64},
-			&Char{Val: 65},
-			&Char{Val: 66},
-			&Char{Val: 67},
-			&Char{Val: 68},
-			&Char{Val: 69},
-			&Char{Val: 70},
-			&Char{Val: 71},
-			&Char{Val: 72},
-			&Char{Val: 73},
-			&Char{Val: 74},
-			&Char{Val: 75},
-			&Char{Val: 76},
-			&Char{Val: 77},
-			&Char{Val: 78},
-			&Char{Val: 79},
-			&Char{Val: 80},
-			&Char{Val: 81},
-			&Char{Val: 82},
-			&Char{Val: 83},
-			&Char{Val: 84},
-			&Char{Val: 85},
-			&Char{Val: 86},
-			&Char{Val: 87},
-			&Char{Val: 88},
-			&Char{Val: 89},
-			&Char{Val: 90},
-			&Char{Val: 91},
-			&Char{Val: 92},
-			&Char{Val: 93},
-			&Char{Val: 94},
-			&Char{Val: 95},
-			&Char{Val: 96},
-			&Char{Val: 97},
-			&Char{Val: 98},
-			&Char{Val: 99},
-			&Char{Val: 100},
-			&Char{Val: 101},
-			&Char{Val: 102},
-			&Char{Val: 103},
-			&Char{Val: 104},
-			&Char{Val: 105},
-			&Char{Val: 106},
-			&Char{Val: 107},
-			&Char{Val: 108},
-			&Char{Val: 109},
-			&Char{Val: 110},
-			&Char{Val: 111},
-			&Char{Val: 112},
-			&Char{Val: 113},
-			&Char{Val: 114},
-			&Char{Val: 115},
-			&Char{Val: 116},
-			&Char{Val: 117},
-			&Char{Val: 118},
-			&Char{Val: 119},
-			&Char{Val: 120},
-			&Char{Val: 121},
-			&Char{Val: 122},
-			&Char{Val: 123},
-			&Char{Val: 124},
-			&Char{Val: 125},
-			&Char{Val: 126},
-			&Char{Val: 127},
-		},
 	}
 
 	notDigitChars = []rune{
@@ -2221,146 +1748,8 @@ var (
 		123, 124, 125, 126, 127,
 	}
 
-	whitespace = &Alt{
-		Exprs: []Node{
-			&Char{Val: ' '},
-			&Char{Val: '\t'},
-			&Char{Val: '\n'},
-			&Char{Val: '\r'},
-			&Char{Val: '\f'},
-		},
-	}
-
 	whitespaceChars = []rune{
 		' ', '\t', '\n', '\r', '\f',
-	}
-
-	notWhitespace = &Alt{
-		Exprs: []Node{
-			&Char{Val: 0},
-			&Char{Val: 1},
-			&Char{Val: 2},
-			&Char{Val: 3},
-			&Char{Val: 4},
-			&Char{Val: 5},
-			&Char{Val: 6},
-			&Char{Val: 7},
-			&Char{Val: 8},
-			&Char{Val: 11},
-			&Char{Val: 14},
-			&Char{Val: 15},
-			&Char{Val: 16},
-			&Char{Val: 17},
-			&Char{Val: 18},
-			&Char{Val: 19},
-			&Char{Val: 20},
-			&Char{Val: 21},
-			&Char{Val: 22},
-			&Char{Val: 23},
-			&Char{Val: 24},
-			&Char{Val: 25},
-			&Char{Val: 26},
-			&Char{Val: 27},
-			&Char{Val: 28},
-			&Char{Val: 29},
-			&Char{Val: 30},
-			&Char{Val: 31},
-			&Char{Val: 33},
-			&Char{Val: 34},
-			&Char{Val: 35},
-			&Char{Val: 36},
-			&Char{Val: 37},
-			&Char{Val: 38},
-			&Char{Val: 39},
-			&Char{Val: 40},
-			&Char{Val: 41},
-			&Char{Val: 42},
-			&Char{Val: 43},
-			&Char{Val: 44},
-			&Char{Val: 45},
-			&Char{Val: 46},
-			&Char{Val: 47},
-			&Char{Val: 48},
-			&Char{Val: 49},
-			&Char{Val: 50},
-			&Char{Val: 51},
-			&Char{Val: 52},
-			&Char{Val: 53},
-			&Char{Val: 54},
-			&Char{Val: 55},
-			&Char{Val: 56},
-			&Char{Val: 57},
-			&Char{Val: 58},
-			&Char{Val: 59},
-			&Char{Val: 60},
-			&Char{Val: 61},
-			&Char{Val: 62},
-			&Char{Val: 63},
-			&Char{Val: 64},
-			&Char{Val: 65},
-			&Char{Val: 66},
-			&Char{Val: 67},
-			&Char{Val: 68},
-			&Char{Val: 69},
-			&Char{Val: 70},
-			&Char{Val: 71},
-			&Char{Val: 72},
-			&Char{Val: 73},
-			&Char{Val: 74},
-			&Char{Val: 75},
-			&Char{Val: 76},
-			&Char{Val: 77},
-			&Char{Val: 78},
-			&Char{Val: 79},
-			&Char{Val: 80},
-			&Char{Val: 81},
-			&Char{Val: 82},
-			&Char{Val: 83},
-			&Char{Val: 84},
-			&Char{Val: 85},
-			&Char{Val: 86},
-			&Char{Val: 87},
-			&Char{Val: 88},
-			&Char{Val: 89},
-			&Char{Val: 90},
-			&Char{Val: 91},
-			&Char{Val: 92},
-			&Char{Val: 93},
-			&Char{Val: 94},
-			&Char{Val: 95},
-			&Char{Val: 96},
-			&Char{Val: 97},
-			&Char{Val: 98},
-			&Char{Val: 99},
-			&Char{Val: 100},
-			&Char{Val: 101},
-			&Char{Val: 102},
-			&Char{Val: 103},
-			&Char{Val: 104},
-			&Char{Val: 105},
-			&Char{Val: 106},
-			&Char{Val: 107},
-			&Char{Val: 108},
-			&Char{Val: 109},
-			&Char{Val: 110},
-			&Char{Val: 111},
-			&Char{Val: 112},
-			&Char{Val: 113},
-			&Char{Val: 114},
-			&Char{Val: 115},
-			&Char{Val: 116},
-			&Char{Val: 117},
-			&Char{Val: 118},
-			&Char{Val: 119},
-			&Char{Val: 120},
-			&Char{Val: 121},
-			&Char{Val: 122},
-			&Char{Val: 123},
-			&Char{Val: 124},
-			&Char{Val: 125},
-			&Char{Val: 126},
-			&Char{Val: 127},
-		},
 	}
 
 	notWhitespaceChars = []rune{
@@ -2376,149 +1765,11 @@ var (
 		123, 124, 125, 126, 127,
 	}
 
-	word = &Alt{
-		Exprs: []Node{
-			&Char{Val: '0'},
-			&Char{Val: '1'},
-			&Char{Val: '2'},
-			&Char{Val: '3'},
-			&Char{Val: '4'},
-			&Char{Val: '5'},
-			&Char{Val: '6'},
-			&Char{Val: '7'},
-			&Char{Val: '8'},
-			&Char{Val: '9'},
-			&Char{Val: 'A'},
-			&Char{Val: 'B'},
-			&Char{Val: 'C'},
-			&Char{Val: 'D'},
-			&Char{Val: 'E'},
-			&Char{Val: 'F'},
-			&Char{Val: 'G'},
-			&Char{Val: 'H'},
-			&Char{Val: 'I'},
-			&Char{Val: 'J'},
-			&Char{Val: 'K'},
-			&Char{Val: 'L'},
-			&Char{Val: 'M'},
-			&Char{Val: 'N'},
-			&Char{Val: 'O'},
-			&Char{Val: 'P'},
-			&Char{Val: 'Q'},
-			&Char{Val: 'R'},
-			&Char{Val: 'S'},
-			&Char{Val: 'T'},
-			&Char{Val: 'U'},
-			&Char{Val: 'V'},
-			&Char{Val: 'W'},
-			&Char{Val: 'X'},
-			&Char{Val: 'Y'},
-			&Char{Val: 'Z'},
-			&Char{Val: '_'},
-			&Char{Val: 'a'},
-			&Char{Val: 'b'},
-			&Char{Val: 'c'},
-			&Char{Val: 'd'},
-			&Char{Val: 'e'},
-			&Char{Val: 'f'},
-			&Char{Val: 'g'},
-			&Char{Val: 'h'},
-			&Char{Val: 'i'},
-			&Char{Val: 'j'},
-			&Char{Val: 'k'},
-			&Char{Val: 'l'},
-			&Char{Val: 'm'},
-			&Char{Val: 'n'},
-			&Char{Val: 'o'},
-			&Char{Val: 'p'},
-			&Char{Val: 'q'},
-			&Char{Val: 'r'},
-			&Char{Val: 's'},
-			&Char{Val: 't'},
-			&Char{Val: 'u'},
-			&Char{Val: 'v'},
-			&Char{Val: 'w'},
-			&Char{Val: 'x'},
-			&Char{Val: 'y'},
-			&Char{Val: 'z'},
-		},
-	}
-
 	wordChars = []rune{
 		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
 		'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
 		'_',
 		'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-	}
-
-	notWord = &Alt{
-		Exprs: []Node{
-			&Char{Val: 0},
-			&Char{Val: 1},
-			&Char{Val: 2},
-			&Char{Val: 3},
-			&Char{Val: 4},
-			&Char{Val: 5},
-			&Char{Val: 6},
-			&Char{Val: 7},
-			&Char{Val: 8},
-			&Char{Val: 9},
-			&Char{Val: 10},
-			&Char{Val: 11},
-			&Char{Val: 12},
-			&Char{Val: 13},
-			&Char{Val: 14},
-			&Char{Val: 15},
-			&Char{Val: 16},
-			&Char{Val: 17},
-			&Char{Val: 18},
-			&Char{Val: 19},
-			&Char{Val: 20},
-			&Char{Val: 21},
-			&Char{Val: 22},
-			&Char{Val: 23},
-			&Char{Val: 24},
-			&Char{Val: 25},
-			&Char{Val: 26},
-			&Char{Val: 27},
-			&Char{Val: 28},
-			&Char{Val: 29},
-			&Char{Val: 30},
-			&Char{Val: 31},
-			&Char{Val: 32},
-			&Char{Val: 33},
-			&Char{Val: 34},
-			&Char{Val: 35},
-			&Char{Val: 36},
-			&Char{Val: 37},
-			&Char{Val: 38},
-			&Char{Val: 39},
-			&Char{Val: 40},
-			&Char{Val: 41},
-			&Char{Val: 42},
-			&Char{Val: 43},
-			&Char{Val: 44},
-			&Char{Val: 45},
-			&Char{Val: 46},
-			&Char{Val: 47},
-			&Char{Val: 58},
-			&Char{Val: 59},
-			&Char{Val: 60},
-			&Char{Val: 61},
-			&Char{Val: 62},
-			&Char{Val: 63},
-			&Char{Val: 64},
-			&Char{Val: 91},
-			&Char{Val: 92},
-			&Char{Val: 93},
-			&Char{Val: 94},
-			&Char{Val: 96},
-			&Char{Val: 123},
-			&Char{Val: 124},
-			&Char{Val: 125},
-			&Char{Val: 126},
-			&Char{Val: 127},
-		},
 	}
 
 	notWordChars = []rune{
@@ -2529,57 +1780,12 @@ var (
 		123, 124, 125, 126, 127,
 	}
 
-	blank = &Alt{
-		Exprs: []Node{
-			&Char{Val: ' '},
-			&Char{Val: '\t'},
-		},
-	}
-
 	blankChars = []rune{
 		' ', '\t',
 	}
 
-	space = &Alt{
-		Exprs: []Node{
-			&Char{Val: ' '},
-			&Char{Val: '\t'},
-			&Char{Val: '\n'},
-			&Char{Val: '\r'},
-			&Char{Val: '\f'},
-			&Char{Val: '\v'},
-		},
-	}
-
 	spaceChars = []rune{
 		' ', '\t', '\n', '\r', '\f', '\v',
-	}
-
-	xdigit = &Alt{
-		Exprs: []Node{
-			&Char{Val: '0'},
-			&Char{Val: '1'},
-			&Char{Val: '2'},
-			&Char{Val: '3'},
-			&Char{Val: '4'},
-			&Char{Val: '5'},
-			&Char{Val: '6'},
-			&Char{Val: '7'},
-			&Char{Val: '8'},
-			&Char{Val: '9'},
-			&Char{Val: 'A'},
-			&Char{Val: 'B'},
-			&Char{Val: 'C'},
-			&Char{Val: 'D'},
-			&Char{Val: 'E'},
-			&Char{Val: 'F'},
-			&Char{Val: 'a'},
-			&Char{Val: 'b'},
-			&Char{Val: 'c'},
-			&Char{Val: 'd'},
-			&Char{Val: 'e'},
-			&Char{Val: 'f'},
-		},
 	}
 
 	xdigitChars = []rune{
@@ -2588,131 +1794,12 @@ var (
 		'a', 'b', 'c', 'd', 'e', 'f',
 	}
 
-	upper = &Alt{
-		Exprs: []Node{
-			&Char{Val: 'A'},
-			&Char{Val: 'B'},
-			&Char{Val: 'C'},
-			&Char{Val: 'D'},
-			&Char{Val: 'E'},
-			&Char{Val: 'F'},
-			&Char{Val: 'G'},
-			&Char{Val: 'H'},
-			&Char{Val: 'I'},
-			&Char{Val: 'J'},
-			&Char{Val: 'K'},
-			&Char{Val: 'L'},
-			&Char{Val: 'M'},
-			&Char{Val: 'N'},
-			&Char{Val: 'O'},
-			&Char{Val: 'P'},
-			&Char{Val: 'Q'},
-			&Char{Val: 'R'},
-			&Char{Val: 'S'},
-			&Char{Val: 'T'},
-			&Char{Val: 'U'},
-			&Char{Val: 'V'},
-			&Char{Val: 'W'},
-			&Char{Val: 'X'},
-			&Char{Val: 'Y'},
-			&Char{Val: 'Z'},
-		},
-	}
-
 	upperChars = []rune{
 		'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
 	}
 
-	lower = &Alt{
-		Exprs: []Node{
-			&Char{Val: 'a'},
-			&Char{Val: 'b'},
-			&Char{Val: 'c'},
-			&Char{Val: 'd'},
-			&Char{Val: 'e'},
-			&Char{Val: 'f'},
-			&Char{Val: 'g'},
-			&Char{Val: 'h'},
-			&Char{Val: 'i'},
-			&Char{Val: 'j'},
-			&Char{Val: 'k'},
-			&Char{Val: 'l'},
-			&Char{Val: 'm'},
-			&Char{Val: 'n'},
-			&Char{Val: 'o'},
-			&Char{Val: 'p'},
-			&Char{Val: 'q'},
-			&Char{Val: 'r'},
-			&Char{Val: 's'},
-			&Char{Val: 't'},
-			&Char{Val: 'u'},
-			&Char{Val: 'v'},
-			&Char{Val: 'w'},
-			&Char{Val: 'x'},
-			&Char{Val: 'y'},
-			&Char{Val: 'z'},
-		},
-	}
-
 	lowerChars = []rune{
 		'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-	}
-
-	alpha = &Alt{
-		Exprs: []Node{
-			&Char{Val: 'A'},
-			&Char{Val: 'B'},
-			&Char{Val: 'C'},
-			&Char{Val: 'D'},
-			&Char{Val: 'E'},
-			&Char{Val: 'F'},
-			&Char{Val: 'G'},
-			&Char{Val: 'H'},
-			&Char{Val: 'I'},
-			&Char{Val: 'J'},
-			&Char{Val: 'K'},
-			&Char{Val: 'L'},
-			&Char{Val: 'M'},
-			&Char{Val: 'N'},
-			&Char{Val: 'O'},
-			&Char{Val: 'P'},
-			&Char{Val: 'Q'},
-			&Char{Val: 'R'},
-			&Char{Val: 'S'},
-			&Char{Val: 'T'},
-			&Char{Val: 'U'},
-			&Char{Val: 'V'},
-			&Char{Val: 'W'},
-			&Char{Val: 'X'},
-			&Char{Val: 'Y'},
-			&Char{Val: 'Z'},
-			&Char{Val: 'a'},
-			&Char{Val: 'b'},
-			&Char{Val: 'c'},
-			&Char{Val: 'd'},
-			&Char{Val: 'e'},
-			&Char{Val: 'f'},
-			&Char{Val: 'g'},
-			&Char{Val: 'h'},
-			&Char{Val: 'i'},
-			&Char{Val: 'j'},
-			&Char{Val: 'k'},
-			&Char{Val: 'l'},
-			&Char{Val: 'm'},
-			&Char{Val: 'n'},
-			&Char{Val: 'o'},
-			&Char{Val: 'p'},
-			&Char{Val: 'q'},
-			&Char{Val: 'r'},
-			&Char{Val: 's'},
-			&Char{Val: 't'},
-			&Char{Val: 'u'},
-			&Char{Val: 'v'},
-			&Char{Val: 'w'},
-			&Char{Val: 'x'},
-			&Char{Val: 'y'},
-			&Char{Val: 'z'},
-		},
 	}
 
 	alphaChars = []rune{
@@ -2720,210 +1807,10 @@ var (
 		'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
 	}
 
-	alnum = &Alt{
-		Exprs: []Node{
-			&Char{Val: '0'},
-			&Char{Val: '1'},
-			&Char{Val: '2'},
-			&Char{Val: '3'},
-			&Char{Val: '4'},
-			&Char{Val: '5'},
-			&Char{Val: '6'},
-			&Char{Val: '7'},
-			&Char{Val: '8'},
-			&Char{Val: '9'},
-			&Char{Val: 'A'},
-			&Char{Val: 'B'},
-			&Char{Val: 'C'},
-			&Char{Val: 'D'},
-			&Char{Val: 'E'},
-			&Char{Val: 'F'},
-			&Char{Val: 'G'},
-			&Char{Val: 'H'},
-			&Char{Val: 'I'},
-			&Char{Val: 'J'},
-			&Char{Val: 'K'},
-			&Char{Val: 'L'},
-			&Char{Val: 'M'},
-			&Char{Val: 'N'},
-			&Char{Val: 'O'},
-			&Char{Val: 'P'},
-			&Char{Val: 'Q'},
-			&Char{Val: 'R'},
-			&Char{Val: 'S'},
-			&Char{Val: 'T'},
-			&Char{Val: 'U'},
-			&Char{Val: 'V'},
-			&Char{Val: 'W'},
-			&Char{Val: 'X'},
-			&Char{Val: 'Y'},
-			&Char{Val: 'Z'},
-			&Char{Val: 'a'},
-			&Char{Val: 'b'},
-			&Char{Val: 'c'},
-			&Char{Val: 'd'},
-			&Char{Val: 'e'},
-			&Char{Val: 'f'},
-			&Char{Val: 'g'},
-			&Char{Val: 'h'},
-			&Char{Val: 'i'},
-			&Char{Val: 'j'},
-			&Char{Val: 'k'},
-			&Char{Val: 'l'},
-			&Char{Val: 'm'},
-			&Char{Val: 'n'},
-			&Char{Val: 'o'},
-			&Char{Val: 'p'},
-			&Char{Val: 'q'},
-			&Char{Val: 'r'},
-			&Char{Val: 's'},
-			&Char{Val: 't'},
-			&Char{Val: 'u'},
-			&Char{Val: 'v'},
-			&Char{Val: 'w'},
-			&Char{Val: 'x'},
-			&Char{Val: 'y'},
-			&Char{Val: 'z'},
-		},
-	}
-
 	alnumChars = []rune{
 		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
 		'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
 		'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-	}
-
-	ascii = &Alt{
-		Exprs: []Node{
-			&Char{Val: 0},
-			&Char{Val: 1},
-			&Char{Val: 2},
-			&Char{Val: 3},
-			&Char{Val: 4},
-			&Char{Val: 5},
-			&Char{Val: 6},
-			&Char{Val: 7},
-			&Char{Val: 8},
-			&Char{Val: 9},
-			&Char{Val: 10},
-			&Char{Val: 11},
-			&Char{Val: 12},
-			&Char{Val: 13},
-			&Char{Val: 14},
-			&Char{Val: 15},
-			&Char{Val: 16},
-			&Char{Val: 17},
-			&Char{Val: 18},
-			&Char{Val: 19},
-			&Char{Val: 20},
-			&Char{Val: 21},
-			&Char{Val: 22},
-			&Char{Val: 23},
-			&Char{Val: 24},
-			&Char{Val: 25},
-			&Char{Val: 26},
-			&Char{Val: 27},
-			&Char{Val: 28},
-			&Char{Val: 29},
-			&Char{Val: 30},
-			&Char{Val: 31},
-			&Char{Val: 32},
-			&Char{Val: 33},
-			&Char{Val: 34},
-			&Char{Val: 35},
-			&Char{Val: 36},
-			&Char{Val: 37},
-			&Char{Val: 38},
-			&Char{Val: 39},
-			&Char{Val: 40},
-			&Char{Val: 41},
-			&Char{Val: 42},
-			&Char{Val: 43},
-			&Char{Val: 44},
-			&Char{Val: 45},
-			&Char{Val: 46},
-			&Char{Val: 47},
-			&Char{Val: 48},
-			&Char{Val: 49},
-			&Char{Val: 50},
-			&Char{Val: 51},
-			&Char{Val: 52},
-			&Char{Val: 53},
-			&Char{Val: 54},
-			&Char{Val: 55},
-			&Char{Val: 56},
-			&Char{Val: 57},
-			&Char{Val: 58},
-			&Char{Val: 59},
-			&Char{Val: 60},
-			&Char{Val: 61},
-			&Char{Val: 62},
-			&Char{Val: 63},
-			&Char{Val: 64},
-			&Char{Val: 65},
-			&Char{Val: 66},
-			&Char{Val: 67},
-			&Char{Val: 68},
-			&Char{Val: 69},
-			&Char{Val: 70},
-			&Char{Val: 71},
-			&Char{Val: 72},
-			&Char{Val: 73},
-			&Char{Val: 74},
-			&Char{Val: 75},
-			&Char{Val: 76},
-			&Char{Val: 77},
-			&Char{Val: 78},
-			&Char{Val: 79},
-			&Char{Val: 80},
-			&Char{Val: 81},
-			&Char{Val: 82},
-			&Char{Val: 83},
-			&Char{Val: 84},
-			&Char{Val: 85},
-			&Char{Val: 86},
-			&Char{Val: 87},
-			&Char{Val: 88},
-			&Char{Val: 89},
-			&Char{Val: 90},
-			&Char{Val: 91},
-			&Char{Val: 92},
-			&Char{Val: 93},
-			&Char{Val: 94},
-			&Char{Val: 95},
-			&Char{Val: 96},
-			&Char{Val: 97},
-			&Char{Val: 98},
-			&Char{Val: 99},
-			&Char{Val: 100},
-			&Char{Val: 101},
-			&Char{Val: 102},
-			&Char{Val: 103},
-			&Char{Val: 104},
-			&Char{Val: 105},
-			&Char{Val: 106},
-			&Char{Val: 107},
-			&Char{Val: 108},
-			&Char{Val: 109},
-			&Char{Val: 110},
-			&Char{Val: 111},
-			&Char{Val: 112},
-			&Char{Val: 113},
-			&Char{Val: 114},
-			&Char{Val: 115},
-			&Char{Val: 116},
-			&Char{Val: 117},
-			&Char{Val: 118},
-			&Char{Val: 119},
-			&Char{Val: 120},
-			&Char{Val: 121},
-			&Char{Val: 122},
-			&Char{Val: 123},
-			&Char{Val: 124},
-			&Char{Val: 125},
-			&Char{Val: 126},
-			&Char{Val: 127},
-		},
 	}
 
 	asciiChars = []rune{
@@ -2938,6 +1825,95 @@ var (
 	}
 )
 
+func createTestNFAs() map[string]*auto.NFA {
+	digit := auto.NewNFA(0, auto.States{1})
+	for _, r := range digitChars {
+		digit.Add(0, auto.Symbol(r), auto.States{1})
+	}
+
+	notDigit := auto.NewNFA(0, auto.States{1})
+	for _, r := range notDigitChars {
+		notDigit.Add(0, auto.Symbol(r), auto.States{1})
+	}
+
+	whitespace := auto.NewNFA(0, auto.States{1})
+	for _, r := range whitespaceChars {
+		whitespace.Add(0, auto.Symbol(r), auto.States{1})
+	}
+
+	notWhitespace := auto.NewNFA(0, auto.States{1})
+	for _, r := range notWhitespaceChars {
+		notWhitespace.Add(0, auto.Symbol(r), auto.States{1})
+	}
+
+	word := auto.NewNFA(0, auto.States{1})
+	for _, r := range wordChars {
+		word.Add(0, auto.Symbol(r), auto.States{1})
+	}
+
+	notWord := auto.NewNFA(0, auto.States{1})
+	for _, r := range notWordChars {
+		notWord.Add(0, auto.Symbol(r), auto.States{1})
+	}
+
+	blank := auto.NewNFA(0, auto.States{1})
+	for _, r := range blankChars {
+		blank.Add(0, auto.Symbol(r), auto.States{1})
+	}
+
+	space := auto.NewNFA(0, auto.States{1})
+	for _, r := range spaceChars {
+		space.Add(0, auto.Symbol(r), auto.States{1})
+	}
+
+	xdigit := auto.NewNFA(0, auto.States{1})
+	for _, r := range xdigitChars {
+		xdigit.Add(0, auto.Symbol(r), auto.States{1})
+	}
+
+	upper := auto.NewNFA(0, auto.States{1})
+	for _, r := range upperChars {
+		upper.Add(0, auto.Symbol(r), auto.States{1})
+	}
+
+	lower := auto.NewNFA(0, auto.States{1})
+	for _, r := range lowerChars {
+		lower.Add(0, auto.Symbol(r), auto.States{1})
+	}
+
+	alpha := auto.NewNFA(0, auto.States{1})
+	for _, r := range alphaChars {
+		alpha.Add(0, auto.Symbol(r), auto.States{1})
+	}
+
+	alnum := auto.NewNFA(0, auto.States{1})
+	for _, r := range alnumChars {
+		alnum.Add(0, auto.Symbol(r), auto.States{1})
+	}
+
+	ascii := auto.NewNFA(0, auto.States{1})
+	for _, r := range asciiChars {
+		ascii.Add(0, auto.Symbol(r), auto.States{1})
+	}
+
+	return map[string]*auto.NFA{
+		"digit":         digit,
+		"notDigit":      notDigit,
+		"whitespace":    whitespace,
+		"notWhitespace": notWhitespace,
+		"word":          word,
+		"notWord":       notWord,
+		"blank":         blank,
+		"space":         space,
+		"xdigit":        xdigit,
+		"upper":         upper,
+		"lower":         lower,
+		"alpha":         alpha,
+		"alnum":         alnum,
+		"ascii":         ascii,
+	}
+}
+
 func intPtr(v int) *int {
 	return &v
 }
@@ -2948,6 +1924,24 @@ type MapperTest struct {
 	expectedResult comb.Result
 	expectedOK     bool
 	expectedError  string
+}
+
+func EqualResults(t *testing.T, expectedResult, res comb.Result) {
+	expectedNFA, ok := expectedResult.Val.(*auto.NFA)
+	if !ok {
+		assert.Equal(t, expectedResult, res)
+		return
+	}
+
+	nfa, ok := res.Val.(*auto.NFA)
+	if !ok {
+		assert.Equal(t, expectedResult, res)
+		return
+	}
+
+	assert.True(t, nfa.Equals(expectedNFA))
+	assert.Equal(t, expectedResult.Pos, res.Pos)
+	assert.Equal(t, expectedResult.Bag, res.Bag)
 }
 
 // stringInput implements the input interface for strings.
