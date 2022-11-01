@@ -1,7 +1,6 @@
 package ast
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/hashicorp/go-multierror"
@@ -23,28 +22,6 @@ const (
 	bagKeyLazyQuantifier comb.BagKey = "lazy_quantifier"
 	BagKeyStartOfString  comb.BagKey = "start_of_string"
 )
-
-func Parse(in comb.Input) (Node, error) {
-	m := new(mappers)
-	p := parser.New(m)
-
-	out, ok := p.Parse(in)
-	if !ok {
-		return nil, errors.New("invalid regular expression")
-	}
-
-	if m.errors != nil {
-		return nil, m.errors
-	}
-
-	root := out.Result.Val.(Node)
-
-	// Backfill Pos fields for Char nodes
-	pos := 0
-	setCharPos(root, &pos)
-
-	return root, nil
-}
 
 // mappers implements the parser.Mappers interface.
 type mappers struct {
@@ -597,29 +574,5 @@ func cloneNode(n Node) Node {
 
 	default:
 		return nil
-	}
-}
-
-// setCharPos backfills Pos field for all Char nodes in the abstract syntaxt tree from left to right.
-// These positions are one-based and used for directly converting a regular expression to a DFA.
-// They are semantically different from the zero-based positions set by parsers (in the mappers).
-func setCharPos(n Node, pos *int) {
-	switch v := n.(type) {
-	case *Concat:
-		for _, e := range v.Exprs {
-			setCharPos(e, pos)
-		}
-
-	case *Alt:
-		for _, e := range v.Exprs {
-			setCharPos(e, pos)
-		}
-
-	case *Star:
-		setCharPos(v.Expr, pos)
-
-	case *Char:
-		*pos++
-		v.Pos = *pos
 	}
 }
