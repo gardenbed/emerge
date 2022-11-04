@@ -190,6 +190,9 @@ func (a *AST) ToDFA() *auto.DFA {
 		}
 	}
 
+	// Minimize the no. of states
+	dfa = dfa.Minimize()
+
 	return dfa
 }
 
