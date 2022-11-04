@@ -353,12 +353,12 @@ During the *subset construction*, two sets of NFA states can be treated as the s
 When an NFA is constructed from the [McNaughton-Yamada-Thompson](#converting-regular-expression-to-nfa) algorithm,
 each important state corresponds to a particular operand in the regular expression.
 
-By concatenating a unique right end-marker `~` to a regular expression `r`,
-we give the accepting state for `r` a transition on `~`,
-making it an important state of the NFA for `(r)~`.
-By using the augmented regular expression `(r)~`,
+By concatenating a unique right end-marker `µ` to a regular expression `r`,
+we give the accepting state for `r` a transition on `µ`,
+making it an important state of the NFA for `(r)µ`.
+By using the augmented regular expression `(r)µ`,
 we can forget about accepting states as the subset construction proceeds.
-When the construction is complete, any state with a transition on `~` must be an accepting state.
+When the construction is complete, any state with a transition on end-marker `µ` must be an accepting state.
 
 The important states of the NFA correspond directly to
 the positions in the regular expression that hold symbols of the alphabet.
@@ -375,8 +375,8 @@ and then compute four functions: **nullable**, **firstPos**, **lastPos**, and **
   - `lastPos(n)` is the set of positions in the subtree rooted at `n` that
     correspond to the last symbol of at least one string in the language of the subexpression rooted at `n`.
   - `followPos(p)`, for a position `p`, is the set of positions `q` in the entire syntax tree
-    such that there is some string <code>x = a<sub>1</sub>a<sub>2</sub>...a<sub>n</sub></code> in `L((r)#)`
-    such that for some `i`, there is a way to explain the membership of `x` in `L((r)#)`
+    such that there is some string <code>x = a<sub>1</sub>a<sub>2</sub>...a<sub>n</sub></code> in `L((r)µ)`
+    such that for some `i`, there is a way to explain the membership of `x` in `L((r)µ)`
     by matching <code>a<sub>i</sub></code> to position `p` of the syntax tree and <code>a<sub>i</sub>+1</code> to position `q`.
 
 | **Node `n`** | **`nullable(n)`** | **`firstPos(n)`** | **`lastPos(n)`** |
@@ -402,7 +402,7 @@ The graph for `followPos` would become an NFA without ε-transitions for the und
 
   1. Make all positions in `firstPos` of the root be initial states.
   2. Label each edge from `i` to `j` by the symbol at position `i`.
-  3. Make the position associated with end-marker `~` be the only accepting state.
+  3. Make the position associated with end-marker `µ` be the only accepting state.
 
 ##### Algorithm
 
@@ -410,15 +410,15 @@ The graph for `followPos` would become an NFA without ε-transitions for the und
 # INPUT:  A regular expression r.
 # OUTPUT: A DFA D that recognizes L(r).
 # METHOD:
-#   1. Construct a syntax tree T from the augmented regular expression (r)~.
+#   1. Construct a syntax tree T from the augmented regular expression (r)µ.
 #   2. Compute nullable, firstPos, lastPos, and followPos for T.
 #   3. Construct Dstates, the set of states of DFA D, and Dtran, the transition function for D.
 #      The states of D are sets of positions in T.
 #      Initially, each state is "unmarked," and a state becomes "marked" just before we consider its out-transitions.
 #      The start state of D is firstPos(n0), where node n0 is the root of T.
-#      The accepting states are those containing the position for the end-marker symbol ~.
+#      The accepting states are those containing the position for the end-marker symbol µ.
 
-initialize Dstates to contain only the unmarked state firstPos(n0), where n0 is the root of syntax tree T for (r)~
+initialize Dstates to contain only the unmarked state firstPos(n0), where n0 is the root of syntax tree T for (r)µ
 while (there is an unmarked state S in Dstates) {
   mark S
   for (each input symbol a) {
