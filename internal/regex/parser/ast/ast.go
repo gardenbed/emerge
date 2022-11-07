@@ -147,6 +147,9 @@ func (a *AST) followPos(p Pos) Poses {
 	return a.follows[p]
 }
 
+// ToDFA converts the abstract syntax tree for a regular expression to a DFA.
+//
+// For more details, see Compilers: Principles, Techniques, and Tools (2nd Edition).
 func (a *AST) ToDFA() *auto.DFA {
 	dfa := auto.NewDFA(0, nil)
 	Dstates := list.NewSoftQueue[Poses](func(p, q Poses) bool {
