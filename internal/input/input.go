@@ -5,8 +5,7 @@ import (
 	"strings"
 )
 
-// sentinel is a special character for marking the end of a half or the end of input.
-const sentinel byte = 0x03
+const eof byte = 0x00
 
 // Input implements the two-buffer scheme for reading the input characters.
 //
@@ -15,8 +14,7 @@ type Input struct {
 	src io.Reader
 
 	// The first and second halves of the buff are alternatively reloaded.
-	// Each half is of the same size N plus an additional space for the sentinel character.
-	// Usually, N should be the size of a disk block (4096 bytes).
+	// Each half is of the same size N. Usually, N should be the size of a disk block.
 	buff []byte
 
 	lexemePos   int // Counter lexemePos tracks the position of the current lexeme in the input file.
@@ -27,11 +25,10 @@ type Input struct {
 }
 
 // New creates a new input buffer of size N.
-// N usually should be the size of a disk block (4096 bytes).
+// N usually should be the size of a disk block.
 func New(n int, src io.Reader) (*Input, error) {
 	// buff is divided into two sub-buffers (first half and second half).
-	// Each sub-buffer has an additional space for the sentinel character.
-	l := 2 * (n + 1)
+	l := 2 * n
 	buff := make([]byte, l)
 
 	in := &Input{
@@ -51,26 +48,30 @@ func New(n int, src io.Reader) (*Input, error) {
 
 // loadFirst reads the input and loads the first sub-buffer.
 func (i *Input) loadFirst() error {
-	high := len(i.buff)/2 - 1
+	high := len(i.buff) / 2
 	n, err := i.src.Read(i.buff[:high])
 	if err != nil {
 		return err
 	}
 
-	i.buff[n] = sentinel
+	if n < high {
+		i.buff[n] = eof
+	}
 
 	return nil
 }
 
 // loadSecond reads the input and loads the second sub-buffer.
 func (i *Input) loadSecond() error {
-	low, high := len(i.buff)/2, len(i.buff)-1
+	low, high := len(i.buff)/2, len(i.buff)
 	n, err := i.src.Read(i.buff[low:high])
 	if err != nil {
 		return err
 	}
 
-	i.buff[low+n] = sentinel
+	if n < high-low {
+		i.buff[low+n] = eof
+	}
 
 	return nil
 }
@@ -87,18 +88,14 @@ func (i *Input) Next() (rune, error) {
 	// Determine whether or not the forward pointer has reached the end of any halves.
 	// If so, it loads the other half and set the forward pointer to the beginning of it.
 	// If the forward pointer has reached to the end of input, an io.EOF error will be returned.
-	if i.buff[i.forward] == sentinel {
-		if i.forward == len(i.buff)/2-1 { // Is forward at the end of first half?
-			if i.err = i.loadSecond(); i.err == nil {
-				i.forward++ // beginning of the second half
-			}
-		} else if i.forward == len(i.buff)-1 { // Is forward at the end of second half?
-			if i.err = i.loadFirst(); i.err == nil {
-				i.forward = 0 // beginning of the first half
-			}
-		} else { // Sentinel within a sub-buffer signifies the end of input
-			i.err = io.EOF
+	if i.forward == len(i.buff)/2 { // Is forward at the end of first half?
+		i.err = i.loadSecond()
+	} else if i.forward == len(i.buff) { // Is forward at the end of second half?
+		if i.err = i.loadFirst(); i.err == nil {
+			i.forward = 0 // beginning of the first half
 		}
+	} else if i.buff[i.forward] == eof {
+		i.err = io.EOF
 	}
 
 	// The current read is fine, but the next read may return an error
@@ -109,9 +106,7 @@ func (i *Input) Next() (rune, error) {
 // It can only be called once per each call of Next.
 func (i *Input) Retract() {
 	if i.forward == 0 { // Is forward at the beginning of first half?
-		i.forward = len(i.buff) - 2 // end of the second half
-	} else if i.forward == len(i.buff)/2 { // Is forward at the beginning of second half?
-		i.forward = len(i.buff)/2 - 2 // end of the first half
+		i.forward = len(i.buff) - 1 // end of the second half
 	} else {
 		i.forward--
 	}
@@ -135,9 +130,7 @@ func (i *Input) Lexeme() (string, int) {
 		i.lexemePos++
 		i.lexemeBegin++
 
-		if i.lexemeBegin == len(i.buff)/2-1 { // Is lexemeBegin at the end of first half?
-			i.lexemeBegin++
-		} else if i.lexemeBegin == len(i.buff)-1 { // Is lexemeBegin at the end of second half?
+		if i.lexemeBegin == len(i.buff) { // Is lexemeBegin at the end of second half?
 			i.lexemeBegin = 0 // beginning of the first half
 		}
 	}
@@ -147,14 +140,11 @@ func (i *Input) Lexeme() (string, int) {
 
 // Skip skips over the pending lexeme in the input.
 func (i *Input) Skip() {
-	for i.lexemeBegin != i.forward {
-		i.lexemePos++
-		i.lexemeBegin++
-
-		if i.lexemeBegin == len(i.buff)/2-1 { // Is lexemeBegin at the end of first half?
-			i.lexemeBegin++
-		} else if i.lexemeBegin == len(i.buff)-1 { // Is lexemeBegin at the end of second half?
-			i.lexemeBegin = 0 // beginning of the first half
-		}
+	if d := i.forward - i.lexemeBegin; d >= 0 {
+		i.lexemePos += d
+	} else {
+		i.lexemePos += len(i.buff) + d
 	}
+
+	i.lexemeBegin = i.forward
 }

@@ -61,7 +61,7 @@ func TestInput_loadFirst(t *testing.T) {
 			name: "Success",
 			i: &Input{
 				src:  strings.NewReader("Lorem ipsum"),
-				buff: make([]byte, 2050),
+				buff: make([]byte, 2048),
 			},
 			expectedError: "",
 		},
@@ -69,7 +69,7 @@ func TestInput_loadFirst(t *testing.T) {
 			name: "Failure",
 			i: &Input{
 				src:  iotest.ErrReader(errors.New("io error")),
-				buff: make([]byte, 2050),
+				buff: make([]byte, 2048),
 			},
 			expectedError: "io error",
 		},
@@ -98,7 +98,7 @@ func TestInput_loadSecond(t *testing.T) {
 			name: "Success",
 			i: &Input{
 				src:  strings.NewReader("Lorem ipsum"),
-				buff: make([]byte, 2050),
+				buff: make([]byte, 2048),
 			},
 			expectedError: "",
 		},
@@ -106,7 +106,7 @@ func TestInput_loadSecond(t *testing.T) {
 			name: "Failure",
 			i: &Input{
 				src:  iotest.ErrReader(errors.New("io error")),
-				buff: make([]byte, 2050),
+				buff: make([]byte, 2048),
 			},
 			expectedError: "io error",
 		},
@@ -184,15 +184,15 @@ func TestInput_Retract(t *testing.T) {
 			name:         "Success_SecondHalfToFirstHalf",
 			n:            1024,
 			file:         "./fixture/lorem_ipsum",
-			lexemeBegin:  1000,
-			forward:      1025,
+			lexemeBegin:  1020,
+			forward:      1024,
 			expectedPeek: 's',
 		},
 		{
 			name:         "Success_FirstHalfToSecondHalf",
 			n:            1024,
 			file:         "./fixture/lorem_ipsum",
-			lexemeBegin:  2000,
+			lexemeBegin:  2040,
 			forward:      0,
 			expectedPeek: 'p',
 		},
@@ -225,14 +225,16 @@ func TestInput_Peek(t *testing.T) {
 		name         string
 		n            int
 		file         string
-		nextCount    int
+		lexemeBegin  int
+		forward      int
 		expectedRune rune
 	}{
 		{
 			name:         "Success",
 			n:            1024,
 			file:         "./fixture/lorem_ipsum",
-			nextCount:    10,
+			lexemeBegin:  0,
+			forward:      10,
 			expectedRune: 'm',
 		},
 	}
@@ -246,10 +248,11 @@ func TestInput_Peek(t *testing.T) {
 			in, err := New(tc.n, f)
 			assert.NoError(t, err)
 
-			for i := 0; i < tc.nextCount; i++ {
-				_, err := in.Next()
-				assert.NoError(t, err)
-			}
+			err = in.loadSecond()
+			assert.NoError(t, err)
+
+			in.lexemeBegin = tc.lexemeBegin
+			in.forward = tc.forward
 
 			r := in.Peek()
 			assert.Equal(t, tc.expectedRune, r)
@@ -282,21 +285,21 @@ func TestInput_Lexeme(t *testing.T) {
 			name:           "Success_FirstHalfToSecondHalf",
 			n:              1024,
 			file:           "./fixture/lorem_ipsum",
-			lexemePos:      1022,
-			lexemeBegin:    1022,
-			forward:        1044,
-			expectedLexeme: " scelerisque eleifend",
-			expectedPos:    1022,
+			lexemePos:      1020,
+			lexemeBegin:    1020,
+			forward:        1030,
+			expectedLexeme: "us sceleri",
+			expectedPos:    1020,
 		},
 		{
 			name:           "Success_SecondHalfToFirstHalf",
 			n:              1024,
 			file:           "./fixture/lorem_ipsum",
-			lexemePos:      4045,
-			lexemeBegin:    2045,
+			lexemePos:      4040,
+			lexemeBegin:    2044,
 			forward:        5,
 			expectedLexeme: "corpLorem",
-			expectedPos:    4045,
+			expectedPos:    4040,
 		},
 	}
 
@@ -340,28 +343,28 @@ func TestInput_Skip(t *testing.T) {
 			file:                "./fixture/lorem_ipsum",
 			lexemePos:           0,
 			lexemeBegin:         0,
-			forward:             5,
-			expectedLexemePos:   5,
-			expectedLexemeBegin: 5,
+			forward:             10,
+			expectedLexemePos:   10,
+			expectedLexemeBegin: 10,
 		},
 		{
 			name:                "Success_FirstHalfToSecondHalf",
 			n:                   1024,
 			file:                "./fixture/lorem_ipsum",
-			lexemePos:           1022,
-			lexemeBegin:         1022,
-			forward:             1044,
-			expectedLexemePos:   1043,
-			expectedLexemeBegin: 1044,
+			lexemePos:           1020,
+			lexemeBegin:         1020,
+			forward:             1030,
+			expectedLexemePos:   1030,
+			expectedLexemeBegin: 1030,
 		},
 		{
 			name:                "Success_SecondHalfToFirstHalf",
 			n:                   1024,
 			file:                "./fixture/lorem_ipsum",
-			lexemePos:           4045,
-			lexemeBegin:         2045,
+			lexemePos:           4040,
+			lexemeBegin:         2044,
 			forward:             5,
-			expectedLexemePos:   4054,
+			expectedLexemePos:   4049,
 			expectedLexemeBegin: 5,
 		},
 	}
