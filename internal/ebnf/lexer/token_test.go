@@ -107,7 +107,7 @@ func TestTag_String(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			s := fmt.Sprintf("%s", tc.t.String())
+			s := fmt.Sprintf("%v", tc.t)
 			assert.Equal(t, tc.expectedString, s)
 		})
 	}
@@ -132,7 +132,7 @@ func TestToken_String(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			s := fmt.Sprintf("%s", tc.t.String())
+			s := fmt.Sprintf("%v", tc.t)
 			assert.Equal(t, tc.expectedString, s)
 		})
 	}
