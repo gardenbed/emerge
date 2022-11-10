@@ -8,14 +8,20 @@ import (
 	"testing"
 	"testing/iotest"
 
+	"github.com/moorara/algo/list"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNew(t *testing.T) {
-	f, err := os.Open("./fixture/lorem_ipsum")
-	assert.NoError(t, err)
-	defer f.Close()
+func newStack(n int, vs ...int) list.Stack[int] {
+	s := list.NewStack[int](n, nil)
+	for _, v := range vs {
+		s.Push(v)
+	}
 
+	return s
+}
+
+func TestNew(t *testing.T) {
 	tests := []struct {
 		name          string
 		n             int
@@ -25,7 +31,7 @@ func TestNew(t *testing.T) {
 		{
 			name:          "Success",
 			n:             4096,
-			src:           f,
+			src:           strings.NewReader("Lorem ipsum"),
 			expectedError: "",
 		},
 		{
@@ -54,12 +60,12 @@ func TestNew(t *testing.T) {
 func TestInput_loadFirst(t *testing.T) {
 	tests := []struct {
 		name          string
-		i             *Input
+		in            *Input
 		expectedError string
 	}{
 		{
 			name: "Success",
-			i: &Input{
+			in: &Input{
 				src:  strings.NewReader("Lorem ipsum"),
 				buff: make([]byte, 2048),
 			},
@@ -67,7 +73,7 @@ func TestInput_loadFirst(t *testing.T) {
 		},
 		{
 			name: "Failure",
-			i: &Input{
+			in: &Input{
 				src:  iotest.ErrReader(errors.New("io error")),
 				buff: make([]byte, 2048),
 			},
@@ -77,7 +83,7 @@ func TestInput_loadFirst(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			err := tc.i.loadFirst()
+			err := tc.in.loadFirst()
 
 			if tc.expectedError == "" {
 				assert.NoError(t, err)
@@ -91,12 +97,12 @@ func TestInput_loadFirst(t *testing.T) {
 func TestInput_loadSecond(t *testing.T) {
 	tests := []struct {
 		name          string
-		i             *Input
+		in            *Input
 		expectedError string
 	}{
 		{
 			name: "Success",
-			i: &Input{
+			in: &Input{
 				src:  strings.NewReader("Lorem ipsum"),
 				buff: make([]byte, 2048),
 			},
@@ -104,7 +110,7 @@ func TestInput_loadSecond(t *testing.T) {
 		},
 		{
 			name: "Failure",
-			i: &Input{
+			in: &Input{
 				src:  iotest.ErrReader(errors.New("io error")),
 				buff: make([]byte, 2048),
 			},
@@ -114,7 +120,7 @@ func TestInput_loadSecond(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			err := tc.i.loadSecond()
+			err := tc.in.loadSecond()
 
 			if tc.expectedError == "" {
 				assert.NoError(t, err)
@@ -125,7 +131,7 @@ func TestInput_loadSecond(t *testing.T) {
 	}
 }
 
-func TestInput_Next(t *testing.T) {
+func TestInput_next(t *testing.T) {
 	tests := []struct {
 		name          string
 		n             int
@@ -149,12 +155,12 @@ func TestInput_Next(t *testing.T) {
 			in, err := New(tc.n, f)
 			assert.NoError(t, err)
 
-			var r rune
+			var b byte
 			var count int
 
-			for r, err = in.Next(); err == nil; r, err = in.Next() {
+			for b, err = in.next(); err == nil; b, err = in.next() {
 				count++
-				assert.NotEmpty(t, r)
+				assert.NotZero(t, b)
 			}
 
 			assert.Equal(t, io.EOF, err)
@@ -163,165 +169,409 @@ func TestInput_Next(t *testing.T) {
 	}
 }
 
-func TestInput_Retract(t *testing.T) {
+func TestInput_Next(t *testing.T) {
+	// By putting 10 elements in the buff,
+	// we ensure that we won't need to load the second half of the buffer.
+
 	tests := []struct {
-		name         string
-		n            int
-		file         string
-		lexemeBegin  int
-		forward      int
-		expectedPeek rune
+		name          string
+		in            *Input
+		expectedError string
+		expectedRune  rune
+		expectedSize  int
 	}{
 		{
-			name:         "Success",
-			n:            1024,
-			file:         "./fixture/lorem_ipsum",
-			lexemeBegin:  0,
-			forward:      10,
-			expectedPeek: 'u',
+			name: "FirstByte_EOF",
+			in: &Input{
+				src:         nil,
+				buff:        []byte{0x00, 0x00, 0x00, 0x00, 0x00 /**/, 0x00, 0x00, 0x00, 0x00, 0x00},
+				lexemeBegin: 0,
+				forward:     0,
+				runeCount:   0,
+				runeSizes:   newStack(4),
+				err:         io.EOF,
+			},
+			expectedError: "EOF",
+			expectedRune:  0,
+			expectedSize:  0,
 		},
 		{
-			name:         "Success_SecondHalfToFirstHalf",
-			n:            1024,
-			file:         "./fixture/lorem_ipsum",
-			lexemeBegin:  1020,
-			forward:      1024,
-			expectedPeek: 's',
+			name: "FirstByte_Invalid",
+			in: &Input{
+				src:         nil,
+				buff:        []byte{0x80, 0x00, 0x00, 0x00, 0x00 /**/, 0x00, 0x00, 0x00, 0x00, 0x00},
+				lexemeBegin: 0,
+				forward:     0,
+				runeCount:   0,
+				runeSizes:   newStack(4),
+				err:         nil,
+			},
+			expectedError: "invalid utf-8 character at 0",
+			expectedRune:  0,
+			expectedSize:  0,
 		},
 		{
-			name:         "Success_FirstHalfToSecondHalf",
-			n:            1024,
-			file:         "./fixture/lorem_ipsum",
-			lexemeBegin:  2040,
-			forward:      0,
-			expectedPeek: 'p',
+			name: "FirstByte_Success",
+			in: &Input{
+				src:         nil,
+				buff:        []byte{0x69, 0x00, 0x00, 0x00, 0x00 /**/, 0x00, 0x00, 0x00, 0x00, 0x00},
+				lexemeBegin: 0,
+				forward:     0,
+				runeCount:   0,
+				runeSizes:   newStack(4),
+				err:         nil,
+			},
+			expectedError: "",
+			expectedRune:  'i',
+			expectedSize:  1,
+		},
+		{
+			name: "SecondByte_EOF",
+			in: &Input{
+				src:         nil,
+				buff:        []byte{0xC6, 0x00, 0x00, 0x00, 0x00 /**/, 0x00, 0x00, 0x00, 0x00, 0x00},
+				lexemeBegin: 0,
+				forward:     0,
+				runeCount:   0,
+				runeSizes:   newStack(4),
+				err:         nil,
+			},
+			expectedError: "EOF",
+			expectedRune:  0,
+			expectedSize:  0,
+		},
+		{
+			name: "SecondByte_Invalid",
+			in: &Input{
+				src:         nil,
+				buff:        []byte{0xC6, 0x40, 0x00, 0x00, 0x00 /**/, 0x00, 0x00, 0x00, 0x00, 0x00},
+				lexemeBegin: 0,
+				forward:     0,
+				runeCount:   0,
+				runeSizes:   newStack(4),
+				err:         nil,
+			},
+			expectedError: "invalid utf-8 character at 0",
+			expectedRune:  0,
+			expectedSize:  0,
+		},
+		{
+			name: "SecondByte_Success",
+			in: &Input{
+				src:         nil,
+				buff:        []byte{0xC6, 0xA9, 0x00, 0x00, 0x00 /**/, 0x00, 0x00, 0x00, 0x00, 0x00},
+				lexemeBegin: 0,
+				forward:     0,
+				runeCount:   0,
+				runeSizes:   newStack(4),
+				err:         nil,
+			},
+			expectedError: "",
+			expectedRune:  'Ʃ',
+			expectedSize:  2,
+		},
+		{
+			name: "ThirdByte_EOF",
+			in: &Input{
+				src:         nil,
+				buff:        []byte{0xEA, 0xA9, 0x00, 0x00, 0x00 /**/, 0x00, 0x00, 0x00, 0x00, 0x00},
+				lexemeBegin: 0,
+				forward:     0,
+				runeCount:   0,
+				runeSizes:   newStack(4),
+				err:         nil,
+			},
+			expectedError: "EOF",
+			expectedRune:  0,
+			expectedSize:  0,
+		},
+		{
+			name: "ThirdByte_Invalid",
+			in: &Input{
+				src:         nil,
+				buff:        []byte{0xEA, 0xA9, 0x40, 0x00, 0x00 /**/, 0x00, 0x00, 0x00, 0x00, 0x00},
+				lexemeBegin: 0,
+				forward:     0,
+				runeCount:   0,
+				runeSizes:   newStack(4),
+				err:         nil,
+			},
+			expectedError: "invalid utf-8 character at 0",
+			expectedRune:  0,
+			expectedSize:  0,
+		},
+		{
+			name: "ThirdByte_Success",
+			in: &Input{
+				src:         nil,
+				buff:        []byte{0xEA, 0xA9, 0x80, 0x00, 0x00 /**/, 0x00, 0x00, 0x00, 0x00, 0x00},
+				lexemeBegin: 0,
+				forward:     0,
+				runeCount:   0,
+				runeSizes:   newStack(4),
+				err:         nil,
+			},
+			expectedError: "",
+			expectedRune:  'ꩀ',
+			expectedSize:  3,
+		},
+		{
+			name: "FourthByte_EOF",
+			in: &Input{
+				src:         nil,
+				buff:        []byte{0xF0, 0x90, 0x80, 0x00, 0x00 /**/, 0x00, 0x00, 0x00, 0x00, 0x00},
+				lexemeBegin: 0,
+				forward:     0,
+				runeCount:   0,
+				runeSizes:   newStack(4),
+				err:         nil,
+			},
+			expectedError: "EOF",
+			expectedRune:  0,
+			expectedSize:  0,
+		},
+		{
+			name: "FourthByte_Invalid",
+			in: &Input{
+				src:         nil,
+				buff:        []byte{0xF0, 0x90, 0x80, 0x40, 0x00 /**/, 0x00, 0x00, 0x00, 0x00, 0x00},
+				lexemeBegin: 0,
+				forward:     0,
+				runeCount:   0,
+				runeSizes:   newStack(4),
+				err:         nil,
+			},
+			expectedError: "invalid utf-8 character at 0",
+			expectedRune:  0,
+			expectedSize:  0,
+		},
+		{
+			name: "FourthByte_Success",
+			in: &Input{
+				src:         nil,
+				buff:        []byte{0xF0, 0x90, 0x80, 0x80, 0x00 /**/, 0x00, 0x00, 0x00, 0x00, 0x00},
+				lexemeBegin: 0,
+				forward:     0,
+				runeCount:   0,
+				runeSizes:   newStack(4),
+				err:         nil,
+			},
+			expectedError: "",
+			expectedRune:  '𐀀',
+			expectedSize:  4,
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			f, err := os.Open(tc.file)
-			assert.NoError(t, err)
-			defer f.Close()
+			r, err := tc.in.Next()
 
-			in, err := New(tc.n, f)
-			assert.NoError(t, err)
+			if tc.expectedError != "" {
+				assert.EqualError(t, err, tc.expectedError)
+				assert.Equal(t, tc.expectedRune, r)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedRune, r)
 
-			err = in.loadSecond()
-			assert.NoError(t, err)
+				size, ok := tc.in.runeSizes.Peek()
+				assert.True(t, ok)
+				assert.Equal(t, tc.expectedSize, size)
+			}
+		})
+	}
+}
 
-			in.lexemeBegin = tc.lexemeBegin
-			in.forward = tc.forward
+func TestInput_Retract(t *testing.T) {
+	tests := []struct {
+		name            string
+		in              *Input
+		retractCount    int
+		expectedForward int
+	}{
+		{
+			name: "Success",
+			in: &Input{
+				src:         nil,
+				buff:        []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00 /**/, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+				lexemeBegin: 1,
+				forward:     4,
+				runeCount:   1,
+				runeSizes:   newStack(4, 1, 2),
+				err:         nil,
+			},
+			retractCount:    2,
+			expectedForward: 1,
+		},
+		{
+			name: "Success_SecondHalfToFirstHalf",
+			in: &Input{
+				src:         nil,
+				buff:        []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00 /**/, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+				lexemeBegin: 4,
+				forward:     8,
+				runeCount:   2,
+				runeSizes:   newStack(4, 2, 2),
+				err:         nil,
+			},
+			retractCount:    2,
+			expectedForward: 4,
+		},
+		{
+			name: "Success_FirstHalfToSecondHalf",
+			in: &Input{
+				src:         nil,
+				buff:        []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00 /**/, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+				lexemeBegin: 8,
+				forward:     2,
+				runeCount:   2,
+				runeSizes:   newStack(4, 4, 2),
+				err:         nil,
+			},
+			retractCount:    2,
+			expectedForward: 8,
+		},
+	}
 
-			in.Retract()
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			for i := 0; i < tc.retractCount; i++ {
+				tc.in.Retract()
+			}
 
-			assert.Equal(t, tc.expectedPeek, in.Peek())
+			assert.Equal(t, tc.expectedForward, tc.in.forward)
 		})
 	}
 }
 
 func TestInput_Peek(t *testing.T) {
 	tests := []struct {
-		name         string
-		n            int
-		file         string
-		lexemeBegin  int
-		forward      int
-		expectedRune rune
+		name          string
+		in            *Input
+		expectedRune  rune
+		expectedError string
 	}{
 		{
-			name:         "Success",
-			n:            1024,
-			file:         "./fixture/lorem_ipsum",
-			lexemeBegin:  0,
-			forward:      10,
-			expectedRune: 'm',
+			name: "EOF",
+			in: &Input{
+				src:         nil,
+				buff:        []byte{0x00, 0x00, 0x00, 0x00, 0x00 /**/, 0x00, 0x00, 0x00, 0x00, 0x00},
+				lexemeBegin: 0,
+				forward:     0,
+				runeCount:   0,
+				runeSizes:   newStack(4),
+				err:         io.EOF,
+			},
+			expectedRune:  0,
+			expectedError: "EOF",
+		},
+		{
+			name: "Success",
+			in: &Input{
+				src:         nil,
+				buff:        []byte{0x69, 0x00, 0x00, 0x00, 0x00 /**/, 0x00, 0x00, 0x00, 0x00, 0x00},
+				lexemeBegin: 0,
+				forward:     0,
+				runeCount:   0,
+				runeSizes:   newStack(4),
+				err:         nil,
+			},
+			expectedRune:  'i',
+			expectedError: "",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			f, err := os.Open(tc.file)
-			assert.NoError(t, err)
-			defer f.Close()
+			r, err := tc.in.Peek()
 
-			in, err := New(tc.n, f)
-			assert.NoError(t, err)
-
-			err = in.loadSecond()
-			assert.NoError(t, err)
-
-			in.lexemeBegin = tc.lexemeBegin
-			in.forward = tc.forward
-
-			r := in.Peek()
-			assert.Equal(t, tc.expectedRune, r)
+			if tc.expectedError == "" {
+				assert.Equal(t, tc.expectedRune, r)
+				assert.NoError(t, err)
+			} else {
+				assert.Equal(t, tc.expectedRune, r)
+				assert.EqualError(t, err, tc.expectedError)
+			}
 		})
 	}
 }
 
 func TestInput_Lexeme(t *testing.T) {
 	tests := []struct {
-		name           string
-		n              int
-		file           string
-		lexemePos      int
-		lexemeBegin    int
-		forward        int
-		expectedLexeme string
-		expectedPos    int
+		name              string
+		in                *Input
+		expectedLexeme    string
+		expectedPos       int
+		expectedRuneCount int
 	}{
 		{
-			name:           "Success",
-			n:              1024,
-			file:           "./fixture/lorem_ipsum",
-			lexemePos:      0,
-			lexemeBegin:    0,
-			forward:        5,
-			expectedLexeme: "Lorem",
-			expectedPos:    0,
+			name: "Empty",
+			in: &Input{
+				src:         nil,
+				buff:        []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00 /**/, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+				lexemeBegin: 0,
+				forward:     0,
+				runeCount:   0,
+				runeSizes:   newStack(4),
+				err:         nil,
+			},
+			expectedLexeme:    "",
+			expectedPos:       0,
+			expectedRuneCount: 0,
 		},
 		{
-			name:           "Success_FirstHalfToSecondHalf",
-			n:              1024,
-			file:           "./fixture/lorem_ipsum",
-			lexemePos:      1020,
-			lexemeBegin:    1020,
-			forward:        1030,
-			expectedLexeme: "us sceleri",
-			expectedPos:    1020,
+			name: "Success",
+			in: &Input{
+				src:         nil,
+				buff:        []byte{0x40, 0x68, 0x65, 0x72, 0x65, 0x20 /**/, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+				lexemeBegin: 1,
+				forward:     5,
+				runeCount:   1,
+				runeSizes:   newStack(4, 1, 1, 1, 1),
+				err:         nil,
+			},
+			expectedLexeme:    "here",
+			expectedPos:       1,
+			expectedRuneCount: 5,
 		},
 		{
-			name:           "Success_SecondHalfToFirstHalf",
-			n:              1024,
-			file:           "./fixture/lorem_ipsum",
-			lexemePos:      4040,
-			lexemeBegin:    2044,
-			forward:        5,
-			expectedLexeme: "corpLorem",
-			expectedPos:    4040,
+			name: "Success_FirstHalfToSecondHalf",
+			in: &Input{
+				src:         nil,
+				buff:        []byte{0x00, 0x00, 0x00, 0x40, 0x68, 0x65 /**/, 0x72, 0x65, 0x20, 0x00, 0x00, 0x00},
+				lexemeBegin: 4,
+				forward:     8,
+				runeCount:   4,
+				runeSizes:   newStack(4, 1, 1, 1, 1),
+				err:         nil,
+			},
+			expectedLexeme:    "here",
+			expectedPos:       4,
+			expectedRuneCount: 8,
+		},
+		{
+			name: "Success_SecondHalfToFirstHalf",
+			in: &Input{
+				src:         nil,
+				buff:        []byte{0x72, 0x65, 0x20, 0x00, 0x00, 0x00 /**/, 0x00, 0x00, 0x00, 0x40, 0x68, 0x65},
+				lexemeBegin: 10,
+				forward:     2,
+				runeCount:   10,
+				runeSizes:   newStack(4, 1, 1, 1, 1),
+				err:         nil,
+			},
+			expectedLexeme:    "here",
+			expectedPos:       10,
+			expectedRuneCount: 14,
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			f, err := os.Open(tc.file)
-			assert.NoError(t, err)
-			defer f.Close()
+			lexeme, pos := tc.in.Lexeme()
 
-			in, err := New(tc.n, f)
-			assert.NoError(t, err)
-
-			err = in.loadSecond()
-			assert.NoError(t, err)
-
-			in.lexemePos = tc.lexemePos
-			in.lexemeBegin = tc.lexemeBegin
-			in.forward = tc.forward
-
-			lexeme, pos := in.Lexeme()
 			assert.Equal(t, tc.expectedLexeme, lexeme)
 			assert.Equal(t, tc.expectedPos, pos)
+			assert.Equal(t, tc.expectedRuneCount, tc.in.runeCount)
 		})
 	}
 }
@@ -329,66 +579,74 @@ func TestInput_Lexeme(t *testing.T) {
 func TestInput_Skip(t *testing.T) {
 	tests := []struct {
 		name                string
-		n                   int
-		file                string
-		lexemePos           int
-		lexemeBegin         int
-		forward             int
-		expectedLexemePos   int
+		in                  *Input
 		expectedLexemeBegin int
+		expectedRuneCount   int
 	}{
 		{
-			name:                "Success",
-			n:                   1024,
-			file:                "./fixture/lorem_ipsum",
-			lexemePos:           0,
-			lexemeBegin:         0,
-			forward:             10,
-			expectedLexemePos:   10,
-			expectedLexemeBegin: 10,
+			name: "Empty",
+			in: &Input{
+				src:         nil,
+				buff:        []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00 /**/, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+				lexemeBegin: 0,
+				forward:     0,
+				runeCount:   0,
+				runeSizes:   newStack(4),
+				err:         nil,
+			},
+			expectedLexemeBegin: 0,
+			expectedRuneCount:   0,
 		},
 		{
-			name:                "Success_FirstHalfToSecondHalf",
-			n:                   1024,
-			file:                "./fixture/lorem_ipsum",
-			lexemePos:           1020,
-			lexemeBegin:         1020,
-			forward:             1030,
-			expectedLexemePos:   1030,
-			expectedLexemeBegin: 1030,
-		},
-		{
-			name:                "Success_SecondHalfToFirstHalf",
-			n:                   1024,
-			file:                "./fixture/lorem_ipsum",
-			lexemePos:           4040,
-			lexemeBegin:         2044,
-			forward:             5,
-			expectedLexemePos:   4049,
+			name: "Success",
+			in: &Input{
+				src:         nil,
+				buff:        []byte{0x40, 0x68, 0x65, 0x72, 0x65, 0x20 /**/, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+				lexemeBegin: 1,
+				forward:     5,
+				runeCount:   1,
+				runeSizes:   newStack(4, 1, 1, 1, 1),
+				err:         nil,
+			},
 			expectedLexemeBegin: 5,
+			expectedRuneCount:   5,
+		},
+		{
+			name: "Success_FirstHalfToSecondHalf",
+			in: &Input{
+				src:         nil,
+				buff:        []byte{0x00, 0x00, 0x00, 0x40, 0x68, 0x65 /**/, 0x72, 0x65, 0x20, 0x00, 0x00, 0x00},
+				lexemeBegin: 4,
+				forward:     8,
+				runeCount:   4,
+				runeSizes:   newStack(4, 1, 1, 1, 1),
+				err:         nil,
+			},
+			expectedLexemeBegin: 8,
+			expectedRuneCount:   8,
+		},
+		{
+			name: "Success_SecondHalfToFirstHalf",
+			in: &Input{
+				src:         nil,
+				buff:        []byte{0x72, 0x65, 0x20, 0x00, 0x00, 0x00 /**/, 0x00, 0x00, 0x00, 0x40, 0x68, 0x65},
+				lexemeBegin: 10,
+				forward:     2,
+				runeCount:   10,
+				runeSizes:   newStack(4, 1, 1, 1, 1),
+				err:         nil,
+			},
+			expectedLexemeBegin: 2,
+			expectedRuneCount:   14,
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			f, err := os.Open(tc.file)
-			assert.NoError(t, err)
-			defer f.Close()
+			tc.in.Skip()
 
-			in, err := New(tc.n, f)
-			assert.NoError(t, err)
-
-			err = in.loadSecond()
-			assert.NoError(t, err)
-
-			in.lexemePos = tc.lexemePos
-			in.lexemeBegin = tc.lexemeBegin
-			in.forward = tc.forward
-
-			in.Skip()
-
-			assert.Equal(t, tc.expectedLexemePos, in.lexemePos)
-			assert.Equal(t, tc.expectedLexemeBegin, in.lexemeBegin)
+			assert.Equal(t, tc.expectedLexemeBegin, tc.in.lexemeBegin)
+			assert.Equal(t, tc.expectedRuneCount, tc.in.runeCount)
 		})
 	}
 }
