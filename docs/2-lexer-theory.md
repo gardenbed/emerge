@@ -268,7 +268,7 @@ Once the next lexeme is determined, `forward` is set to the character at its rig
 Then, after the lexeme is recorded, `lexemeBegin` is set to the character immediately after the lexeme just found.
 
 We can combine the buffer-end test with the test for the current character
-if we extend each buffer to hold a sentinel character at the end.
+if we extend each buffer to hold a *sentinel* character at the end.
 The sentinel is a special character that cannot be part of the source program, and a natural choice is *EOF*.
 
 Note that as long as we never need to look so far ahead of the actual lexeme
@@ -276,6 +276,12 @@ that the sum of the lexeme's length plus the distance we look ahead is greater t
 we shall never overwrite the lexeme in the buffer before determining it.
 **If character strings can be very long, extending over many lines,
 then we could face the possibility that a lexeme is longer than `N`.**
+
+<span style="color:green">
+We have implemented a variation of this double-buffer scheme without a sentinel character
+that can handle Unicode (UTF-8) characters.
+The sentinel character adds extra complexity when processing Unicode characters and moving pointers forward and backward.
+</span>
 
 ### Reserved Words vs. Identifiers
 
@@ -289,6 +295,26 @@ There are two ways to recognize reserved words:
      so that the reserved-word tokens are recognized in preference to id, when the lexeme matches both patterns.
 
 ### Lexical Analysis using DFAs
+
+There are several ways that a collection of DFAs can be used to build a lexical analyzer.
+Regardless of the overall strategy, each state is associated with a code fragment.
+We allocate a variable `state` holding the current state for a DFA.
+A switch based on the value of `state` takes us to the code for each of the possible states.
+
+There are a few different ways to simulate DFAs for all tokens and pick a lexeme.
+
+  1. We can try the DFA for each token sequentially.
+     Then, a function `fail()` resets the pointer `forward` and starts the next DFA.
+     This method allows us to use DFAs for the individual keywords.
+     We only have to use these DFAs for keywords before we use the DFAs for identifiers,
+     for the keywords to be reserved words.
+  2. We can run multiple DFAs in parallel, feeding the next input character to all of them.
+     With this strategy, we must be careful to resolve the case where one DFA finds a lexeme
+     that matches its pattern, while other DFAs are still able to make progress.
+     The convention is to take the longest prefix of the input that matches any pattern.
+  3. <span style="color:green">The preferred approach is to combine all the DFAs into one.
+     We allow the DFA to read input until there is no possible next state,
+     and then take the longest lexeme that matched any pattern.</span>
 
 To construct an automaton for a lexical analyzer,
 
