@@ -25,9 +25,10 @@ const (
 	BagKeyStartOfString  comb.BagKey = "start_of_string"
 )
 
-func Parse(in comb.Input) (*auto.NFA, error) {
+func Parse(regex string) (*auto.NFA, error) {
 	m := new(mappers)
 	p := parser.New(m)
+	in := parser.NewInput(regex)
 
 	out, ok := p.Parse(in)
 	if !ok {

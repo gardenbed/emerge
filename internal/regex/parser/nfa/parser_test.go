@@ -14,28 +14,28 @@ func TestParse(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		in            comb.Input
+		regex         string
 		expectedError string
 		expectedNFA   *auto.NFA
 	}{
 		{
 			name:          "InvalidRegex",
-			in:            newStringInput("["),
+			regex:         "[",
 			expectedError: "invalid regular expression",
 		},
 		{
 			name:          "InvalidCharRange",
-			in:            newStringInput("[9-0]"),
+			regex:         "[9-0]",
 			expectedError: "1 error occurred:\n\t* invalid character range 9-0\n\n",
 		},
 		{
 			name:          "InvalidRepRange",
-			in:            newStringInput("[0-9]{4,2}"),
+			regex:         "[0-9]{4,2}",
 			expectedError: "1 error occurred:\n\t* invalid repetition range {4,2}\n\n",
 		},
 		{
-			name: "Success",
-			in:   newStringInput(`^[A-Z]?[a-z][0-9A-Za-z]{1,}$`),
+			name:  "Success",
+			regex: `^[A-Z]?[a-z][0-9A-Za-z]{1,}$`,
 			expectedNFA: Concat(
 				Alt(Empty(), nfas["upper"]),
 				nfas["lower"],
@@ -46,7 +46,7 @@ func TestParse(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			nfa, err := Parse(tc.in)
+			nfa, err := Parse(tc.regex)
 
 			if tc.expectedError != "" {
 				assert.Nil(t, nfa)
@@ -1942,32 +1942,4 @@ func EqualResults(t *testing.T, expectedResult, res comb.Result) {
 	assert.True(t, nfa.Equals(expectedNFA))
 	assert.Equal(t, expectedResult.Pos, res.Pos)
 	assert.Equal(t, expectedResult.Bag, res.Bag)
-}
-
-// stringInput implements the input interface for strings.
-type stringInput struct {
-	pos   int
-	runes []rune
-}
-
-func newStringInput(s string) comb.Input {
-	return &stringInput{
-		pos:   0,
-		runes: []rune(s),
-	}
-}
-
-func (s *stringInput) Current() (rune, int) {
-	return s.runes[0], s.pos
-}
-
-func (s *stringInput) Remaining() comb.Input {
-	if len(s.runes) == 1 {
-		return nil
-	}
-
-	return &stringInput{
-		pos:   s.pos + 1,
-		runes: s.runes[1:],
-	}
 }

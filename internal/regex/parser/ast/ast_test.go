@@ -6,14 +6,12 @@ import (
 
 	auto "github.com/moorara/algo/automata"
 	"github.com/stretchr/testify/assert"
-
-	comb "github.com/gardenbed/emerge/internal/combinator"
 )
 
 func TestParse(t *testing.T) {
 	tests := []struct {
 		name             string
-		in               comb.Input
+		regex            string
 		expectedError    string
 		expectedAST      *AST
 		expectedNullable bool
@@ -22,22 +20,22 @@ func TestParse(t *testing.T) {
 	}{
 		{
 			name:          "InvalidRegex",
-			in:            newStringInput("["),
+			regex:         "[",
 			expectedError: "invalid regular expression",
 		},
 		{
 			name:          "InvalidCharRange",
-			in:            newStringInput("[9-0]"),
+			regex:         "[9-0]",
 			expectedError: "1 error occurred:\n\t* invalid character range 9-0\n\n",
 		},
 		{
 			name:          "InvalidRepRange",
-			in:            newStringInput("[0-9]{4,2}"),
+			regex:         "[0-9]{4,2}",
 			expectedError: "1 error occurred:\n\t* invalid repetition range {4,2}\n\n",
 		},
 		{
-			name: "Success_Simple",
-			in:   newStringInput(`(a|b)*abb`),
+			name:  "Success_Simple",
+			regex: `(a|b)*abb`,
 			expectedAST: &AST{
 				Root: &Concat{
 					Exprs: []Node{
@@ -114,8 +112,8 @@ func TestParse(t *testing.T) {
 			expectedLastPos:  Poses{6},
 		},
 		{
-			name: "Success_Complex",
-			in:   newStringInput(`^[a-f][0-9a-f]*$`),
+			name:  "Success_Complex",
+			regex: `^[a-f][0-9a-f]*$`,
 			expectedAST: &AST{
 				Root: &Concat{
 					Exprs: []Node{
@@ -251,7 +249,7 @@ func TestParse(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			a, err := Parse(tc.in)
+			a, err := Parse(tc.regex)
 
 			if tc.expectedError != "" {
 				assert.Nil(t, a)

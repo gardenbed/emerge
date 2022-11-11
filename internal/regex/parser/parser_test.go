@@ -87,14 +87,14 @@ func TestParser_char(t *testing.T) {
 		{
 			name:        "Failure",
 			m:           &mockMappers{},
-			in:          newStringInput(`µ`),
+			in:          NewInput(`µ`),
 			expectedOut: comb.Output{},
 			expectedOK:  false,
 		},
 		{
 			name: "Success_Low",
 			m:    &mockMappers{},
-			in:   newStringInput(` `),
+			in:   NewInput(` `),
 			expectedOut: comb.Output{
 				Result: comb.Result{Val: ' ', Pos: 0},
 			},
@@ -103,7 +103,7 @@ func TestParser_char(t *testing.T) {
 		{
 			name: "Success_High",
 			m:    &mockMappers{},
-			in:   newStringInput(`~`),
+			in:   NewInput(`~`),
 			expectedOut: comb.Output{
 				Result: comb.Result{Val: '~', Pos: 0},
 			},
@@ -132,7 +132,7 @@ func TestParser_unescapedChar(t *testing.T) {
 		{
 			name: "Failure",
 			m:    &mockMappers{},
-			in:   newStringInput(`*`),
+			in:   NewInput(`*`),
 		},
 		{
 			name: "Success",
@@ -141,7 +141,7 @@ func TestParser_unescapedChar(t *testing.T) {
 					{},
 				},
 			},
-			in:               newStringInput(`a`),
+			in:               NewInput(`a`),
 			expectedInResult: comb.Result{Val: 'a', Pos: 0},
 		},
 	}
@@ -169,7 +169,7 @@ func TestParser_escapedChar(t *testing.T) {
 		{
 			name: "Failure",
 			m:    &mockMappers{},
-			in:   newStringInput(`a`),
+			in:   NewInput(`a`),
 		},
 		{
 			name: "Success",
@@ -178,7 +178,7 @@ func TestParser_escapedChar(t *testing.T) {
 					{},
 				},
 			},
-			in: newStringInput(`\*`),
+			in: NewInput(`\*`),
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: '\\', Pos: 0},
@@ -213,14 +213,14 @@ func TestParser_digit(t *testing.T) {
 		{
 			name:        "Failure",
 			m:           &mockMappers{},
-			in:          newStringInput(`a`),
+			in:          NewInput(`a`),
 			expectedOut: comb.Output{},
 			expectedOK:  false,
 		},
 		{
 			name: "Success",
 			m:    &mockMappers{},
-			in:   newStringInput(`7`),
+			in:   NewInput(`7`),
 			expectedOut: comb.Output{
 				Result: comb.Result{Val: '7', Pos: 0},
 			},
@@ -250,14 +250,14 @@ func TestParser_letter(t *testing.T) {
 		{
 			name:        "Failure",
 			m:           &mockMappers{},
-			in:          newStringInput(`0`),
+			in:          NewInput(`0`),
 			expectedOut: comb.Output{},
 			expectedOK:  false,
 		},
 		{
 			name: "Success_Upper",
 			m:    &mockMappers{},
-			in:   newStringInput(`A`),
+			in:   NewInput(`A`),
 			expectedOut: comb.Output{
 				Result: comb.Result{Val: 'A', Pos: 0},
 			},
@@ -266,7 +266,7 @@ func TestParser_letter(t *testing.T) {
 		{
 			name: "Success_Lower",
 			m:    &mockMappers{},
-			in:   newStringInput(`a`),
+			in:   NewInput(`a`),
 			expectedOut: comb.Output{
 				Result: comb.Result{Val: 'a', Pos: 0},
 			},
@@ -296,14 +296,14 @@ func TestParser_num(t *testing.T) {
 		{
 			name:        "Failure",
 			m:           &mockMappers{},
-			in:          newStringInput(`a`),
+			in:          NewInput(`a`),
 			expectedOut: comb.Output{},
 			expectedOK:  false,
 		},
 		{
 			name: "Success",
 			m:    &mockMappers{},
-			in:   newStringInput(`69`),
+			in:   NewInput(`69`),
 			expectedOut: comb.Output{
 				Result: comb.Result{Val: 69, Pos: 0},
 			},
@@ -333,14 +333,14 @@ func TestParser_letters(t *testing.T) {
 		{
 			name:        "Failure",
 			m:           &mockMappers{},
-			in:          newStringInput(`0`),
+			in:          NewInput(`0`),
 			expectedOut: comb.Output{},
 			expectedOK:  false,
 		},
 		{
 			name: "Success",
 			m:    &mockMappers{},
-			in:   newStringInput(`Symbol`),
+			in:   NewInput(`Symbol`),
 			expectedOut: comb.Output{
 				Result: comb.Result{Val: "Symbol", Pos: 0},
 			},
@@ -369,7 +369,7 @@ func TestParser_repOp(t *testing.T) {
 		{
 			name: "Failure",
 			m:    &mockMappers{},
-			in:   newStringInput(`!`),
+			in:   NewInput(`!`),
 		},
 		{
 			name: "Success_ZeroOrOne",
@@ -378,7 +378,7 @@ func TestParser_repOp(t *testing.T) {
 					{},
 				},
 			},
-			in:               newStringInput(`?`),
+			in:               NewInput(`?`),
 			expectedInResult: comb.Result{Val: '?', Pos: 0},
 		},
 		{
@@ -388,7 +388,7 @@ func TestParser_repOp(t *testing.T) {
 					{},
 				},
 			},
-			in:               newStringInput(`*`),
+			in:               NewInput(`*`),
 			expectedInResult: comb.Result{Val: '*', Pos: 0},
 		},
 		{
@@ -398,7 +398,7 @@ func TestParser_repOp(t *testing.T) {
 					{},
 				},
 			},
-			in:               newStringInput(`+`),
+			in:               NewInput(`+`),
 			expectedInResult: comb.Result{Val: '+', Pos: 0},
 		},
 	}
@@ -426,7 +426,7 @@ func TestParser_upperBound(t *testing.T) {
 		{
 			name: "Failure",
 			m:    &mockMappers{},
-			in:   newStringInput(`;`),
+			in:   NewInput(`;`),
 		},
 		{
 			name: "Success_Unbounded",
@@ -435,7 +435,7 @@ func TestParser_upperBound(t *testing.T) {
 					{},
 				},
 			},
-			in: newStringInput(`,`),
+			in: NewInput(`,`),
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: ',', Pos: 0},
@@ -451,7 +451,7 @@ func TestParser_upperBound(t *testing.T) {
 					{},
 				},
 			},
-			in: newStringInput(`,4`),
+			in: NewInput(`,4`),
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: ',', Pos: 0},
@@ -485,7 +485,7 @@ func TestParser_range(t *testing.T) {
 		{
 			name: "Failure",
 			m:    &mockMappers{},
-			in:   newStringInput(`{`),
+			in:   NewInput(`{`),
 		},
 		{
 			name: "Success_WithoutUpperBound",
@@ -494,7 +494,7 @@ func TestParser_range(t *testing.T) {
 					{},
 				},
 			},
-			in: newStringInput(`{2}`),
+			in: NewInput(`{2}`),
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: '{', Pos: 0},
@@ -515,7 +515,7 @@ func TestParser_range(t *testing.T) {
 					{},
 				},
 			},
-			in: newStringInput(`{2,}`),
+			in: NewInput(`{2,}`),
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: '{', Pos: 0},
@@ -551,7 +551,7 @@ func TestParser_repetition(t *testing.T) {
 		{
 			name: "Failure",
 			m:    &mockMappers{},
-			in:   newStringInput(`!`),
+			in:   NewInput(`!`),
 		},
 		{
 			name: "Success_RepOp",
@@ -563,7 +563,7 @@ func TestParser_repetition(t *testing.T) {
 					{},
 				},
 			},
-			in:               newStringInput(`*`),
+			in:               NewInput(`*`),
 			expectedInResult: comb.Result{},
 		},
 		{
@@ -579,7 +579,7 @@ func TestParser_repetition(t *testing.T) {
 					{},
 				},
 			},
-			in:               newStringInput(`{2,4}`),
+			in:               NewInput(`{2,4}`),
 			expectedInResult: comb.Result{},
 		},
 	}
@@ -607,7 +607,7 @@ func TestParser_quantifier(t *testing.T) {
 		{
 			name: "Failure",
 			m:    &mockMappers{},
-			in:   newStringInput(`!`),
+			in:   NewInput(`!`),
 		},
 		{
 			name: "Success",
@@ -622,7 +622,7 @@ func TestParser_quantifier(t *testing.T) {
 					{},
 				},
 			},
-			in: newStringInput(`*`),
+			in: NewInput(`*`),
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{},
@@ -643,7 +643,7 @@ func TestParser_quantifier(t *testing.T) {
 					{},
 				},
 			},
-			in: newStringInput(`*?`),
+			in: NewInput(`*?`),
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{},
@@ -676,7 +676,7 @@ func TestParser_charRange(t *testing.T) {
 		{
 			name: "Failure",
 			m:    &mockMappers{},
-			in:   newStringInput(`a`),
+			in:   NewInput(`a`),
 		},
 		{
 			name: "Success",
@@ -685,7 +685,7 @@ func TestParser_charRange(t *testing.T) {
 					{},
 				},
 			},
-			in: newStringInput(`a-z`),
+			in: NewInput(`a-z`),
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: 'a', Pos: 0},
@@ -720,7 +720,7 @@ func TestParser_charClass(t *testing.T) {
 		{
 			name: "Failure",
 			m:    &mockMappers{},
-			in:   newStringInput(`\a`),
+			in:   NewInput(`\a`),
 		},
 		{
 			name: "Success_Digit",
@@ -729,7 +729,7 @@ func TestParser_charClass(t *testing.T) {
 					{},
 				},
 			},
-			in:               newStringInput(`\d`),
+			in:               NewInput(`\d`),
 			expectedInResult: comb.Result{Val: "\\d", Pos: 0},
 		},
 		{
@@ -739,7 +739,7 @@ func TestParser_charClass(t *testing.T) {
 					{},
 				},
 			},
-			in:               newStringInput(`\D`),
+			in:               NewInput(`\D`),
 			expectedInResult: comb.Result{Val: "\\D", Pos: 0},
 		},
 		{
@@ -749,7 +749,7 @@ func TestParser_charClass(t *testing.T) {
 					{},
 				},
 			},
-			in:               newStringInput(`\s`),
+			in:               NewInput(`\s`),
 			expectedInResult: comb.Result{Val: "\\s", Pos: 0},
 		},
 		{
@@ -759,7 +759,7 @@ func TestParser_charClass(t *testing.T) {
 					{},
 				},
 			},
-			in:               newStringInput(`\S`),
+			in:               NewInput(`\S`),
 			expectedInResult: comb.Result{Val: "\\S", Pos: 0},
 		},
 		{
@@ -769,7 +769,7 @@ func TestParser_charClass(t *testing.T) {
 					{},
 				},
 			},
-			in:               newStringInput(`\w`),
+			in:               NewInput(`\w`),
 			expectedInResult: comb.Result{Val: "\\w", Pos: 0},
 		},
 		{
@@ -779,7 +779,7 @@ func TestParser_charClass(t *testing.T) {
 					{},
 				},
 			},
-			in:               newStringInput(`\W`),
+			in:               NewInput(`\W`),
 			expectedInResult: comb.Result{Val: "\\W", Pos: 0},
 		},
 	}
@@ -807,7 +807,7 @@ func TestParser_asciiCharClass(t *testing.T) {
 		{
 			name: "Failure",
 			m:    &mockMappers{},
-			in:   newStringInput(`[:invalid:]`),
+			in:   NewInput(`[:invalid:]`),
 		},
 		{
 			name: "Success_Blank",
@@ -816,7 +816,7 @@ func TestParser_asciiCharClass(t *testing.T) {
 					{},
 				},
 			},
-			in:               newStringInput(`[:blank:]`),
+			in:               NewInput(`[:blank:]`),
 			expectedInResult: comb.Result{Val: "[:blank:]", Pos: 0},
 		},
 		{
@@ -826,7 +826,7 @@ func TestParser_asciiCharClass(t *testing.T) {
 					{},
 				},
 			},
-			in:               newStringInput(`[:space:]`),
+			in:               NewInput(`[:space:]`),
 			expectedInResult: comb.Result{Val: "[:space:]", Pos: 0},
 		},
 		{
@@ -836,7 +836,7 @@ func TestParser_asciiCharClass(t *testing.T) {
 					{},
 				},
 			},
-			in:               newStringInput(`[:digit:]`),
+			in:               NewInput(`[:digit:]`),
 			expectedInResult: comb.Result{Val: "[:digit:]", Pos: 0},
 		},
 		{
@@ -846,7 +846,7 @@ func TestParser_asciiCharClass(t *testing.T) {
 					{},
 				},
 			},
-			in:               newStringInput(`[:xdigit:]`),
+			in:               NewInput(`[:xdigit:]`),
 			expectedInResult: comb.Result{Val: "[:xdigit:]", Pos: 0},
 		},
 		{
@@ -856,7 +856,7 @@ func TestParser_asciiCharClass(t *testing.T) {
 					{},
 				},
 			},
-			in:               newStringInput(`[:upper:]`),
+			in:               NewInput(`[:upper:]`),
 			expectedInResult: comb.Result{Val: "[:upper:]", Pos: 0},
 		},
 		{
@@ -866,7 +866,7 @@ func TestParser_asciiCharClass(t *testing.T) {
 					{},
 				},
 			},
-			in:               newStringInput(`[:lower:]`),
+			in:               NewInput(`[:lower:]`),
 			expectedInResult: comb.Result{Val: "[:lower:]", Pos: 0},
 		},
 		{
@@ -876,7 +876,7 @@ func TestParser_asciiCharClass(t *testing.T) {
 					{},
 				},
 			},
-			in:               newStringInput(`[:alpha:]`),
+			in:               NewInput(`[:alpha:]`),
 			expectedInResult: comb.Result{Val: "[:alpha:]", Pos: 0},
 		},
 		{
@@ -886,7 +886,7 @@ func TestParser_asciiCharClass(t *testing.T) {
 					{},
 				},
 			},
-			in:               newStringInput(`[:alnum:]`),
+			in:               NewInput(`[:alnum:]`),
 			expectedInResult: comb.Result{Val: "[:alnum:]", Pos: 0},
 		},
 		{
@@ -896,7 +896,7 @@ func TestParser_asciiCharClass(t *testing.T) {
 					{},
 				},
 			},
-			in:               newStringInput(`[:word:]`),
+			in:               NewInput(`[:word:]`),
 			expectedInResult: comb.Result{Val: "[:word:]", Pos: 0},
 		},
 		{
@@ -906,7 +906,7 @@ func TestParser_asciiCharClass(t *testing.T) {
 					{},
 				},
 			},
-			in:               newStringInput(`[:ascii:]`),
+			in:               NewInput(`[:ascii:]`),
 			expectedInResult: comb.Result{Val: "[:ascii:]", Pos: 0},
 		},
 	}
@@ -934,7 +934,7 @@ func TestParser_charGroupItem(t *testing.T) {
 		{
 			name: "Failure",
 			m:    &mockMappers{},
-			in:   newStringInput(`\`),
+			in:   NewInput(`\`),
 		},
 		{
 			name: "Success_CharClass",
@@ -946,7 +946,7 @@ func TestParser_charGroupItem(t *testing.T) {
 					{},
 				},
 			},
-			in:               newStringInput(`\d`),
+			in:               NewInput(`\d`),
 			expectedInResult: comb.Result{},
 		},
 		{
@@ -959,7 +959,7 @@ func TestParser_charGroupItem(t *testing.T) {
 					{},
 				},
 			},
-			in:               newStringInput(`[:digit:]`),
+			in:               NewInput(`[:digit:]`),
 			expectedInResult: comb.Result{},
 		},
 		{
@@ -972,7 +972,7 @@ func TestParser_charGroupItem(t *testing.T) {
 					{},
 				},
 			},
-			in:               newStringInput(`a-z`),
+			in:               NewInput(`a-z`),
 			expectedInResult: comb.Result{},
 		},
 		{
@@ -985,7 +985,7 @@ func TestParser_charGroupItem(t *testing.T) {
 					{},
 				},
 			},
-			in:               newStringInput(`\*`),
+			in:               NewInput(`\*`),
 			expectedInResult: comb.Result{},
 		},
 		{
@@ -998,7 +998,7 @@ func TestParser_charGroupItem(t *testing.T) {
 					{},
 				},
 			},
-			in:               newStringInput(`a`),
+			in:               NewInput(`a`),
 			expectedInResult: comb.Result{},
 		},
 	}
@@ -1026,7 +1026,7 @@ func TestParser_charGroup(t *testing.T) {
 		{
 			name: "Failure",
 			m:    &mockMappers{},
-			in:   newStringInput(`[`),
+			in:   NewInput(`[`),
 		},
 		{
 			name: "Success_Chars",
@@ -1043,7 +1043,7 @@ func TestParser_charGroup(t *testing.T) {
 					MapperMock{},
 				},
 			},
-			in: newStringInput(`[ab]`),
+			in: NewInput(`[ab]`),
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: '[', Pos: 0},
@@ -1074,7 +1074,7 @@ func TestParser_charGroup(t *testing.T) {
 					MapperMock{},
 				},
 			},
-			in: newStringInput(`[^ab]`),
+			in: NewInput(`[^ab]`),
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: '[', Pos: 0},
@@ -1115,7 +1115,7 @@ func TestParser_anyChar(t *testing.T) {
 		{
 			name: "Failure",
 			m:    &mockMappers{},
-			in:   newStringInput(`:`),
+			in:   NewInput(`:`),
 		},
 		{
 			name: "Success",
@@ -1124,7 +1124,7 @@ func TestParser_anyChar(t *testing.T) {
 					{},
 				},
 			},
-			in:               newStringInput(`.`),
+			in:               NewInput(`.`),
 			expectedInResult: comb.Result{Val: '.', Pos: 0},
 		},
 	}
@@ -1152,7 +1152,7 @@ func TestParser_matchItem(t *testing.T) {
 		{
 			name: "Failure",
 			m:    &mockMappers{},
-			in:   newStringInput(`\`),
+			in:   NewInput(`\`),
 		},
 		{
 			name: "Success_AnyChar",
@@ -1164,7 +1164,7 @@ func TestParser_matchItem(t *testing.T) {
 					{},
 				},
 			},
-			in:               newStringInput(`.`),
+			in:               NewInput(`.`),
 			expectedInResult: comb.Result{},
 		},
 		{
@@ -1177,7 +1177,7 @@ func TestParser_matchItem(t *testing.T) {
 					{},
 				},
 			},
-			in:               newStringInput(`a`),
+			in:               NewInput(`a`),
 			expectedInResult: comb.Result{},
 		},
 		{
@@ -1190,7 +1190,7 @@ func TestParser_matchItem(t *testing.T) {
 					{},
 				},
 			},
-			in:               newStringInput(`\*`),
+			in:               NewInput(`\*`),
 			expectedInResult: comb.Result{},
 		},
 		{
@@ -1203,7 +1203,7 @@ func TestParser_matchItem(t *testing.T) {
 					{},
 				},
 			},
-			in:               newStringInput(`\d`),
+			in:               NewInput(`\d`),
 			expectedInResult: comb.Result{},
 		},
 		{
@@ -1216,7 +1216,7 @@ func TestParser_matchItem(t *testing.T) {
 					{},
 				},
 			},
-			in:               newStringInput(`[:digit:]`),
+			in:               NewInput(`[:digit:]`),
 			expectedInResult: comb.Result{},
 		},
 		{
@@ -1235,7 +1235,7 @@ func TestParser_matchItem(t *testing.T) {
 					{},
 				},
 			},
-			in:               newStringInput(`[a-z]`),
+			in:               NewInput(`[a-z]`),
 			expectedInResult: comb.Result{},
 		},
 	}
@@ -1263,7 +1263,7 @@ func TestParser_match(t *testing.T) {
 		{
 			name: "Failure",
 			m:    &mockMappers{},
-			in:   newStringInput(`\`),
+			in:   NewInput(`\`),
 		},
 		{
 			name: "Success_WithoutQuantifier",
@@ -1278,7 +1278,7 @@ func TestParser_match(t *testing.T) {
 					{},
 				},
 			},
-			in: newStringInput(`\d`),
+			in: NewInput(`\d`),
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{},
@@ -1308,7 +1308,7 @@ func TestParser_match(t *testing.T) {
 					MapperMock{},
 				},
 			},
-			in: newStringInput(`[:digit:]+`),
+			in: NewInput(`[:digit:]+`),
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{},
@@ -1341,7 +1341,7 @@ func TestParser_anchor(t *testing.T) {
 		{
 			name: "Failure",
 			m:    &mockMappers{},
-			in:   newStringInput(`#`),
+			in:   NewInput(`#`),
 		},
 		{
 			name: "Success",
@@ -1350,7 +1350,7 @@ func TestParser_anchor(t *testing.T) {
 					{},
 				},
 			},
-			in:               newStringInput(`$`),
+			in:               NewInput(`$`),
 			expectedInResult: comb.Result{Val: '$', Pos: 0},
 		},
 	}
@@ -1378,7 +1378,7 @@ func TestParser_group(t *testing.T) {
 		{
 			name: "Failure",
 			m:    &mockMappers{},
-			in:   newStringInput(`(`),
+			in:   NewInput(`(`),
 		},
 		{
 			name: "Success_WithoutQuantifier",
@@ -1405,7 +1405,7 @@ func TestParser_group(t *testing.T) {
 					{},
 				},
 			},
-			in: newStringInput(`(a)`),
+			in: NewInput(`(a)`),
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: '(', Pos: 0},
@@ -1450,7 +1450,7 @@ func TestParser_group(t *testing.T) {
 					{},
 				},
 			},
-			in: newStringInput(`(\*)?`),
+			in: NewInput(`(\*)?`),
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: '(', Pos: 0},
@@ -1486,7 +1486,7 @@ func TestParser_subexprItem(t *testing.T) {
 		{
 			name: "Failure",
 			m:    &mockMappers{},
-			in:   newStringInput(`\`),
+			in:   NewInput(`\`),
 		},
 		{
 			name: "Success_Anchor",
@@ -1498,7 +1498,7 @@ func TestParser_subexprItem(t *testing.T) {
 					{},
 				},
 			},
-			in:               newStringInput(`$`),
+			in:               NewInput(`$`),
 			expectedInResult: comb.Result{},
 		},
 		{
@@ -1527,7 +1527,7 @@ func TestParser_subexprItem(t *testing.T) {
 					{},
 				},
 			},
-			in:               newStringInput(`(a)`),
+			in:               NewInput(`(a)`),
 			expectedInResult: comb.Result{},
 		},
 		{
@@ -1546,7 +1546,7 @@ func TestParser_subexprItem(t *testing.T) {
 					{},
 				},
 			},
-			in:               newStringInput(`\d`),
+			in:               NewInput(`\d`),
 			expectedInResult: comb.Result{},
 		},
 	}
@@ -1574,7 +1574,7 @@ func TestParser_subexpr(t *testing.T) {
 		{
 			name: "Failure",
 			m:    &mockMappers{},
-			in:   newStringInput(`\`),
+			in:   NewInput(`\`),
 		},
 		{
 			name: "Success_UnescapedChar",
@@ -1599,7 +1599,7 @@ func TestParser_subexpr(t *testing.T) {
 					MapperMock{},
 				},
 			},
-			in: newStringInput(`ab`),
+			in: NewInput(`ab`),
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{},
@@ -1632,7 +1632,7 @@ func TestParser_expr(t *testing.T) {
 		{
 			name: "Failure",
 			m:    &mockMappers{},
-			in:   newStringInput(`\`),
+			in:   NewInput(`\`),
 		},
 		{
 			name: "Success",
@@ -1656,7 +1656,7 @@ func TestParser_expr(t *testing.T) {
 					{},
 				},
 			},
-			in: newStringInput(`a`),
+			in: NewInput(`a`),
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{},
@@ -1692,7 +1692,7 @@ func TestParser_expr(t *testing.T) {
 					{},
 				},
 			},
-			in: newStringInput(`a|b`),
+			in: NewInput(`a|b`),
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{},
@@ -1731,7 +1731,7 @@ func TestParser_regex(t *testing.T) {
 		{
 			name: "Failure",
 			m:    &mockMappers{},
-			in:   newStringInput(`\`),
+			in:   NewInput(`\`),
 		},
 		{
 			name: "Success_WithoutStartOfString",
@@ -1758,7 +1758,7 @@ func TestParser_regex(t *testing.T) {
 					{},
 				},
 			},
-			in: newStringInput(`a`),
+			in: NewInput(`a`),
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: comb.Empty{}},
@@ -1791,7 +1791,7 @@ func TestParser_regex(t *testing.T) {
 					{},
 				},
 			},
-			in: newStringInput(`^a`),
+			in: NewInput(`^a`),
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: '^', Pos: 0},
@@ -1854,7 +1854,7 @@ func TestParser_Parse(t *testing.T) {
 					{OutOK: true},
 				},
 			},
-			in:             newStringInput(`a`),
+			in:             NewInput(`a`),
 			expectedOutput: comb.Output{},
 			expectedOK:     true,
 		},
@@ -1872,34 +1872,6 @@ func TestParser_Parse(t *testing.T) {
 }
 
 //==================================================< HELPERS >==================================================
-
-// stringInput implements the input interface for strings.
-type stringInput struct {
-	pos   int
-	runes []rune
-}
-
-func newStringInput(s string) comb.Input {
-	return &stringInput{
-		pos:   0,
-		runes: []rune(s),
-	}
-}
-
-func (s *stringInput) Current() (rune, int) {
-	return s.runes[0], s.pos
-}
-
-func (s *stringInput) Remaining() comb.Input {
-	if len(s.runes) == 1 {
-		return nil
-	}
-
-	return &stringInput{
-		pos:   s.pos + 1,
-		runes: s.runes[1:],
-	}
-}
 
 type (
 	MapperMock struct {
