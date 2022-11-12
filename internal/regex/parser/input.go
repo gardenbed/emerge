@@ -2,30 +2,30 @@ package parser
 
 import comb "github.com/gardenbed/emerge/internal/combinator"
 
-// Input implements the input interface for strings.
-type Input struct {
+// stringInput implements the combinator.Input interface for strings.
+type stringInput struct {
 	pos   int
 	runes []rune
 }
 
-func NewInput(s string) comb.Input {
-	return &Input{
+func newStringInput(s string) comb.Input {
+	return &stringInput{
 		pos:   0,
 		runes: []rune(s),
 	}
 }
 
-func (i *Input) Current() (rune, int) {
-	return i.runes[0], i.pos
+func (s *stringInput) Current() (rune, int) {
+	return s.runes[0], s.pos
 }
 
-func (i *Input) Remaining() comb.Input {
-	if len(i.runes) == 1 {
+func (s *stringInput) Remaining() comb.Input {
+	if len(s.runes) == 1 {
 		return nil
 	}
 
-	return &Input{
-		pos:   i.pos + 1,
-		runes: i.runes[1:],
+	return &stringInput{
+		pos:   s.pos + 1,
+		runes: s.runes[1:],
 	}
 }

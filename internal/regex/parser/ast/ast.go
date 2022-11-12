@@ -37,9 +37,8 @@ type AST struct {
 func Parse(regex string) (*AST, error) {
 	m := new(mappers)
 	p := parser.New(m)
-	in := parser.NewInput(regex)
 
-	out, ok := p.Parse(in)
+	out, ok := p.Parse(regex)
 	if !ok {
 		return nil, errors.New("invalid regular expression")
 	}
