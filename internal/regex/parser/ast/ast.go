@@ -11,7 +11,6 @@ import (
 	auto "github.com/moorara/algo/automata"
 	"github.com/moorara/algo/list"
 
-	comb "github.com/gardenbed/emerge/internal/combinator"
 	"github.com/gardenbed/emerge/internal/regex/parser"
 )
 
@@ -35,11 +34,11 @@ type AST struct {
 	follows   map[Pos]Poses
 }
 
-func Parse(in comb.Input) (*AST, error) {
+func Parse(regex string) (*AST, error) {
 	m := new(mappers)
 	p := parser.New(m)
 
-	out, ok := p.Parse(in)
+	out, ok := p.Parse(regex)
 	if !ok {
 		return nil, errors.New("invalid regular expression")
 	}

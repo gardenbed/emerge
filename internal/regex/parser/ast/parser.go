@@ -28,7 +28,19 @@ type mappers struct {
 	errors error
 }
 
-func (m *mappers) ToUnescapedChar(r comb.Result) (comb.Result, bool) {
+func (m *mappers) ToAnyChar(r comb.Result) (comb.Result, bool) {
+	alt := new(Alt)
+	for _, r := range parser.Alphabet {
+		alt.Exprs = append(alt.Exprs, runeToChar(r))
+	}
+
+	return comb.Result{
+		Val: alt,
+		Pos: r.Pos,
+	}, true
+}
+
+func (m *mappers) ToSingleChar(r comb.Result) (comb.Result, bool) {
 	c := r.Val.(rune)
 
 	return comb.Result{
@@ -40,17 +52,74 @@ func (m *mappers) ToUnescapedChar(r comb.Result) (comb.Result, bool) {
 	}, true
 }
 
-func (m *mappers) ToEscapedChar(r comb.Result) (comb.Result, bool) {
-	r0, _ := r.Get(0)
-	r1, _ := r.Get(1)
+func (m *mappers) ToCharClass(r comb.Result) (comb.Result, bool) {
+	class := r.Val.(string)
 
-	c := r1.Val.(rune)
+	var node *Alt
+	var chars []rune
+
+	switch class {
+	case `\d`:
+		node, chars = runeRangesToAlt(false, [2]rune{'0', '9'})
+	case `\D`:
+		node, chars = runeRangesToAlt(true, [2]rune{'0', '9'})
+	case `\s`:
+		node, chars = runesToAlt(false, ' ', '\t', '\n', '\r', '\f')
+	case `\S`:
+		node, chars = runesToAlt(true, ' ', '\t', '\n', '\r', '\f')
+	case `\w`:
+		node, chars = runeRangesToAlt(false, [2]rune{'0', '9'}, [2]rune{'A', 'Z'}, [2]rune{'_', '_'}, [2]rune{'a', 'z'})
+	case `\W`:
+		node, chars = runeRangesToAlt(true, [2]rune{'0', '9'}, [2]rune{'A', 'Z'}, [2]rune{'_', '_'}, [2]rune{'a', 'z'})
+	default:
+		return comb.Result{}, false
+	}
 
 	return comb.Result{
-		Val: runeToChar(c),
-		Pos: r0.Pos,
+		Val: node,
+		Pos: r.Pos,
 		Bag: comb.Bag{
-			bagKeyChars: []rune{c},
+			bagKeyChars: chars,
+		},
+	}, true
+}
+
+func (m *mappers) ToASCIICharClass(r comb.Result) (comb.Result, bool) {
+	class := r.Val.(string)
+
+	var node *Alt
+	var chars []rune
+
+	switch class {
+	case "[:blank:]":
+		node, chars = runesToAlt(false, ' ', '\t')
+	case "[:space:]":
+		node, chars = runesToAlt(false, ' ', '\t', '\n', '\r', '\f', '\v')
+	case "[:digit:]":
+		node, chars = runeRangesToAlt(false, [2]rune{'0', '9'})
+	case "[:xdigit:]":
+		node, chars = runeRangesToAlt(false, [2]rune{'0', '9'}, [2]rune{'A', 'F'}, [2]rune{'a', 'f'})
+	case "[:upper:]":
+		node, chars = runeRangesToAlt(false, [2]rune{'A', 'Z'})
+	case "[:lower:]":
+		node, chars = runeRangesToAlt(false, [2]rune{'a', 'z'})
+	case "[:alpha:]":
+		node, chars = runeRangesToAlt(false, [2]rune{'A', 'Z'}, [2]rune{'a', 'z'})
+	case "[:alnum:]":
+		node, chars = runeRangesToAlt(false, [2]rune{'0', '9'}, [2]rune{'A', 'Z'}, [2]rune{'a', 'z'})
+	case "[:word:]":
+		node, chars = runeRangesToAlt(false, [2]rune{'0', '9'}, [2]rune{'A', 'Z'}, [2]rune{'_', '_'}, [2]rune{'a', 'z'})
+	case "[:ascii:]":
+		node, chars = runeRangesToAlt(false, [2]rune{0x00, 0x7f})
+	default:
+		return comb.Result{}, false
+	}
+
+	return comb.Result{
+		Val: node,
+		Pos: r.Pos,
+		Bag: comb.Bag{
+			bagKeyChars: chars,
 		},
 	}, true
 }
@@ -125,6 +194,11 @@ func (m *mappers) ToQuantifier(r comb.Result) (comb.Result, bool) {
 	}, true
 }
 
+func (m *mappers) ToCharInRange(r comb.Result) (comb.Result, bool) {
+	// Passing the result up the parsing chain
+	return r, true
+}
+
 func (m *mappers) ToCharRange(r comb.Result) (comb.Result, bool) {
 	r0, _ := r.Get(0)
 	r2, _ := r.Get(2)
@@ -187,90 +261,6 @@ func (m *mappers) ToCharGroup(r comb.Result) (comb.Result, bool) {
 	}, true
 }
 
-func (m *mappers) ToASCIICharClass(r comb.Result) (comb.Result, bool) {
-	class := r.Val.(string)
-
-	var node *Alt
-	var chars []rune
-
-	switch class {
-	case "[:blank:]":
-		node, chars = runesToAlt(false, ' ', '\t')
-	case "[:space:]":
-		node, chars = runesToAlt(false, ' ', '\t', '\n', '\r', '\f', '\v')
-	case "[:digit:]":
-		node, chars = runeRangesToAlt(false, [2]rune{'0', '9'})
-	case "[:xdigit:]":
-		node, chars = runeRangesToAlt(false, [2]rune{'0', '9'}, [2]rune{'A', 'F'}, [2]rune{'a', 'f'})
-	case "[:upper:]":
-		node, chars = runeRangesToAlt(false, [2]rune{'A', 'Z'})
-	case "[:lower:]":
-		node, chars = runeRangesToAlt(false, [2]rune{'a', 'z'})
-	case "[:alpha:]":
-		node, chars = runeRangesToAlt(false, [2]rune{'A', 'Z'}, [2]rune{'a', 'z'})
-	case "[:alnum:]":
-		node, chars = runeRangesToAlt(false, [2]rune{'0', '9'}, [2]rune{'A', 'Z'}, [2]rune{'a', 'z'})
-	case "[:word:]":
-		node, chars = runeRangesToAlt(false, [2]rune{'0', '9'}, [2]rune{'A', 'Z'}, [2]rune{'_', '_'}, [2]rune{'a', 'z'})
-	case "[:ascii:]":
-		node, chars = runeRangesToAlt(false, [2]rune{0x00, 0x7f})
-	default:
-		return comb.Result{}, false
-	}
-
-	return comb.Result{
-		Val: node,
-		Pos: r.Pos,
-		Bag: comb.Bag{
-			bagKeyChars: chars,
-		},
-	}, true
-}
-
-func (m *mappers) ToCharClass(r comb.Result) (comb.Result, bool) {
-	class := r.Val.(string)
-
-	var node *Alt
-	var chars []rune
-
-	switch class {
-	case `\d`:
-		node, chars = runeRangesToAlt(false, [2]rune{'0', '9'})
-	case `\D`:
-		node, chars = runeRangesToAlt(true, [2]rune{'0', '9'})
-	case `\s`:
-		node, chars = runesToAlt(false, ' ', '\t', '\n', '\r', '\f')
-	case `\S`:
-		node, chars = runesToAlt(true, ' ', '\t', '\n', '\r', '\f')
-	case `\w`:
-		node, chars = runeRangesToAlt(false, [2]rune{'0', '9'}, [2]rune{'A', 'Z'}, [2]rune{'_', '_'}, [2]rune{'a', 'z'})
-	case `\W`:
-		node, chars = runeRangesToAlt(true, [2]rune{'0', '9'}, [2]rune{'A', 'Z'}, [2]rune{'_', '_'}, [2]rune{'a', 'z'})
-	default:
-		return comb.Result{}, false
-	}
-
-	return comb.Result{
-		Val: node,
-		Pos: r.Pos,
-		Bag: comb.Bag{
-			bagKeyChars: chars,
-		},
-	}, true
-}
-
-func (m *mappers) ToAnyChar(r comb.Result) (comb.Result, bool) {
-	alt := new(Alt)
-	for _, r := range parser.Alphabet {
-		alt.Exprs = append(alt.Exprs, runeToChar(r))
-	}
-
-	return comb.Result{
-		Val: alt,
-		Pos: r.Pos,
-	}, true
-}
-
 func (m *mappers) ToMatchItem(r comb.Result) (comb.Result, bool) {
 	// Passing the result up the parsing chain
 	return r, true
@@ -299,21 +289,6 @@ func (m *mappers) ToMatch(r comb.Result) (comb.Result, bool) {
 	}, true
 }
 
-func (m *mappers) ToAnchor(r comb.Result) (comb.Result, bool) {
-	c := r.Val.(rune)
-
-	var anchor Anchor
-	switch c {
-	case '$': // end-of-string
-		anchor = EndOfString
-	}
-
-	return comb.Result{
-		Val: anchor,
-		Pos: r.Pos,
-	}, true
-}
-
 func (m *mappers) ToGroup(r comb.Result) (comb.Result, bool) {
 	r0, _ := r.Get(0)
 	r1, _ := r.Get(1)
@@ -335,6 +310,21 @@ func (m *mappers) ToGroup(r comb.Result) (comb.Result, bool) {
 		Val: node,
 		Pos: r0.Pos,
 		Bag: bag,
+	}, true
+}
+
+func (m *mappers) ToAnchor(r comb.Result) (comb.Result, bool) {
+	c := r.Val.(rune)
+
+	var anchor Anchor
+	switch c {
+	case '$': // end-of-string
+		anchor = EndOfString
+	}
+
+	return comb.Result{
+		Val: anchor,
+		Pos: r.Pos,
 	}, true
 }
 

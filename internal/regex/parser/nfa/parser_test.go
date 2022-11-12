@@ -14,28 +14,28 @@ func TestParse(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		in            comb.Input
+		regex         string
 		expectedError string
 		expectedNFA   *auto.NFA
 	}{
 		{
 			name:          "InvalidRegex",
-			in:            newStringInput("["),
+			regex:         "[",
 			expectedError: "invalid regular expression",
 		},
 		{
 			name:          "InvalidCharRange",
-			in:            newStringInput("[9-0]"),
+			regex:         "[9-0]",
 			expectedError: "1 error occurred:\n\t* invalid character range 9-0\n\n",
 		},
 		{
 			name:          "InvalidRepRange",
-			in:            newStringInput("[0-9]{4,2}"),
+			regex:         "[0-9]{4,2}",
 			expectedError: "1 error occurred:\n\t* invalid repetition range {4,2}\n\n",
 		},
 		{
-			name: "Success",
-			in:   newStringInput(`^[A-Z]?[a-z][0-9A-Za-z]{1,}$`),
+			name:  "Success",
+			regex: `^[A-Z]?[a-z][0-9A-Za-z]{1,}$`,
 			expectedNFA: Concat(
 				Alt(Empty(), nfas["upper"]),
 				nfas["lower"],
@@ -46,7 +46,7 @@ func TestParse(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			nfa, err := Parse(tc.in)
+			nfa, err := Parse(tc.regex)
 
 			if tc.expectedError != "" {
 				assert.Nil(t, nfa)
@@ -59,7 +59,40 @@ func TestParse(t *testing.T) {
 	}
 }
 
-func TestMappers_ToUnescapedChar(t *testing.T) {
+func TestMappers_ToAnyChar(t *testing.T) {
+	nfas := createTestNFAs()
+
+	tests := []MapperTest{
+		{
+			name: "Success",
+			r: comb.Result{
+				Val: '.',
+				Pos: 2,
+			},
+			expectedResult: comb.Result{
+				Val: nfas["ascii"],
+				Pos: 2,
+			},
+			expectedOK: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			m := new(mappers)
+			res, ok := m.ToAnyChar(tc.r)
+
+			EqualResults(t, tc.expectedResult, res)
+			assert.Equal(t, tc.expectedOK, ok)
+
+			if tc.expectedError != "" {
+				assert.EqualError(t, m.errors, tc.expectedError)
+			}
+		})
+	}
+}
+
+func TestMappers_ToSingleChar(t *testing.T) {
 	xNFA := auto.NewNFA(0, auto.States{1})
 	xNFA.Add(0, 'x', auto.States{1})
 
@@ -84,7 +117,7 @@ func TestMappers_ToUnescapedChar(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			m := new(mappers)
-			res, ok := m.ToUnescapedChar(tc.r)
+			res, ok := m.ToSingleChar(tc.r)
 
 			EqualResults(t, tc.expectedResult, res)
 			assert.Equal(t, tc.expectedOK, ok)
@@ -96,25 +129,96 @@ func TestMappers_ToUnescapedChar(t *testing.T) {
 	}
 }
 
-func TestMappers_ToEscapedChar(t *testing.T) {
-	asteriskNFA := auto.NewNFA(0, auto.States{1})
-	asteriskNFA.Add(0, '*', auto.States{1})
+func TestMappers_ToCharClass(t *testing.T) {
+	nfas := createTestNFAs()
 
 	tests := []MapperTest{
 		{
-			name: "Success",
+			name: "Success_Digit",
 			r: comb.Result{
-				Val: comb.List{
-					{Val: '\\', Pos: 2},
-					{Val: '*', Pos: 3},
-				},
+				Val: `\d`,
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: asteriskNFA,
+				Val: nfas["digit"],
 				Pos: 2,
 				Bag: comb.Bag{
-					bagKeyChars: []rune{'*'},
+					bagKeyChars: digitChars,
+				},
+			},
+			expectedOK: true,
+		},
+		{
+			name: "Success_NotDigit",
+			r: comb.Result{
+				Val: `\D`,
+				Pos: 2,
+			},
+			expectedResult: comb.Result{
+				Val: nfas["notDigit"],
+				Pos: 2,
+				Bag: comb.Bag{
+					bagKeyChars: notDigitChars,
+				},
+			},
+			expectedOK: true,
+		},
+		{
+			name: "Success_Whitespace",
+			r: comb.Result{
+				Val: `\s`,
+				Pos: 2,
+			},
+			expectedResult: comb.Result{
+				Val: nfas["whitespace"],
+				Pos: 2,
+				Bag: comb.Bag{
+					bagKeyChars: whitespaceChars,
+				},
+			},
+			expectedOK: true,
+		},
+		{
+			name: "Success_NotWhitespace",
+			r: comb.Result{
+				Val: `\S`,
+				Pos: 2,
+			},
+			expectedResult: comb.Result{
+				Val: nfas["notWhitespace"],
+				Pos: 2,
+				Bag: comb.Bag{
+					bagKeyChars: notWhitespaceChars,
+				},
+			},
+			expectedOK: true,
+		},
+		{
+			name: "Success_Word",
+			r: comb.Result{
+				Val: `\w`,
+				Pos: 2,
+			},
+			expectedResult: comb.Result{
+				Val: nfas["word"],
+				Pos: 2,
+				Bag: comb.Bag{
+					bagKeyChars: wordChars,
+				},
+			},
+			expectedOK: true,
+		},
+		{
+			name: "Success_NotWord",
+			r: comb.Result{
+				Val: `\W`,
+				Pos: 2,
+			},
+			expectedResult: comb.Result{
+				Val: nfas["notWord"],
+				Pos: 2,
+				Bag: comb.Bag{
+					bagKeyChars: notWordChars,
 				},
 			},
 			expectedOK: true,
@@ -124,7 +228,178 @@ func TestMappers_ToEscapedChar(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			m := new(mappers)
-			res, ok := m.ToEscapedChar(tc.r)
+			res, ok := m.ToCharClass(tc.r)
+
+			EqualResults(t, tc.expectedResult, res)
+			assert.Equal(t, tc.expectedOK, ok)
+
+			if tc.expectedError != "" {
+				assert.EqualError(t, m.errors, tc.expectedError)
+			}
+		})
+	}
+}
+
+func TestMappers_ToASCIICharClass(t *testing.T) {
+	nfas := createTestNFAs()
+
+	tests := []MapperTest{
+		{
+			name: "Success_Blank",
+			r: comb.Result{
+				Val: "[:blank:]",
+				Pos: 2,
+			},
+			expectedResult: comb.Result{
+				Val: nfas["blank"],
+				Pos: 2,
+				Bag: comb.Bag{
+					bagKeyChars: blankChars,
+				},
+			},
+			expectedOK: true,
+		},
+		{
+			name: "Success_Space",
+			r: comb.Result{
+				Val: "[:space:]",
+				Pos: 2,
+			},
+			expectedResult: comb.Result{
+				Val: nfas["space"],
+				Pos: 2,
+				Bag: comb.Bag{
+					bagKeyChars: spaceChars,
+				},
+			},
+			expectedOK: true,
+		},
+		{
+			name: "Success_Digit",
+			r: comb.Result{
+				Val: "[:digit:]",
+				Pos: 2,
+			},
+			expectedResult: comb.Result{
+				Val: nfas["digit"],
+				Pos: 2,
+				Bag: comb.Bag{
+					bagKeyChars: digitChars,
+				},
+			},
+			expectedOK: true,
+		},
+		{
+			name: "Success_XDigit",
+			r: comb.Result{
+				Val: "[:xdigit:]",
+				Pos: 2,
+			},
+			expectedResult: comb.Result{
+				Val: nfas["xdigit"],
+				Pos: 2,
+				Bag: comb.Bag{
+					bagKeyChars: xdigitChars,
+				},
+			},
+			expectedOK: true,
+		},
+		{
+			name: "Success_Upper",
+			r: comb.Result{
+				Val: "[:upper:]",
+				Pos: 2,
+			},
+			expectedResult: comb.Result{
+				Val: nfas["upper"],
+				Pos: 2,
+				Bag: comb.Bag{
+					bagKeyChars: upperChars,
+				},
+			},
+			expectedOK: true,
+		},
+		{
+			name: "Success_Lower",
+			r: comb.Result{
+				Val: "[:lower:]",
+				Pos: 2,
+			},
+			expectedResult: comb.Result{
+				Val: nfas["lower"],
+				Pos: 2,
+				Bag: comb.Bag{
+					bagKeyChars: lowerChars,
+				},
+			},
+			expectedOK: true,
+		},
+		{
+			name: "Success_Alpha",
+			r: comb.Result{
+				Val: "[:alpha:]",
+				Pos: 2,
+			},
+			expectedResult: comb.Result{
+				Val: nfas["alpha"],
+				Pos: 2,
+				Bag: comb.Bag{
+					bagKeyChars: alphaChars,
+				},
+			},
+			expectedOK: true,
+		},
+		{
+			name: "Success_Alnum",
+			r: comb.Result{
+				Val: "[:alnum:]",
+				Pos: 2,
+			},
+			expectedResult: comb.Result{
+				Val: nfas["alnum"],
+				Pos: 2,
+				Bag: comb.Bag{
+					bagKeyChars: alnumChars,
+				},
+			},
+			expectedOK: true,
+		},
+		{
+			name: "Success_Word",
+			r: comb.Result{
+				Val: "[:word:]",
+				Pos: 2,
+			},
+			expectedResult: comb.Result{
+				Val: nfas["word"],
+				Pos: 2,
+				Bag: comb.Bag{
+					bagKeyChars: wordChars,
+				},
+			},
+			expectedOK: true,
+		},
+		{
+			name: "Success_ASCII",
+			r: comb.Result{
+				Val: "[:ascii:]",
+				Pos: 2,
+			},
+			expectedResult: comb.Result{
+				Val: nfas["ascii"],
+				Pos: 2,
+				Bag: comb.Bag{
+					bagKeyChars: asciiChars,
+				},
+			},
+			expectedOK: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			m := new(mappers)
+			res, ok := m.ToASCIICharClass(tc.r)
 
 			EqualResults(t, tc.expectedResult, res)
 			assert.Equal(t, tc.expectedOK, ok)
@@ -411,6 +686,37 @@ func TestMappers_ToQuantifier(t *testing.T) {
 	}
 }
 
+func TestMappers_ToCharInRange(t *testing.T) {
+	tests := []MapperTest{
+		{
+			name: "Success",
+			r: comb.Result{
+				Val: 'a',
+				Pos: 2,
+			},
+			expectedResult: comb.Result{
+				Val: 'a',
+				Pos: 2,
+			},
+			expectedOK: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			m := new(mappers)
+			res, ok := m.ToCharInRange(tc.r)
+
+			EqualResults(t, tc.expectedResult, res)
+			assert.Equal(t, tc.expectedOK, ok)
+
+			if tc.expectedError != "" {
+				assert.EqualError(t, m.errors, tc.expectedError)
+			}
+		})
+	}
+}
+
 func TestMappers_ToCharRange(t *testing.T) {
 	aTofNFA := auto.NewNFA(0, auto.States{1})
 	aTofNFA.Add(0, 'a', auto.States{1})
@@ -618,321 +924,6 @@ func TestMappers_ToCharGroup(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			m := new(mappers)
 			res, ok := m.ToCharGroup(tc.r)
-
-			EqualResults(t, tc.expectedResult, res)
-			assert.Equal(t, tc.expectedOK, ok)
-
-			if tc.expectedError != "" {
-				assert.EqualError(t, m.errors, tc.expectedError)
-			}
-		})
-	}
-}
-
-func TestMappers_ToASCIICharClass(t *testing.T) {
-	nfas := createTestNFAs()
-
-	tests := []MapperTest{
-		{
-			name: "Success_Blank",
-			r: comb.Result{
-				Val: "[:blank:]",
-				Pos: 2,
-			},
-			expectedResult: comb.Result{
-				Val: nfas["blank"],
-				Pos: 2,
-				Bag: comb.Bag{
-					bagKeyChars: blankChars,
-				},
-			},
-			expectedOK: true,
-		},
-		{
-			name: "Success_Space",
-			r: comb.Result{
-				Val: "[:space:]",
-				Pos: 2,
-			},
-			expectedResult: comb.Result{
-				Val: nfas["space"],
-				Pos: 2,
-				Bag: comb.Bag{
-					bagKeyChars: spaceChars,
-				},
-			},
-			expectedOK: true,
-		},
-		{
-			name: "Success_Digit",
-			r: comb.Result{
-				Val: "[:digit:]",
-				Pos: 2,
-			},
-			expectedResult: comb.Result{
-				Val: nfas["digit"],
-				Pos: 2,
-				Bag: comb.Bag{
-					bagKeyChars: digitChars,
-				},
-			},
-			expectedOK: true,
-		},
-		{
-			name: "Success_XDigit",
-			r: comb.Result{
-				Val: "[:xdigit:]",
-				Pos: 2,
-			},
-			expectedResult: comb.Result{
-				Val: nfas["xdigit"],
-				Pos: 2,
-				Bag: comb.Bag{
-					bagKeyChars: xdigitChars,
-				},
-			},
-			expectedOK: true,
-		},
-		{
-			name: "Success_Upper",
-			r: comb.Result{
-				Val: "[:upper:]",
-				Pos: 2,
-			},
-			expectedResult: comb.Result{
-				Val: nfas["upper"],
-				Pos: 2,
-				Bag: comb.Bag{
-					bagKeyChars: upperChars,
-				},
-			},
-			expectedOK: true,
-		},
-		{
-			name: "Success_Lower",
-			r: comb.Result{
-				Val: "[:lower:]",
-				Pos: 2,
-			},
-			expectedResult: comb.Result{
-				Val: nfas["lower"],
-				Pos: 2,
-				Bag: comb.Bag{
-					bagKeyChars: lowerChars,
-				},
-			},
-			expectedOK: true,
-		},
-		{
-			name: "Success_Alpha",
-			r: comb.Result{
-				Val: "[:alpha:]",
-				Pos: 2,
-			},
-			expectedResult: comb.Result{
-				Val: nfas["alpha"],
-				Pos: 2,
-				Bag: comb.Bag{
-					bagKeyChars: alphaChars,
-				},
-			},
-			expectedOK: true,
-		},
-		{
-			name: "Success_Alnum",
-			r: comb.Result{
-				Val: "[:alnum:]",
-				Pos: 2,
-			},
-			expectedResult: comb.Result{
-				Val: nfas["alnum"],
-				Pos: 2,
-				Bag: comb.Bag{
-					bagKeyChars: alnumChars,
-				},
-			},
-			expectedOK: true,
-		},
-		{
-			name: "Success_Word",
-			r: comb.Result{
-				Val: "[:word:]",
-				Pos: 2,
-			},
-			expectedResult: comb.Result{
-				Val: nfas["word"],
-				Pos: 2,
-				Bag: comb.Bag{
-					bagKeyChars: wordChars,
-				},
-			},
-			expectedOK: true,
-		},
-		{
-			name: "Success_ASCII",
-			r: comb.Result{
-				Val: "[:ascii:]",
-				Pos: 2,
-			},
-			expectedResult: comb.Result{
-				Val: nfas["ascii"],
-				Pos: 2,
-				Bag: comb.Bag{
-					bagKeyChars: asciiChars,
-				},
-			},
-			expectedOK: true,
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			m := new(mappers)
-			res, ok := m.ToASCIICharClass(tc.r)
-
-			EqualResults(t, tc.expectedResult, res)
-			assert.Equal(t, tc.expectedOK, ok)
-
-			if tc.expectedError != "" {
-				assert.EqualError(t, m.errors, tc.expectedError)
-			}
-		})
-	}
-}
-
-func TestMappers_ToCharClass(t *testing.T) {
-	nfas := createTestNFAs()
-
-	tests := []MapperTest{
-		{
-			name: "Success_Digit",
-			r: comb.Result{
-				Val: `\d`,
-				Pos: 2,
-			},
-			expectedResult: comb.Result{
-				Val: nfas["digit"],
-				Pos: 2,
-				Bag: comb.Bag{
-					bagKeyChars: digitChars,
-				},
-			},
-			expectedOK: true,
-		},
-		{
-			name: "Success_NotDigit",
-			r: comb.Result{
-				Val: `\D`,
-				Pos: 2,
-			},
-			expectedResult: comb.Result{
-				Val: nfas["notDigit"],
-				Pos: 2,
-				Bag: comb.Bag{
-					bagKeyChars: notDigitChars,
-				},
-			},
-			expectedOK: true,
-		},
-		{
-			name: "Success_Whitespace",
-			r: comb.Result{
-				Val: `\s`,
-				Pos: 2,
-			},
-			expectedResult: comb.Result{
-				Val: nfas["whitespace"],
-				Pos: 2,
-				Bag: comb.Bag{
-					bagKeyChars: whitespaceChars,
-				},
-			},
-			expectedOK: true,
-		},
-		{
-			name: "Success_NotWhitespace",
-			r: comb.Result{
-				Val: `\S`,
-				Pos: 2,
-			},
-			expectedResult: comb.Result{
-				Val: nfas["notWhitespace"],
-				Pos: 2,
-				Bag: comb.Bag{
-					bagKeyChars: notWhitespaceChars,
-				},
-			},
-			expectedOK: true,
-		},
-		{
-			name: "Success_Word",
-			r: comb.Result{
-				Val: `\w`,
-				Pos: 2,
-			},
-			expectedResult: comb.Result{
-				Val: nfas["word"],
-				Pos: 2,
-				Bag: comb.Bag{
-					bagKeyChars: wordChars,
-				},
-			},
-			expectedOK: true,
-		},
-		{
-			name: "Success_NotWord",
-			r: comb.Result{
-				Val: `\W`,
-				Pos: 2,
-			},
-			expectedResult: comb.Result{
-				Val: nfas["notWord"],
-				Pos: 2,
-				Bag: comb.Bag{
-					bagKeyChars: notWordChars,
-				},
-			},
-			expectedOK: true,
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			m := new(mappers)
-			res, ok := m.ToCharClass(tc.r)
-
-			EqualResults(t, tc.expectedResult, res)
-			assert.Equal(t, tc.expectedOK, ok)
-
-			if tc.expectedError != "" {
-				assert.EqualError(t, m.errors, tc.expectedError)
-			}
-		})
-	}
-}
-
-func TestMappers_ToAnyChar(t *testing.T) {
-	nfas := createTestNFAs()
-
-	tests := []MapperTest{
-		{
-			name: "Success",
-			r: comb.Result{
-				Val: '.',
-				Pos: 2,
-			},
-			expectedResult: comb.Result{
-				Val: nfas["ascii"],
-				Pos: 2,
-			},
-			expectedOK: true,
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			m := new(mappers)
-			res, ok := m.ToAnyChar(tc.r)
 
 			EqualResults(t, tc.expectedResult, res)
 			assert.Equal(t, tc.expectedOK, ok)
@@ -1232,37 +1223,6 @@ func TestMappers_ToMatch(t *testing.T) {
 	}
 }
 
-func TestMappers_ToAnchor(t *testing.T) {
-	tests := []MapperTest{
-		{
-			name: "Success",
-			r: comb.Result{
-				Val: '$',
-				Pos: 2,
-			},
-			expectedResult: comb.Result{
-				Val: EndOfString,
-				Pos: 2,
-			},
-			expectedOK: true,
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			m := new(mappers)
-			res, ok := m.ToAnchor(tc.r)
-
-			EqualResults(t, tc.expectedResult, res)
-			assert.Equal(t, tc.expectedOK, ok)
-
-			if tc.expectedError != "" {
-				assert.EqualError(t, m.errors, tc.expectedError)
-			}
-		})
-	}
-}
-
 func TestMappers_ToGroup(t *testing.T) {
 	xNFA := auto.NewNFA(0, auto.States{1})
 	xNFA.Add(0, 'x', auto.States{1})
@@ -1517,6 +1477,37 @@ func TestMappers_ToGroup(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			m := new(mappers)
 			res, ok := m.ToGroup(tc.r)
+
+			EqualResults(t, tc.expectedResult, res)
+			assert.Equal(t, tc.expectedOK, ok)
+
+			if tc.expectedError != "" {
+				assert.EqualError(t, m.errors, tc.expectedError)
+			}
+		})
+	}
+}
+
+func TestMappers_ToAnchor(t *testing.T) {
+	tests := []MapperTest{
+		{
+			name: "Success",
+			r: comb.Result{
+				Val: '$',
+				Pos: 2,
+			},
+			expectedResult: comb.Result{
+				Val: EndOfString,
+				Pos: 2,
+			},
+			expectedOK: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			m := new(mappers)
+			res, ok := m.ToAnchor(tc.r)
 
 			EqualResults(t, tc.expectedResult, res)
 			assert.Equal(t, tc.expectedOK, ok)
@@ -1942,32 +1933,4 @@ func EqualResults(t *testing.T, expectedResult, res comb.Result) {
 	assert.True(t, nfa.Equals(expectedNFA))
 	assert.Equal(t, expectedResult.Pos, res.Pos)
 	assert.Equal(t, expectedResult.Bag, res.Bag)
-}
-
-// stringInput implements the input interface for strings.
-type stringInput struct {
-	pos   int
-	runes []rune
-}
-
-func newStringInput(s string) comb.Input {
-	return &stringInput{
-		pos:   0,
-		runes: []rune(s),
-	}
-}
-
-func (s *stringInput) Current() (rune, int) {
-	return s.runes[0], s.pos
-}
-
-func (s *stringInput) Remaining() comb.Input {
-	if len(s.runes) == 1 {
-		return nil
-	}
-
-	return &stringInput{
-		pos:   s.pos + 1,
-		runes: s.runes[1:],
-	}
 }
