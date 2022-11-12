@@ -3,9 +3,8 @@ package generator
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	auto "github.com/moorara/algo/automata"
+	"github.com/stretchr/testify/assert"
 )
 
 func getTestDFAs() []*auto.DFA {
@@ -69,7 +68,28 @@ func getTestDFAs() []*auto.DFA {
 	d12.Add(5, 'a', 6)
 	d12.Add(6, 'r', 7)
 
-	return []*auto.DFA{d0, d1, d2, d3, d4, d5, d6, d7, d8, d9, d10, d11, d12}
+	d13 := auto.NewDFA(0, auto.States{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 19})
+	d13.Add(0, '"', 1)
+	d13.Add(0, '\\', 2)
+	d13.Add(0, '=', 3)
+	d13.Add(0, '|', 4)
+	d13.Add(0, '(', 5)
+	d13.Add(0, ')', 6)
+	d13.Add(0, '[', 7)
+	d13.Add(0, ']', 8)
+	d13.Add(0, '{', 9)
+	d13.Add(9, '{', 10)
+	d13.Add(0, '}', 11)
+	d13.Add(11, '}', 12)
+	d13.Add(0, 'g', 13)
+	d13.Add(13, 'r', 14)
+	d13.Add(14, 'a', 15)
+	d13.Add(15, 'm', 16)
+	d13.Add(16, 'm', 17)
+	d13.Add(17, 'a', 18)
+	d13.Add(18, 'r', 19)
+
+	return []*auto.DFA{d0, d1, d2, d3, d4, d5, d6, d7, d8, d9, d10, d11, d12, d13}
 }
 
 func TestStringToDFA(t *testing.T) {
