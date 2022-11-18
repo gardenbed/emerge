@@ -53,9 +53,11 @@ The Solidus (Slash) character (`/`) is added to the Emerge's EBNF language for d
 
 ### Lexer Design
 
+![Lexer DFA](./lexer_dfa.png)
+
 #### Input Buffer
 
-We employ the *two-buffer* scheme explained [here](./2-lexer-theory.md#input-buffering).
+We employ the *two-buffer* scheme explained [here](./2-lexer_theory.md#input-buffering).
 The two buffers are implemented as one buffer divided into two halves.
 
 ### Parser Design
