@@ -223,11 +223,15 @@ func (i *Input) Lexeme() (string, int) {
 }
 
 // Skip skips over the pending lexeme in the input.
-func (i *Input) Skip() {
+func (i *Input) Skip() int {
+	pos := i.runeCount
+
 	i.lexemeBegin = i.forward
 
 	for !i.runeSizes.IsEmpty() {
 		i.runeSizes.Pop()
 		i.runeCount++
 	}
+
+	return pos
 }

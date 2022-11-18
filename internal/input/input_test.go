@@ -580,6 +580,7 @@ func TestInput_Skip(t *testing.T) {
 	tests := []struct {
 		name                string
 		in                  *Input
+		expectedPos         int
 		expectedLexemeBegin int
 		expectedRuneCount   int
 	}{
@@ -594,6 +595,7 @@ func TestInput_Skip(t *testing.T) {
 				runeSizes:   newStack(4),
 				err:         nil,
 			},
+			expectedPos:         0,
 			expectedLexemeBegin: 0,
 			expectedRuneCount:   0,
 		},
@@ -608,6 +610,7 @@ func TestInput_Skip(t *testing.T) {
 				runeSizes:   newStack(4, 1, 1, 1, 1),
 				err:         nil,
 			},
+			expectedPos:         1,
 			expectedLexemeBegin: 5,
 			expectedRuneCount:   5,
 		},
@@ -622,6 +625,7 @@ func TestInput_Skip(t *testing.T) {
 				runeSizes:   newStack(4, 1, 1, 1, 1),
 				err:         nil,
 			},
+			expectedPos:         4,
 			expectedLexemeBegin: 8,
 			expectedRuneCount:   8,
 		},
@@ -636,6 +640,7 @@ func TestInput_Skip(t *testing.T) {
 				runeSizes:   newStack(4, 1, 1, 1, 1),
 				err:         nil,
 			},
+			expectedPos:         10,
 			expectedLexemeBegin: 2,
 			expectedRuneCount:   14,
 		},
@@ -643,8 +648,9 @@ func TestInput_Skip(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			tc.in.Skip()
+			pos := tc.in.Skip()
 
+			assert.Equal(t, tc.expectedPos, pos)
 			assert.Equal(t, tc.expectedLexemeBegin, tc.in.lexemeBegin)
 			assert.Equal(t, tc.expectedRuneCount, tc.in.runeCount)
 		})
