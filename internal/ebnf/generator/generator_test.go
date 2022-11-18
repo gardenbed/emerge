@@ -3,9 +3,8 @@ package generator
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	auto "github.com/moorara/algo/automata"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestStringToDFA(t *testing.T) {

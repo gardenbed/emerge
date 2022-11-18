@@ -14,14 +14,14 @@ func TestTag_String(t *testing.T) {
 		expectedString string
 	}{
 		{
-			name:           "QUO",
-			t:              QUO,
-			expectedString: "QUO",
+			name:           "ERR",
+			t:              ERR,
+			expectedString: "ERR",
 		},
 		{
-			name:           "SOL",
-			t:              SOL,
-			expectedString: "SOL",
+			name:           "WS",
+			t:              WS,
+			expectedString: "WS",
 		},
 		{
 			name:           "DEF",
@@ -102,6 +102,11 @@ func TestTag_String(t *testing.T) {
 			name:           "Unknown",
 			t:              Tag(99),
 			expectedString: "Tag(99)",
+		},
+		{
+			name:           "COMMENT",
+			t:              COMMENT,
+			expectedString: "COMMENT",
 		},
 	}
 
