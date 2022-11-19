@@ -23,10 +23,12 @@ type inputBuffer interface {
 	Skip() int
 }
 
+// Lexer is a lexical analyzer for an extension of EBNF language.
 type Lexer struct {
 	in inputBuffer
 }
 
+// New creates a new lexical analyzer for an extension of EBNF language.
 func New(src io.Reader) (*Lexer, error) {
 	in, err := input.New(bufferSize, src)
 	if err != nil {
@@ -38,6 +40,8 @@ func New(src io.Reader) (*Lexer, error) {
 	}, nil
 }
 
+// NextToken returns the next token from the input.
+// An io.EOF error will be returned when the end of input is reached.
 func (l *Lexer) NextToken() (Token, error) {
 	for curr, next := 0, 0; ; curr = next {
 		// Read the next character from the input
