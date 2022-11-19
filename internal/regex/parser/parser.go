@@ -126,6 +126,18 @@ func toEscapedChar(r comb.Result) (comb.Result, bool) {
 	r1, _ := r.Get(1)
 
 	c := r1.Val.(rune)
+	switch c {
+	case 't':
+		c = '\t'
+	case 'n':
+		c = '\n'
+	case 'v':
+		c = '\v'
+	case 'f':
+		c = '\f'
+	case 'r':
+		c = '\r'
+	}
 
 	return comb.Result{
 		Val: c,
