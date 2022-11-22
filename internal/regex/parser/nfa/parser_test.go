@@ -36,10 +36,9 @@ func TestParse(t *testing.T) {
 		{
 			name:  "Success",
 			regex: `^[A-Z]?[a-z][0-9A-Za-z]{1,}$`,
-			expectedNFA: Concat(
-				Alt(Empty(), nfas["upper"]),
+			expectedNFA: empty().Union(nfas["upper"]).Concat(
 				nfas["lower"],
-				Concat(nfas["alnum"], Star(nfas["alnum"])),
+				nfas["alnum"].Concat(nfas["alnum"].Star()),
 			),
 		},
 	}
@@ -1022,7 +1021,7 @@ func TestMappers_ToMatch(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: Alt(Empty(), xNFA),
+				Val: empty().Union(xNFA),
 				Pos: 2,
 			},
 			expectedOK: true,
@@ -1049,7 +1048,7 @@ func TestMappers_ToMatch(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: Star(xNFA),
+				Val: xNFA.Star(),
 				Pos: 2,
 			},
 			expectedOK: true,
@@ -1076,7 +1075,7 @@ func TestMappers_ToMatch(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: Concat(xNFA, Star(xNFA)),
+				Val: xNFA.Concat(xNFA.Star()),
 				Pos: 2,
 			},
 			expectedOK: true,
@@ -1106,7 +1105,7 @@ func TestMappers_ToMatch(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: Concat(xNFA, xNFA),
+				Val: xNFA.Concat(xNFA),
 				Pos: 2,
 			},
 			expectedOK: true,
@@ -1136,7 +1135,7 @@ func TestMappers_ToMatch(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: Concat(xNFA, xNFA, Star(xNFA)),
+				Val: xNFA.Concat(xNFA, xNFA.Star()),
 				Pos: 2,
 			},
 			expectedOK: true,
@@ -1166,11 +1165,10 @@ func TestMappers_ToMatch(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: Concat(
+				Val: xNFA.Concat(
 					xNFA,
-					xNFA,
-					Alt(Empty(), xNFA),
-					Alt(Empty(), xNFA),
+					empty().Union(xNFA),
+					empty().Union(xNFA),
 				),
 				Pos: 2,
 			},
@@ -1198,7 +1196,7 @@ func TestMappers_ToMatch(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: Concat(xNFA, Star(xNFA)),
+				Val: xNFA.Concat(xNFA.Star()),
 				Pos: 2,
 				Bag: comb.Bag{
 					bagKeyLazyQuantifier: true,
@@ -1275,7 +1273,7 @@ func TestMappers_ToGroup(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: Alt(Empty(), xNFA),
+				Val: empty().Union(xNFA),
 				Pos: 2,
 			},
 			expectedOK: true,
@@ -1304,7 +1302,7 @@ func TestMappers_ToGroup(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: Star(xNFA),
+				Val: xNFA.Star(),
 				Pos: 2,
 			},
 			expectedOK: true,
@@ -1333,7 +1331,7 @@ func TestMappers_ToGroup(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: Concat(xNFA, Star(xNFA)),
+				Val: xNFA.Concat(xNFA.Star()),
 				Pos: 2,
 			},
 			expectedOK: true,
@@ -1365,7 +1363,7 @@ func TestMappers_ToGroup(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: Concat(xNFA, xNFA),
+				Val: xNFA.Concat(xNFA),
 				Pos: 2,
 			},
 			expectedOK: true,
@@ -1397,7 +1395,7 @@ func TestMappers_ToGroup(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: Concat(xNFA, xNFA, Star(xNFA)),
+				Val: xNFA.Concat(xNFA, xNFA.Star()),
 				Pos: 2,
 			},
 			expectedOK: true,
@@ -1429,11 +1427,10 @@ func TestMappers_ToGroup(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: Concat(
+				Val: xNFA.Concat(
 					xNFA,
-					xNFA,
-					Alt(Empty(), xNFA),
-					Alt(Empty(), xNFA),
+					empty().Union(xNFA),
+					empty().Union(xNFA),
 				),
 				Pos: 2,
 			},
@@ -1463,7 +1460,7 @@ func TestMappers_ToGroup(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: Concat(xNFA, Star(xNFA)),
+				Val: xNFA.Concat(xNFA.Star()),
 				Pos: 2,
 				Bag: comb.Bag{
 					bagKeyLazyQuantifier: true,
@@ -1572,7 +1569,7 @@ func TestMappers_ToSubexpr(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: Concat(nfas["digit"]),
+				Val: nfas["digit"],
 				Pos: 2,
 			},
 			expectedOK: true,
@@ -1603,7 +1600,7 @@ func TestMappers_ToExpr(t *testing.T) {
 			r: comb.Result{
 				Val: comb.List{
 					{
-						Val: Concat(nfas["upper"]),
+						Val: nfas["upper"],
 						Pos: 2,
 					},
 					{Val: comb.Empty{}},
@@ -1611,7 +1608,7 @@ func TestMappers_ToExpr(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: Concat(nfas["upper"]),
+				Val: nfas["upper"],
 				Pos: 2,
 			},
 			expectedOK: true,
@@ -1621,14 +1618,14 @@ func TestMappers_ToExpr(t *testing.T) {
 			r: comb.Result{
 				Val: comb.List{
 					{
-						Val: Concat(nfas["upper"]),
+						Val: nfas["upper"],
 						Pos: 2,
 					},
 					{
 						Val: comb.List{
 							{Val: '|', Pos: 3},
 							{
-								Val: Concat(nfas["lower"]),
+								Val: nfas["lower"],
 								Pos: 4,
 							},
 						},
@@ -1637,10 +1634,7 @@ func TestMappers_ToExpr(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: Alt(
-					Concat(nfas["upper"]),
-					Concat(nfas["lower"]),
-				),
+				Val: nfas["upper"].Union(nfas["lower"]),
 				Pos: 2,
 			},
 			expectedOK: true,
@@ -1672,14 +1666,14 @@ func TestMappers_ToRegex(t *testing.T) {
 				Val: comb.List{
 					{Val: comb.Empty{}},
 					{
-						Val: Concat(nfas["digit"]),
+						Val: nfas["digit"],
 						Pos: 0,
 					},
 				},
 				Pos: 0,
 			},
 			expectedResult: comb.Result{
-				Val: Concat(nfas["digit"]),
+				Val: nfas["digit"],
 				Pos: 0,
 			},
 			expectedOK: true,
@@ -1690,14 +1684,14 @@ func TestMappers_ToRegex(t *testing.T) {
 				Val: comb.List{
 					{Val: '^', Pos: 0},
 					{
-						Val: Concat(nfas["digit"]),
+						Val: nfas["digit"],
 						Pos: 1,
 					},
 				},
 				Pos: 0,
 			},
 			expectedResult: comb.Result{
-				Val: Concat(nfas["digit"]),
+				Val: nfas["digit"],
 				Pos: 0,
 				Bag: comb.Bag{
 					BagKeyStartOfString: true,
