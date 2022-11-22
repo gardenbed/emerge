@@ -16,7 +16,7 @@ var (
 		'{', '|', '}', '~', 0x7f,
 	}
 
-	escapedChars = []rune{'\\', '/', '|', '.', '?', '*', '+', '(', ')', '[', ']', '{', '}', '$'}
+	escapedChars = []rune{'\\', '|', '.', '?', '*', '+', '(', ')', '[', ']', '{', '}', '$'}
 )
 
 //==================================================< MAPPERS >==================================================
@@ -126,6 +126,18 @@ func toEscapedChar(r comb.Result) (comb.Result, bool) {
 	r1, _ := r.Get(1)
 
 	c := r1.Val.(rune)
+	switch c {
+	case 't':
+		c = '\t'
+	case 'n':
+		c = '\n'
+	case 'v':
+		c = '\v'
+	case 'f':
+		c = '\f'
+	case 'r':
+		c = '\r'
+	}
 
 	return comb.Result{
 		Val: c,
@@ -220,7 +232,7 @@ func New(m Mappers) *Parser {
 	p.char = comb.ExpectRuneInRange(0x20, 0x7E)
 	// unescaped_char --> all characters excluding the escaped ones
 	p.unescapedChar = p.char.Bind(comb.ExcludeRunes(escapedChars...))
-	// escaped_char --> "\" ( "\" | "/" | "|" | "." | "?" | "*" | "+" | "(" | ")" | "[" | "]" | "{" | "}" | "$" )
+	// escaped_char --> "\" ( "\" | "|" | "." | "?" | "*" | "+" | "(" | ")" | "[" | "]" | "{" | "}" | "$" )
 	p.escapedChar = comb.ExpectRune('\\').CONCAT(comb.ExpectRuneIn(escapedChars...)).Map(toEscapedChar)
 
 	// ascii_char --> "\x" hex_digit{2}

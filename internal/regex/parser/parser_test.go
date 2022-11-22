@@ -135,14 +135,69 @@ func TestToEscapedChar(t *testing.T) {
 		expectedOK     bool
 	}{
 		{
-			name: "OK",
+			name: "Backslash",
 			r: comb.Result{
 				Val: comb.List{
 					{Val: '\\', Pos: 1},
-					{Val: '*', Pos: 2},
+					{Val: '\\', Pos: 2},
 				},
 			},
-			expectedResult: comb.Result{Val: '*', Pos: 1},
+			expectedResult: comb.Result{Val: '\\', Pos: 1},
+			expectedOK:     true,
+		},
+		{
+			name: "HorizontalTab",
+			r: comb.Result{
+				Val: comb.List{
+					{Val: '\\', Pos: 1},
+					{Val: 't', Pos: 2},
+				},
+			},
+			expectedResult: comb.Result{Val: '\t', Pos: 1},
+			expectedOK:     true,
+		},
+		{
+			name: "NewLine",
+			r: comb.Result{
+				Val: comb.List{
+					{Val: '\\', Pos: 1},
+					{Val: 'n', Pos: 2},
+				},
+			},
+			expectedResult: comb.Result{Val: '\n', Pos: 1},
+			expectedOK:     true,
+		},
+		{
+			name: "VerticalTab",
+			r: comb.Result{
+				Val: comb.List{
+					{Val: '\\', Pos: 1},
+					{Val: 'v', Pos: 2},
+				},
+			},
+			expectedResult: comb.Result{Val: '\v', Pos: 1},
+			expectedOK:     true,
+		},
+		{
+			name: "FormFeed",
+			r: comb.Result{
+				Val: comb.List{
+					{Val: '\\', Pos: 1},
+					{Val: 'f', Pos: 2},
+				},
+			},
+			expectedResult: comb.Result{Val: '\f', Pos: 1},
+			expectedOK:     true,
+		},
+		{
+			name: "CarriageReturn",
+			r: comb.Result{
+				Val: comb.List{
+					{Val: '\\', Pos: 1},
+					{Val: 'r', Pos: 2},
+				},
+			},
+			expectedResult: comb.Result{Val: '\r', Pos: 1},
 			expectedOK:     true,
 		},
 	}

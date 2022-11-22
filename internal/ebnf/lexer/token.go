@@ -6,49 +6,51 @@ import "fmt"
 type Tag int
 
 const (
-	// QUO is the token tag for `"`.
-	QUO Tag = 256 + iota
-	// SOL is the token tag for `\`.
-	SOL
-	// DEF is the token tag for `=`.
+	// ERR is the token tag for an error case.
+	ERR Tag = 1000 + iota
+	// WS is the token tag for whitespace characters.
+	WS
+	// DEF is the token tag for "=".
 	DEF
-	// ALT is the token tag for `|`.
+	// ALT is the token tag for "|".
 	ALT
-	// LPAREN is the token tag for `(`.
+	// LPAREN is the token tag for "(".
 	LPAREN
-	// RPAREN is the token tag for `)`.
+	// RPAREN is the token tag for ")".
 	RPAREN
-	// LBRACK is the token tag for `[`.
+	// LBRACK is the token tag for "[".
 	LBRACK
-	// RBRACK is the token tag for `]`.
+	// RBRACK is the token tag for "]".
 	RBRACK
-	// LBRACE is the token tag for `{`.
+	// LBRACE is the token tag for "{".
 	LBRACE
-	// RBRACE is the token tag for `}`.
+	// RBRACE is the token tag for "}".
 	RBRACE
-	// LLBRACE is the token tag for `{{`.
+	// LLBRACE is the token tag for "{{".
 	LLBRACE
-	// RRBRACE is the token tag for `}}`.
+	// RRBRACE is the token tag for "}}".
 	RRBRACE
-	// GRAMMER is the token tag for `grammar`.
+	// GRAMMER is the token tag for "grammar".
 	GRAMMER
-	// IDENT is the token tag for `[a-z][0-9a-z_]*`.
+	// IDENT is the token tag for /[a-z][0-9a-z_]*/.
 	IDENT
-	// TOKEN is the token tag for `[A-Z][0-9A-Z_]*`.
+	// TOKEN is the token tag for /[A-Z][0-9A-Z_]*/.
 	TOKEN
-	// STRING is the token tag for `\"([\x21\x23-\x5B\x5D-\x7E]\|\\[\x21-\x7E]?)*\"`.
+	// STRING is the token tag for /"([\x21\x23-\x5B\x5D-\x7E]|\\[\x21-\x7E])+"/.
 	STRING
-	// REGEX is the token tag for `\/([\x21-\x2E\x30-\x5B\x5D-\x7E]\|\\[\x21-\x7E]?)*\/`.
+	// REGEX is the token tag for /\/([\x20-\x2E\x30-\x5B\x5D-\x7E]|\\[\x20-\x7E])*\//.
 	REGEX
+	// COMMENT is the token tag for single-line and multi-line comments.
+	COMMENT
 )
 
 // String implements the fmt.Stringer interface.
 func (t Tag) String() string {
 	switch t {
-	case QUO:
-		return "QUO"
-	case SOL:
-		return "SOL"
+	case ERR:
+		return "ERR"
+	case WS:
+		return "WS"
 	case DEF:
 		return "DEF"
 	case ALT:
@@ -79,6 +81,8 @@ func (t Tag) String() string {
 		return "STRING"
 	case REGEX:
 		return "REGEX"
+	case COMMENT:
+		return "COMMENT"
 	default:
 		return fmt.Sprintf("Tag(%d)", t)
 	}

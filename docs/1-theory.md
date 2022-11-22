@@ -163,14 +163,14 @@ It is hard for a lexical analyzer to tell, without the aid of other components, 
 The parser calls the lexical analyzer using the `getNextToken` command, causes the lexical analyzer to read characters
 from its input until it can identify the next lexeme and produce the next token, which it returns to the parser.
 
-For a more in-depth theory of lexical analysis and lexers, please see [Theory of Lexers](./2-lexer-theory.md).
+For a more in-depth theory of lexical analysis and lexers, please see [Theory of Lexers](./2-lexer_theory.md).
 
 ### Syntax Analysis
 
 The second phase of the compiler is *syntax analysis* or *parsing*.
 The parser creates a **syntax tree** (intermediate representation) that depicts the grammatical structure of the token stream.
 
-For a more in-depth theory of syntax analysis and parsers, please see [Theory of Parser](./2-parser-theory.md).
+For a more in-depth theory of syntax analysis and parsers, please see [Theory of Parser](./2-parser_theory.md).
 
   - [Top-Down Parsers](https://en.wikipedia.org/wiki/Top-down_parsing)
     - [LL Parser](https://en.wikipedia.org/wiki/LL_parser)

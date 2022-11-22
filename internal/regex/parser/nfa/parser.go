@@ -364,7 +364,7 @@ func (m *mappers) ToSubexpr(r comb.Result) (comb.Result, bool) {
 		}
 	}
 
-	nfa := Concat(ns...)
+	nfa := concat(ns...)
 
 	return comb.Result{
 		Val: nfa,
@@ -381,7 +381,7 @@ func (m *mappers) ToExpr(r comb.Result) (comb.Result, bool) {
 	if _, ok := r1.Val.(comb.List); ok {
 		r11, _ := r1.Get(1)
 		expr := r11.Val.(*auto.NFA)
-		nfa = Alt(nfa, expr)
+		nfa = nfa.Union(expr)
 	}
 
 	return comb.Result{
@@ -498,11 +498,11 @@ func quantifyNFA(n *auto.NFA, q any) *auto.NFA {
 	case rune:
 		switch rep {
 		case '?':
-			nfa = Alt(Empty(), n)
+			nfa = empty().Union(n)
 		case '*':
-			nfa = Star(n)
+			nfa = n.Star()
 		case '+':
-			nfa = Concat(n, Star(n))
+			nfa = n.Concat(n.Star())
 		}
 
 	// Range repetition
@@ -515,14 +515,14 @@ func quantifyNFA(n *auto.NFA, q any) *auto.NFA {
 		}
 
 		if up == nil {
-			ns = append(ns, Star(n))
+			ns = append(ns, n.Star())
 		} else {
 			for i := 0; i < *up-low; i++ {
-				ns = append(ns, Alt(Empty(), n))
+				ns = append(ns, empty().Union(n))
 			}
 		}
 
-		nfa = Concat(ns...)
+		nfa = concat(ns...)
 	}
 
 	return nfa

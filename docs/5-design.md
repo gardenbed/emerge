@@ -53,9 +53,176 @@ The Solidus (Slash) character (`/`) is added to the Emerge's EBNF language for d
 
 ### Lexer Design
 
+![Lexer DFA](./lexer_dfa.png)
+
+<details>
+  <summary>Lexer DFA Code</summary>
+
+  ```go
+  dfa := auto.NewDFA(0, auto.States{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 18, 20, 22, 26, 30, 31, 34})
+
+  dfa.Add(0, ' ', 1)
+  dfa.Add(0, '\t', 1)
+  dfa.Add(0, '\n', 1)
+  dfa.Add(0, '\r', 1)
+  dfa.Add(0, '\f', 1)
+  dfa.Add(0, '\v', 1)
+  dfa.Add(1, ' ', 1)
+  dfa.Add(1, '\t', 1)
+  dfa.Add(1, '\n', 1)
+  dfa.Add(1, '\r', 1)
+  dfa.Add(1, '\f', 1)
+  dfa.Add(1, '\v', 1)
+
+  dfa.Add(0, '=', 2)
+  dfa.Add(0, '|', 3)
+  dfa.Add(0, '(', 4)
+  dfa.Add(0, ')', 5)
+  dfa.Add(0, '[', 6)
+  dfa.Add(0, ']', 7)
+  dfa.Add(0, '{', 8)
+  dfa.Add(8, '{', 9)
+  dfa.Add(0, '}', 10)
+  dfa.Add(10, '}', 11)
+
+  dfa.Add(0, 'g', 12)
+  dfa.Add(12, 'r', 13)
+  dfa.Add(13, 'a', 14)
+  dfa.Add(14, 'm', 15)
+  dfa.Add(15, 'm', 16)
+  dfa.Add(16, 'a', 17)
+  dfa.Add(17, 'r', 18)
+
+  //==================================================< IDENTIFIER >==================================================
+
+  for r := 'a'; r <= 'z'; r++ {
+    if r != 'g' {
+      dfa.Add(0, auto.Symbol(r), 19)
+    }
+
+    if r != 'r' {
+      dfa.Add(12, auto.Symbol(r), 20)
+      dfa.Add(17, auto.Symbol(r), 20)
+    }
+    if r != 'a' {
+      dfa.Add(13, auto.Symbol(r), 20)
+      dfa.Add(16, auto.Symbol(r), 20)
+    }
+    if r != 'm' {
+      dfa.Add(14, auto.Symbol(r), 20)
+      dfa.Add(15, auto.Symbol(r), 20)
+    }
+    dfa.Add(18, auto.Symbol(r), 20)
+    dfa.Add(19, auto.Symbol(r), 20)
+    dfa.Add(20, auto.Symbol(r), 20)
+  }
+
+  for r := '0'; r <= '9'; r++ {
+    dfa.Add(12, auto.Symbol(r), 20)
+    dfa.Add(13, auto.Symbol(r), 20)
+    dfa.Add(14, auto.Symbol(r), 20)
+    dfa.Add(15, auto.Symbol(r), 20)
+    dfa.Add(16, auto.Symbol(r), 20)
+    dfa.Add(17, auto.Symbol(r), 20)
+    dfa.Add(18, auto.Symbol(r), 20)
+    dfa.Add(19, auto.Symbol(r), 20)
+    dfa.Add(20, auto.Symbol(r), 20)
+  }
+
+  dfa.Add(12, '_', 20)
+  dfa.Add(13, '_', 20)
+  dfa.Add(14, '_', 20)
+  dfa.Add(15, '_', 20)
+  dfa.Add(16, '_', 20)
+  dfa.Add(17, '_', 20)
+  dfa.Add(18, '_', 20)
+  dfa.Add(19, '_', 20)
+  dfa.Add(20, '_', 20)
+
+  //==================================================< TOKEN >==================================================
+
+  for r := 'A'; r <= 'Z'; r++ {
+    dfa.Add(0, auto.Symbol(r), 21)
+    dfa.Add(21, auto.Symbol(r), 22)
+    dfa.Add(22, auto.Symbol(r), 22)
+  }
+
+  for r := '0'; r <= '9'; r++ {
+    dfa.Add(21, auto.Symbol(r), 22)
+    dfa.Add(22, auto.Symbol(r), 22)
+  }
+
+  dfa.Add(21, '_', 22)
+  dfa.Add(22, '_', 22)
+
+  //==================================================< STRING >==================================================
+
+  dfa.Add(0, '"', 23)
+  dfa.Add(23, '\\', 24)
+  dfa.Add(25, '\\', 24)
+  dfa.Add(25, '"', 26)
+
+  for r := 0x21; r <= 0x7E; r++ {
+    dfa.Add(24, auto.Symbol(r), 25)
+    if r != '"' && r != '\\' {
+      dfa.Add(23, auto.Symbol(r), 25)
+      dfa.Add(25, auto.Symbol(r), 25)
+    }
+  }
+
+  //==================================================< REGEX >==================================================
+
+  dfa.Add(0, '/', 27)
+  dfa.Add(27, '\\', 28)
+  dfa.Add(29, '\\', 28)
+  dfa.Add(29, '/', 30)
+
+  for r := 0x20; r <= 0x7E; r++ {
+    if r != '*' && r != '/' && r != '\\' {
+      dfa.Add(27, auto.Symbol(r), 29)
+    }
+
+    dfa.Add(28, auto.Symbol(r), 29)
+
+    if r != '/' && r != '\\' {
+      dfa.Add(29, auto.Symbol(r), 29)
+    }
+  }
+
+  //==================================================< SINGLE-LINE COMMENT >==================================================
+
+  dfa.Add(27, '/', 31)
+
+  for r := 0x20; r <= 0x7E; r++ {
+    dfa.Add(31, auto.Symbol(r), 31)
+  }
+
+  //==================================================< MULTI-LINE COMMENT >==================================================
+
+  dfa.Add(27, '*', 32)
+  dfa.Add(32, '*', 33)
+  dfa.Add(33, '/', 34)
+
+  for _, r := range []rune{'\t', '\n', '\r'} {
+    dfa.Add(32, auto.Symbol(r), 32)
+    dfa.Add(33, auto.Symbol(r), 32)
+  }
+
+  for r := 0x20; r <= 0x7E; r++ {
+    if r != '*' {
+      dfa.Add(32, auto.Symbol(r), 32)
+    }
+
+    if r != '/' {
+      dfa.Add(33, auto.Symbol(r), 32)
+    }
+  }
+  ```
+</details>
+
 #### Input Buffer
 
-We employ the *two-buffer* scheme explained [here](./2-lexer-theory.md#input-buffering).
+We employ the *two-buffer* scheme explained [here](./2-lexer_theory.md#input-buffering).
 The two buffers are implemented as one buffer divided into two halves.
 
 ### Parser Design
