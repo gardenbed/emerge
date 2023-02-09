@@ -38,6 +38,11 @@ A context-free grammar `G` is defined by the 4-tuple `{G=(V,Σ,R,S)}`, where:
 There are several slightly different notations for context-free garmmars.
 We use a variation of [Extended Backus-Naur Form (EBNF)](https://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_form).
 
+Colloquially, we say that *finnite automata* cannot count, meaning that
+a finite automaton cannot accept a language like `{a`<sup>`n`</sup> `b`<sup>`n`</sup> `| n >= 1}`
+that would require it to keep count of the number of a's before it sees the b's.
+Likewise, a context-free grammar can count two items but not three.
+
 ### Type-3 Languages
 
 Type-3 languages can be represented and decided by a *finite automata*.
@@ -170,18 +175,24 @@ For a more in-depth theory of lexical analysis and lexers, please see [Theory of
 The second phase of the compiler is *syntax analysis* or *parsing*.
 The parser creates a **syntax tree** (intermediate representation) that depicts the grammatical structure of the token stream.
 
-For a more in-depth theory of syntax analysis and parsers, please see [Theory of Parser](./2-parser_theory.md).
+There are no strong guidelines for what to put into the lexical rules vs. to the syntactic rules.
+Regular expressions are favorable for formulating the structure of constructs such as keywords, identifiers, and whitespaces.
+Grammars, on the other hand, are convenient for formulating nested structures such as matching parentheses, brackets, and so on.
 
-  - [Top-Down Parsers](https://en.wikipedia.org/wiki/Top-down_parsing)
-    - [LL Parser](https://en.wikipedia.org/wiki/LL_parser)
-    - [Recursive Descent Parser](https://en.wikipedia.org/wiki/Recursive_descent_parser)
-      - [Parser Combinator](https://en.wikipedia.org/wiki/Parser_combinator)
-  - [Bottom-Up Parsering](https://en.wikipedia.org/wiki/Bottom-up_parsing)
-    - [LR Parser](https://en.wikipedia.org/wiki/LR_parser)
-      - [Simple LR Parser](https://en.wikipedia.org/wiki/Simple_LR_parser)
-      - [LALR Parser](https://en.wikipedia.org/wiki/LALR_parser)
-      - [Canonical LR Parser](https://en.wikipedia.org/wiki/Canonical_LR_parser)
-      - [GLR Parser](https://en.wikipedia.org/wiki/GLR_parser)
+  1. Separating the syntactic structure of a language into lexical and non-lexical parts provides
+     a convenient way of modularizing the front end of a compiler into two manageable components.
+  1. We do not need a notation as expressive as grammars for describing the lexical rules of a language that are quite simple.
+  1. Regular expressions provide a more concise and easier-to-understand notation for tokens than grammars.
+  1. More eficient lexical analyzers can be generated automatically from regular expressions than from arbitrary grammars.
+
+The syntax of programming language constructs can be specified by context-free grammars or *BNF (Backus-Naur Form)* notation.
+
+  - A grammar gives a precise and easy-to-understand syntactic specification of a language.
+  - A grammar allows a language to be developed and evolved iteratively.
+  - From certain classes of grammars, we can automatically construct an efficient parser.
+    - During the parser construction, we can reveal syntactic ambiguities that might have slipped through the initial design of a language.
+
+For a more in-depth theory of syntax analysis and parsers, please see [Theory of Parsers](./3-parser_theory.md).
 
 ### Semantic Analysis
 
@@ -208,8 +219,3 @@ The code generator takes as input an intermediate representation of the source p
 
 *Optimization* is a misnomer!
 In fact, there is no way that the code produced by a compiler can be guaranteed to be as fast or faster than any other code that performs the same task.
-
-## References
-
-  - [Compilers: Principles, Techniques, and Tools, 2nd Edition](https://www.pearson.com/us/higher-education/program/Aho-Compilers-Principles-Techniques-and-Tools-2nd-Edition/PGM167067.html)
-  - [Parsing Techniques: A Practical Guide, Second Edition](https://link.springer.com/book/10.1007/978-0-387-68954-8)

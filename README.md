@@ -5,7 +5,12 @@
 
 # Emerge
 
-TBD ...
+Emerge is a command-line tool for automatically generating
+[lexers](https://en.wikipedia.org/wiki/Lexical_analysis) and [parsers](https://en.wikipedia.org/wiki/Parsing)
+in [Go](https://go.dev) from an [EBNF](https://en.wikipedia.org/wiki/Extended_Backus–Naur_form)
+description of any arbitrary grammar (language).
+
+For an in-depth description of the project, please see the full documentation [here](./docs/index.md).
 
 
 [godoc-url]: https://pkg.go.dev/github.com/gardenbed/emerge

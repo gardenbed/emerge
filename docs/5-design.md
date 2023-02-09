@@ -30,7 +30,7 @@ Building a regex parser is fairly simple and straightforward.
 Implementing a separate *lexer* and *parser* for regular expressions is an inessential complexity
 (i.e., whitespace characters do not need to be stripped out).
 
-We have built a simple parser for Emerge's regular expressions that takes care of terminal symbols as well.
+We have built a simple parser for Emerge's regular expressions that takes care of terminal symbols.
 This parser is implemented as a [Top-Down Parser](https://en.wikipedia.org/wiki/Top-down_parsing) using [Parser Combinators](https://en.wikipedia.org/wiki/Parser_combinator).
 
 A parser combinator is a *higher-order function* that accepts a *stream of input characters* and returns a *parsing result*.
@@ -232,3 +232,4 @@ The two buffers are implemented as one buffer divided into two halves.
   - [Extended Backus–Naur Form](https://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_form)
   - [Parser Combinator](https://en.wikipedia.org/wiki/Parser_combinator)
   - [Let's Build a Regex Engine](https://kean.blog/post/lets-build-regex)
+    - https://github.com/kean/Regex
