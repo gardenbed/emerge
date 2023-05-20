@@ -7,7 +7,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/mitchellh/cli v1.1.5
 	github.com/moorara/algo v0.4.4
-	github.com/stretchr/testify v1.8.2
+	github.com/stretchr/testify v1.8.3
 )
 
 require (
