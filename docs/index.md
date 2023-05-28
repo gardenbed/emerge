@@ -51,6 +51,8 @@ Here is a summary of some of the other similar projects.
     distribution of Yacc that takes an annotated context-free grammar and generates a deterministic parser.
   - [Goyacc](https://pkg.go.dev/golang.org/x/tools/cmd/goyacc) is a version of Yacc for Go.
     It is written in Go and generates parsers in Go.
+  - [ANTLR](https://www.antlr.org) generates a parser that can build and walk parse trees from a grammar.
+    It is used for reading, processing, executing, or translating structured text or binary files.
   - [Participle](https://github.com/alecthomas/participle) is simple Go library for building parsers from grammars.
     A grammar is an annotated Go structure used for defining both the grammar and the abstract syntax tree.
 
@@ -58,7 +60,7 @@ Here is a summary of some of the other similar projects.
 
   - [Theory of Languages and Compilers](./1-theory.md)
       - [Theory of Lexers](./2-lexer_theory.md)
-      - [Theory of Parser](./3-parser_theory.md)
+      - [Theory of Parsers](./3-parser_theory.md)
   - [Definitions](./4-definitions.md)
   - [Design](./5-design.md)
 
