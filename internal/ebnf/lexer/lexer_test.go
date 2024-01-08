@@ -3,6 +3,7 @@ package lexer
 import (
 	"errors"
 	"io"
+	"os"
 	"strings"
 	"testing"
 	"testing/iotest"
@@ -605,6 +606,33 @@ func TestAdvanceDFA(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			state := advanceDFA(tc.state, tc.r)
 			assert.Equal(t, tc.expectedState, state)
+		})
+	}
+}
+
+func TestLexer(t *testing.T) {
+	tests := []struct {
+		name string
+		file string
+	}{
+		{
+			name: "Success",
+			file: "../fixture/please.grammar",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			f, err := os.Open(tc.file)
+			assert.NoError(t, err)
+			defer f.Close()
+
+			lex, err := New(f)
+			assert.NoError(t, err)
+
+			for token, err := lex.NextToken(); err != io.EOF; token, err = lex.NextToken() {
+				assert.NotEmpty(t, token)
+			}
 		})
 	}
 }

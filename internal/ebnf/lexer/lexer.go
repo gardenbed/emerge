@@ -1,3 +1,4 @@
+// Package lexer implements a lexical analyzer for an extension of EBNF language.
 package lexer
 
 import (
