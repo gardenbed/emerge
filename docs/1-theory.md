@@ -190,7 +190,7 @@ The syntax of programming language constructs can be specified by context-free g
   - A grammar gives a precise and easy-to-understand syntactic specification of a language.
   - A grammar allows a language to be developed and evolved iteratively.
   - From certain classes of grammars, we can automatically construct an efficient parser.
-    - During the parser construction, we can reveal syntactic ambiguities that might have slipped through the initial design of a language.
+  - During the parser construction, we can reveal syntactic ambiguities that might have slipped through the initial design of a language.
 
 For a more in-depth theory of syntax analysis and parsers, please see [Theory of Parsers](./3-parser_theory.md).
 

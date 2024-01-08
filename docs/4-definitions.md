@@ -4,6 +4,9 @@ In this document, we define two languages using formal mathematical notations.
 The first language is the [Regular Expression](https://en.wikipedia.org/wiki/Regular_expression),
 and the second language is the [Extended Backus-Naur Form](https://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_form).
 
+To distinguish between *terminal* and *non-terminal* symbols in this document,
+we use lowercase letters or quotation marks for terminal symbols and uppercase letters for non-terminal symbols.
+
 We use regular expressions for defining patterns for *tokens* (*terminal symbols*)
 in the EBNF language itself as well as any input languages desribed in EBNF.
 We need a regular expression parser for building a lexer for any EBNF parser.
