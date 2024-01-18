@@ -26,12 +26,12 @@ func TestParse(t *testing.T) {
 		{
 			name:          "InvalidCharRange",
 			regex:         "[9-0]",
-			expectedError: "1 error occurred:\n\t* invalid character range 9-0\n\n",
+			expectedError: "invalid character range 9-0",
 		},
 		{
 			name:          "InvalidRepRange",
 			regex:         "[0-9]{4,2}",
-			expectedError: "1 error occurred:\n\t* invalid repetition range {4,2}\n\n",
+			expectedError: "invalid repetition range {4,2}",
 		},
 		{
 			name:  "Success_Simple",

@@ -451,22 +451,22 @@ func TestCFG_EliminateEmptyProductions(t *testing.T) {
 		{
 			name:            "First",
 			g:               grammars[0],
-			expectedGrammar: "",
+			expectedGrammar: "Terminal Symbols: a b\nNon-Terminal Symbols: A B S\nStart Symbol: S\nProduction Rules:\n  S → a b\n  S → a b S\n  S → a S b\n  S → a S b S\n  S → b a\n  S → b a S\n  S → b S a\n  S → b S a S\n",
 		},
 		{
 			name:            "Second",
 			g:               grammars[1],
-			expectedGrammar: "",
+			expectedGrammar: "Terminal Symbols: a b\nNon-Terminal Symbols: A B S\nStart Symbol: S\nProduction Rules:\n  S → a\n  S → b\n  S → A b\n  S → a a\n  S → a B a\n  A → b\n  B → b\n  B → A\n",
 		},
 		{
 			name:            "Third",
 			g:               grammars[2],
-			expectedGrammar: "",
+			expectedGrammar: "Terminal Symbols: 0 1\nNon-Terminal Symbols: S X Y\nStart Symbol: S\nProduction Rules:\n  S → X\n  S → Y\n  S → Y X\n  S → X X\n  S → X Y\n  S → X Y X\n  X → 0\n  X → 0 X\n  Y → 1\n  Y → 1 Y\n",
 		},
 		{
 			name:            "Fourth",
 			g:               grammars[3],
-			expectedGrammar: "",
+			expectedGrammar: "Terminal Symbols: = | ( ) [ ] { } {{ }} GRAMMAR IDENT TOKEN STRING REGEX\nNon-Terminal Symbols: grammar name decls decl token rule lhs rhs nonterm term\nStart Symbol: grammar\nProduction Rules:\n  grammar → name\n  grammar → name decls\n  name → GRAMMAR IDENT\n  decls → decl\n  decls → decls decl\n  decl → token\n  decl → rule\n  token → TOKEN = STRING\n  token → TOKEN = REGEX\n  rule → lhs = rhs\n  lhs → nonterm\n  rhs → nonterm\n  rhs → term\n  rhs → ( rhs )\n  rhs → [ rhs ]\n  rhs → { rhs }\n  rhs → {{ rhs }}\n  rhs → rhs rhs\n  rhs → rhs | rhs\n  nonterm → IDENT\n  term → TOKEN\n  term → STRING\n",
 		},
 	}
 
