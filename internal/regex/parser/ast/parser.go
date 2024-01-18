@@ -1,9 +1,8 @@
 package ast
 
 import (
+	"errors"
 	"fmt"
-
-	"github.com/hashicorp/go-multierror"
 
 	comb "github.com/gardenbed/emerge/internal/combinator"
 	"github.com/gardenbed/emerge/internal/regex/parser"
@@ -161,7 +160,7 @@ func (m *mappers) ToRange(r comb.Result) (comb.Result, bool) {
 	if up != nil && low > *up {
 		// The input syntax is correct while its semantic is incorrect
 		// We continue parsing the rest of input to find more errors
-		m.errors = multierror.Append(m.errors, fmt.Errorf("invalid repetition range {%d,%d}", low, *up))
+		m.errors = errors.Join(m.errors, fmt.Errorf("invalid repetition range {%d,%d}", low, *up))
 	}
 
 	return comb.Result{
@@ -208,7 +207,7 @@ func (m *mappers) ToCharRange(r comb.Result) (comb.Result, bool) {
 	if low > up {
 		// The input syntax is correct while its semantic is incorrect
 		// We continue parsing the rest of input to find more errors
-		m.errors = multierror.Append(m.errors, fmt.Errorf("invalid character range %s-%s", string(low), string(up)))
+		m.errors = errors.Join(m.errors, fmt.Errorf("invalid character range %s-%s", string(low), string(up)))
 	}
 
 	node, chars := runeRangesToAlt(false, [2]rune{low, up})

@@ -96,9 +96,9 @@ Tokens can be declared and defined explicitly or implicitly.
 ## Grammar
 
 ```
-grammar = { decl }
-decl    = name | token | rule
+grammar = name { decl }
 name    = "grammar" IDENT
+decl    = token | rule
 token   = TOKEN "=" ( STRING | REGEX )
 rule    = lhs "=" rhs
 lhs     = nonterm
