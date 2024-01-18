@@ -521,7 +521,7 @@ func TestMappers_ToRange(t *testing.T) {
 				Pos: 2,
 			},
 			expectedOK:    true,
-			expectedError: "1 error occurred:\n\t* invalid repetition range {6,2}\n\n",
+			expectedError: "invalid repetition range {6,2}",
 		},
 	}
 
@@ -705,7 +705,7 @@ func TestMappers_ToCharRange(t *testing.T) {
 				},
 			},
 			expectedOK:    true,
-			expectedError: "1 error occurred:\n\t* invalid character range f-a\n\n",
+			expectedError: "invalid character range f-a",
 		},
 	}
 
