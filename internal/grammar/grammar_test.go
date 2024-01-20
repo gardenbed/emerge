@@ -101,6 +101,7 @@ func TestTerminal(t *testing.T) {
 			assert.True(t, tr.Equals(Terminal(tc.value)))
 			assert.False(t, tr.Equals(NonTerminal(tc.value)))
 			assert.False(t, tr.Equals(notEqual))
+			assert.True(t, tr.IsTerminal())
 		})
 	}
 }
@@ -127,6 +128,7 @@ func TestNonTerminal(t *testing.T) {
 			assert.True(t, n.Equals(NonTerminal(tc.value)))
 			assert.False(t, n.Equals(Terminal(tc.value)))
 			assert.False(t, n.Equals(notEqual))
+			assert.False(t, n.IsTerminal())
 		})
 	}
 }
@@ -473,6 +475,87 @@ func TestCFG_EliminateEmptyProductions(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			g := tc.g.EliminateEmptyProductions()
+			assert.Equal(t, tc.expectedGrammar, g.String())
+		})
+	}
+}
+
+func TestCFG_EliminateSingleProductions(t *testing.T) {
+	tests := []struct {
+		name            string
+		g               CFG
+		expectedGrammar string
+	}{
+		{
+			name:            "First",
+			g:               grammars[0],
+			expectedGrammar: "",
+		},
+		{
+			name:            "Second",
+			g:               grammars[1],
+			expectedGrammar: "",
+		},
+		{
+			name:            "Third",
+			g:               grammars[2],
+			expectedGrammar: "",
+		},
+		{
+			name:            "Fourth",
+			g:               grammars[3],
+			expectedGrammar: "",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			g := tc.g.EliminateEmptyProductions().EliminateSingleProductions()
+			assert.Equal(t, tc.expectedGrammar, g.String())
+		})
+	}
+}
+
+func TestCFG_EliminateCycle(t *testing.T) {
+	tests := []struct {
+		name            string
+		g               CFG
+		expectedGrammar string
+	}{}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			g := tc.g.EliminateCycle()
+			assert.Equal(t, tc.expectedGrammar, g.String())
+		})
+	}
+}
+
+func TestCFG_EliminateLeftRecursion(t *testing.T) {
+	tests := []struct {
+		name            string
+		g               CFG
+		expectedGrammar string
+	}{}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			g := tc.g.EliminateLeftRecursion()
+			assert.Equal(t, tc.expectedGrammar, g.String())
+		})
+	}
+}
+
+func TestCFG_LeftFactor(t *testing.T) {
+	tests := []struct {
+		name            string
+		g               CFG
+		expectedGrammar string
+	}{}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			g := tc.g.LeftFactor()
 			assert.Equal(t, tc.expectedGrammar, g.String())
 		})
 	}

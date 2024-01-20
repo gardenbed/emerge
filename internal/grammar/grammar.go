@@ -19,6 +19,7 @@ type Symbol interface {
 
 	Name() string
 	Equals(Symbol) bool
+	IsTerminal() bool
 }
 
 // Terminal represents a terminal symbol.
@@ -38,10 +39,15 @@ func (t Terminal) Name() string {
 
 // Equals determines whether or not two terminal symbols are the same.
 func (t Terminal) Equals(rhs Symbol) bool {
-	if val, ok := rhs.(Terminal); ok {
-		return t == val
+	if v, ok := rhs.(Terminal); ok {
+		return t == v
 	}
 	return false
+}
+
+// IsTerminal always returns true for terminal symbols.
+func (t Terminal) IsTerminal() bool {
+	return true
 }
 
 // NonTerminal represents a non-terminal symbol.
@@ -61,9 +67,14 @@ func (n NonTerminal) Name() string {
 
 // Equals determines whether or not two non-terminal symbols are the same.
 func (n NonTerminal) Equals(rhs Symbol) bool {
-	if val, ok := rhs.(NonTerminal); ok {
-		return n == val
+	if v, ok := rhs.(NonTerminal); ok {
+		return n == v
 	}
+	return false
+}
+
+// IsTerminal always returns false for non-terminal symbols.
+func (n NonTerminal) IsTerminal() bool {
 	return false
 }
 
@@ -99,8 +110,8 @@ func (s String[T]) Equals(rhs String[T]) bool {
 func (s String[Symbol]) Terminals() String[Terminal] {
 	terms := String[Terminal]{}
 	for _, symbol := range s {
-		if term, ok := any(symbol).(Terminal); ok {
-			terms = append(terms, term)
+		if v, ok := any(symbol).(Terminal); ok {
+			terms = append(terms, v)
 		}
 	}
 	return terms
@@ -110,8 +121,8 @@ func (s String[Symbol]) Terminals() String[Terminal] {
 func (s String[Symbol]) NonTerminals() String[NonTerminal] {
 	nonTerms := String[NonTerminal]{}
 	for _, symbol := range s {
-		if nonTerm, ok := any(symbol).(NonTerminal); ok {
-			nonTerms = append(nonTerms, nonTerm)
+		if v, ok := any(symbol).(NonTerminal); ok {
+			nonTerms = append(nonTerms, v)
 		}
 	}
 	return nonTerms
@@ -143,13 +154,7 @@ func (p Production) Equals(rhs Production) bool {
 //
 // A single production (unit production) is a production whose body is a single non-terminal (A → B).
 func (p Production) IsSingle() bool {
-	if len(p.Body) == 1 {
-		if _, ok := p.Body[0].(NonTerminal); ok {
-			return true
-		}
-	}
-
-	return false
+	return len(p.Body) == 1 && !p.Body[0].IsTerminal()
 }
 
 // CFG represents a context-free grammar in formal language theory.
@@ -326,6 +331,99 @@ func (g CFG) EliminateEmptyProductions() CFG {
 			}
 		}
 	}
+
+	return CFG{
+		Terminals:    g.Terminals.Clone(),
+		NonTerminals: g.NonTerminals.Clone(),
+		Productions:  prods,
+		Start:        g.Start,
+	}
+}
+
+// EliminateSingleProductions receives a context-free grammar and returns an equivalent single-production-free grammar.
+//
+// A single production a.k.a. unit production is a production rule whose body is a single non-terminal symbol (A → B).
+func (g CFG) EliminateSingleProductions() CFG {
+	// The new set of production rules
+	prods := g.Productions.Clone()
+
+	// Iterate through each production rule in the input grammar.
+	// Replace each production rule of the form A → B,
+	// with production rules of the form A → b₁, A → b₂, ..., A → bₙ where B → b₁, B → b₂, ..., B → bₙ occurs in the grammar.
+
+	return CFG{
+		Terminals:    g.Terminals.Clone(),
+		NonTerminals: g.NonTerminals.Clone(),
+		Productions:  prods,
+		Start:        g.Start,
+	}
+}
+
+// EliminateCycle receives a context-free grammar and returns an equivalent cycle-free grammar.
+//
+// A grammar is cyclic if it has derivations of one or more steps in which A ⇒* A for some non-terminal A.
+func (g CFG) EliminateCycle() CFG {
+	// The new set of production rules
+	prods := set.New[Production](func(lhs, rhs Production) bool {
+		return lhs.Equals(rhs)
+	})
+
+	// TODO:
+
+	return CFG{
+		Terminals:    g.Terminals.Clone(),
+		NonTerminals: g.NonTerminals.Clone(),
+		Productions:  prods,
+		Start:        g.Start}
+}
+
+// EliminateLeftRecursion receives a context-free grammar and returns an equivalent grammar with no left recursion.
+//
+// A grammar is left-recursive if it has a non-terminal A such that there is a derivation A ⇒+ Aα for some string.
+// For top-down parsers, left recursion causes the parser to loop forever.
+// Many bottom-up parsers also will not accept left-recursive grammars.
+func (g CFG) EliminateLeftRecursion() CFG {
+	// The new set of production rules
+	prods := set.New[Production](func(lhs, rhs Production) bool {
+		return lhs.Equals(rhs)
+	})
+
+	// TODO:
+	/* for i := range g.NonTerminals {
+		Ai := g.NonTerminals[i]
+
+		for j := 0; j < i; j++ {
+			Aj := g.NonTerminals[i]
+
+			for _, p := range g.Productions {
+				if p.Head == Ai {
+					if s, ok := p.Body[0].(NonTerminal); ok && s == Aj {
+
+					} else {
+
+					}
+				}
+			}
+		}
+	} */
+
+	return CFG{
+		Terminals:    g.Terminals.Clone(),
+		NonTerminals: g.NonTerminals.Clone(),
+		Productions:  prods,
+		Start:        g.Start}
+}
+
+// LeftFactor receives a context-free grammar and returns an equivalent left-factored grammar.
+//
+// Left factoring is a grammar transformation for producing a grammar suitable for top-down parsing.
+// When the choice between two alternative A-productions is not clear, we may be able to rewrite the productions
+// to defer the decision until enough of the input has been seen that we can make the right choice.
+func (g CFG) LeftFactor() CFG {
+	// The new set of production rules
+	prods := set.New[Production](func(lhs, rhs Production) bool {
+		return lhs.Equals(rhs)
+	})
 
 	return CFG{
 		Terminals:    g.Terminals.Clone(),
