@@ -5,7 +5,7 @@ go 1.23.3
 require (
 	github.com/gardenbed/charm v0.1.4
 	github.com/mitchellh/cli v1.1.5
-	github.com/moorara/algo v0.7.0
+	github.com/moorara/algo v0.8.0
 	github.com/stretchr/testify v1.10.0
 )
 
