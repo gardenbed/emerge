@@ -265,6 +265,20 @@ A′ → β₁ | β₂
 
 This [algorithm](#left-factoring-a-grammar) implements this approach for the general case.
 
+### Non-Context-Free Language Constructs
+
+When designing a programming language, there are certain aspects that cannot be expressed using context-free grammars (CFGs).
+Here are a few notable examples:
+
+  1. **Declaration Before Use**: CFGs cannot enforce that all identifiers are declared
+     before they are used within a program. This requires semantic analysis beyond syntactic rules.
+  2. **Function Parameter Matching**: CFGs cannot ensure that the number of actual parameters
+     passed to a function matches the number of formal parameters declared in its definition.
+  3. **Semantic Rules**: CFGs are limited to syntactic structures and cannot reason about semantic aspects,
+     such as verifying type compatibility during operations or type checking in general.
+
+These limitations necessitate additional mechanisms, such as semantic analysis or type systems, to fully validate programs.
+
 ## Top-Down Parsing
 
 Top-down parsing can be understood as constructing a parse tree for the input string,
