@@ -1,4 +1,5 @@
 [![Go Doc][godoc-image]][godoc-url]
+[![CodeQL][codeql-image]][codeql-url]
 [![Build Status][workflow-image]][workflow-url]
 [![Go Report Card][goreport-image]][goreport-url]
 [![Test Coverage][codecov-image]][codecov-url]
@@ -15,6 +16,8 @@ For an in-depth description of the project, please see the full documentation [h
 
 [godoc-url]: https://pkg.go.dev/github.com/gardenbed/emerge
 [godoc-image]: https://pkg.go.dev/badge/github.com/gardenbed/emerge
+[codeql-url]: https://github.com/gardenbed/emerge/actions/workflows/github-code-scanning/codeql
+[codeql-image]: https://github.com/gardenbed/emerge/workflows/CodeQL/badge.svg
 [workflow-url]: https://github.com/gardenbed/emerge/actions
 [workflow-image]: https://github.com/gardenbed/emerge/workflows/Go/badge.svg
 [goreport-url]: https://goreportcard.com/report/github.com/gardenbed/emerge
