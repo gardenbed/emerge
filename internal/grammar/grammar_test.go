@@ -1,10 +1,8 @@
 package grammar
 
 import (
-	"slices"
 	"testing"
 
-	"github.com/moorara/algo/set"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -99,7 +97,7 @@ var grammars = []Grammar{
 			{"E", String[Symbol]{NonTerminal("T")}},                                  // E → T
 			{"T", String[Symbol]{NonTerminal("T"), Terminal("*"), NonTerminal("F")}}, // T → T * F
 			{"T", String[Symbol]{NonTerminal("T"), Terminal("/"), NonTerminal("F")}}, // T → T / F
-			{"E", String[Symbol]{NonTerminal("T")}},                                  // T → F
+			{"T", String[Symbol]{NonTerminal("F")}},                                  // T → F
 			{"F", String[Symbol]{Terminal("("), NonTerminal("E"), Terminal(")")}},    // F → ( E )
 			{"F", String[Symbol]{Terminal("id")}},                                    // F → id
 		},
@@ -133,166 +131,6 @@ var grammars = []Grammar{
 		},
 		"grammar",
 	),
-}
-
-func TestTerminal(t *testing.T) {
-	tests := []struct {
-		value string
-	}{
-		{value: "a"},
-		{value: "b"},
-		{value: "c"},
-		{value: "0"},
-		{value: "1"},
-		{value: "2"},
-		{value: "+"},
-		{value: "*"},
-		{value: "("},
-		{value: ")"},
-		{value: "id"},
-		{value: "if"},
-	}
-
-	notEqual := Terminal("🙂")
-
-	for _, tc := range tests {
-		t.Run(tc.value, func(t *testing.T) {
-			tr := Terminal(tc.value)
-			assert.Equal(t, tc.value, tr.String())
-			assert.Equal(t, tc.value, tr.Name())
-			assert.True(t, tr.Equals(Terminal(tc.value)))
-			assert.False(t, tr.Equals(NonTerminal(tc.value)))
-			assert.False(t, tr.Equals(notEqual))
-			assert.True(t, tr.IsTerminal())
-		})
-	}
-}
-
-func TestNonTerminal(t *testing.T) {
-	tests := []struct {
-		value string
-	}{
-		{value: "A"},
-		{value: "B"},
-		{value: "C"},
-		{value: "S"},
-		{value: "expr"},
-		{value: "stmt"},
-	}
-
-	notEqual := NonTerminal("🙂")
-
-	for _, tc := range tests {
-		t.Run(tc.value, func(t *testing.T) {
-			n := NonTerminal(tc.value)
-			assert.Equal(t, tc.value, n.String())
-			assert.Equal(t, tc.value, n.Name())
-			assert.True(t, n.Equals(NonTerminal(tc.value)))
-			assert.False(t, n.Equals(Terminal(tc.value)))
-			assert.False(t, n.Equals(notEqual))
-			assert.False(t, n.IsTerminal())
-		})
-	}
-}
-
-func TestString(t *testing.T) {
-	tests := []struct {
-		name                 string
-		s                    String[Symbol]
-		expectedString       string
-		expectedTerminals    String[Terminal]
-		expectedNonTerminals String[NonTerminal]
-	}{
-		{
-			name:                 "Empty",
-			s:                    ε,
-			expectedString:       "ε",
-			expectedTerminals:    String[Terminal]{},
-			expectedNonTerminals: String[NonTerminal]{},
-		},
-		{
-			name:                 "AllTerminals",
-			s:                    String[Symbol]{Terminal("a"), Terminal("b"), Terminal("c")},
-			expectedString:       "a b c",
-			expectedTerminals:    String[Terminal]{"a", "b", "c"},
-			expectedNonTerminals: String[NonTerminal]{},
-		},
-		{
-			name:                 "AllNonTerminals",
-			s:                    String[Symbol]{NonTerminal("A"), NonTerminal("B"), NonTerminal("C")},
-			expectedString:       "A B C",
-			expectedTerminals:    String[Terminal]{},
-			expectedNonTerminals: String[NonTerminal]{"A", "B", "C"},
-		},
-		{
-			name:                 "TerminalsAndNonTerminals",
-			s:                    String[Symbol]{Terminal("a"), NonTerminal("A"), Terminal("b"), NonTerminal("B"), Terminal("c")},
-			expectedString:       "a A b B c",
-			expectedTerminals:    String[Terminal]{"a", "b", "c"},
-			expectedNonTerminals: String[NonTerminal]{"A", "B"},
-		},
-	}
-
-	notEqual := String[Symbol]{Terminal("🙂"), NonTerminal("🙃")}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			assert.Equal(t, tc.expectedString, tc.s.String())
-			assert.Equal(t, tc.expectedTerminals, tc.s.Terminals())
-			assert.Equal(t, tc.expectedNonTerminals, tc.s.NonTerminals())
-			assert.True(t, tc.s.Equals(tc.s))
-			assert.False(t, tc.s.Equals(notEqual))
-		})
-	}
-}
-
-func TestProduction(t *testing.T) {
-	tests := []struct {
-		name             string
-		p                Production
-		expectedString   string
-		expectedIsEmpty  bool
-		expectedIsSingle bool
-	}{
-		{
-			name:             "First",
-			p:                Production{"S", ε},
-			expectedString:   "S → ε",
-			expectedIsEmpty:  true,
-			expectedIsSingle: false,
-		},
-		{
-			name:             "Second",
-			p:                Production{"A", String[Symbol]{NonTerminal("B")}},
-			expectedString:   "A → B",
-			expectedIsEmpty:  false,
-			expectedIsSingle: true,
-		},
-		{
-			name:             "Third",
-			p:                Production{"stmt", String[Symbol]{Terminal("if"), NonTerminal("expr"), Terminal("then"), NonTerminal("stmt")}},
-			expectedString:   "stmt → if expr then stmt",
-			expectedIsEmpty:  false,
-			expectedIsSingle: false,
-		},
-	}
-
-	notEqual := Production{"😐", String[Symbol]{Terminal("🙂"), NonTerminal("🙃")}}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			assert.Equal(t, tc.expectedString, tc.p.String())
-			assert.True(t, tc.p.Equals(tc.p))
-			assert.False(t, tc.p.Equals(notEqual))
-			assert.Equal(t, tc.expectedIsEmpty, tc.p.IsEmpty())
-			assert.Equal(t, tc.expectedIsSingle, tc.p.IsSingle())
-		})
-	}
-}
-
-func TestProductions(t *testing.T) {
-	prods := NewProductions()
-	assert.NotNil(t, prods)
 }
 
 func TestNew(t *testing.T) {
@@ -347,81 +185,6 @@ func TestNew(t *testing.T) {
 	}
 }
 
-func TestGrammar_AddProduction(t *testing.T) {
-	tests := []struct {
-		name  string
-		g     Grammar
-		prods []Production
-	}{
-		{
-			name: "OK",
-			g: New(
-				[]Terminal{"+", "-", "*", "/", "(", ")", "id"},
-				[]NonTerminal{"E", "T", "F", "S"},
-				[]Production{},
-				"S",
-			),
-			prods: []Production{
-				{"S", String[Symbol]{NonTerminal("E")}},                                  // S → E
-				{"E", String[Symbol]{NonTerminal("E"), Terminal("+"), NonTerminal("T")}}, // E → E + T
-				{"E", String[Symbol]{NonTerminal("E"), Terminal("-"), NonTerminal("T")}}, // E → E - T
-				{"E", String[Symbol]{NonTerminal("T")}},                                  // E → T
-				{"T", String[Symbol]{NonTerminal("T"), Terminal("*"), NonTerminal("F")}}, // T → T * F
-				{"T", String[Symbol]{NonTerminal("T"), Terminal("/"), NonTerminal("F")}}, // T → T / F
-				{"E", String[Symbol]{NonTerminal("T")}},                                  // T → F
-				{"F", String[Symbol]{Terminal("("), NonTerminal("E"), Terminal(")")}},    // F → ( E )
-				{"F", String[Symbol]{Terminal("id")}},                                    // F → id
-			},
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			tc.g.AddProduction(tc.prods...)
-
-			for _, expectedProduction := range tc.prods {
-				list, ok := tc.g.Productions.Get(expectedProduction.Head)
-				assert.True(t, ok)
-				assert.True(t, list.Contains(expectedProduction))
-			}
-		})
-	}
-}
-
-func TestGrammar_AllProductions(t *testing.T) {
-	tests := []struct {
-		name                string
-		g                   Grammar
-		expectedProductions []Production
-	}{
-		{
-			name: "OK",
-			g:    grammars[6],
-			expectedProductions: []Production{
-				{"S", String[Symbol]{NonTerminal("E")}},                                  // S → E
-				{"E", String[Symbol]{NonTerminal("E"), Terminal("+"), NonTerminal("T")}}, // E → E + T
-				{"E", String[Symbol]{NonTerminal("E"), Terminal("-"), NonTerminal("T")}}, // E → E - T
-				{"E", String[Symbol]{NonTerminal("T")}},                                  // E → T
-				{"T", String[Symbol]{NonTerminal("T"), Terminal("*"), NonTerminal("F")}}, // T → T * F
-				{"T", String[Symbol]{NonTerminal("T"), Terminal("/"), NonTerminal("F")}}, // T → T / F
-				{"E", String[Symbol]{NonTerminal("T")}},                                  // T → F
-				{"F", String[Symbol]{Terminal("("), NonTerminal("E"), Terminal(")")}},    // F → ( E )
-				{"F", String[Symbol]{Terminal("id")}},                                    // F → id
-			},
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			prods := slices.Collect[Production](tc.g.AllProductions())
-
-			for _, expectedProduction := range tc.expectedProductions {
-				assert.Contains(t, prods, expectedProduction)
-			}
-		})
-	}
-}
-
 func TestGrammar_Verify(t *testing.T) {
 	tests := []struct {
 		name          string
@@ -436,7 +199,7 @@ func TestGrammar_Verify(t *testing.T) {
 				[]Production{},
 				"S",
 			),
-			expectedError: "start symbol \"S\" not in the set of non-terminal symbols\nno production rule for start symbol \"S\"",
+			expectedError: "start symbol S not in the set of non-terminal symbols\nno production rule for start symbol S",
 		},
 		{
 			name: "StartSymbolHasNoProduction",
@@ -446,7 +209,7 @@ func TestGrammar_Verify(t *testing.T) {
 				[]Production{},
 				"S",
 			),
-			expectedError: "no production rule for start symbol \"S\"\nno production rule for non-terminal symbol \"S\"",
+			expectedError: "no production rule for start symbol S\nno production rule for non-terminal symbol S",
 		},
 		{
 			name: "NonTerminalHasNoProduction",
@@ -458,7 +221,7 @@ func TestGrammar_Verify(t *testing.T) {
 				},
 				"S",
 			),
-			expectedError: "no production rule for non-terminal symbol \"A\"",
+			expectedError: "no production rule for non-terminal symbol A",
 		},
 		{
 			name: "ProductionHeadNotDeclared",
@@ -472,7 +235,7 @@ func TestGrammar_Verify(t *testing.T) {
 				},
 				"S",
 			),
-			expectedError: "production head \"B\" not in the set of non-terminal symbols",
+			expectedError: "production head B not in the set of non-terminal symbols",
 		},
 		{
 			name: "TerminalNotDeclared",
@@ -500,7 +263,7 @@ func TestGrammar_Verify(t *testing.T) {
 				},
 				"S",
 			),
-			expectedError: "non-terminal symbol \"C\" not in the set of non-terminal symbols",
+			expectedError: "non-terminal symbol C not in the set of non-terminal symbols",
 		},
 		{
 			name: "Valid",
@@ -650,7 +413,7 @@ func TestGrammar_Equals(t *testing.T) {
 					{"E", String[Symbol]{NonTerminal("T")}},                                  // E → T
 					{"T", String[Symbol]{NonTerminal("T"), Terminal("*"), NonTerminal("F")}}, // T → T * F
 					{"T", String[Symbol]{NonTerminal("T"), Terminal("/"), NonTerminal("F")}}, // T → T / F
-					{"E", String[Symbol]{NonTerminal("T")}},                                  // T → F
+					{"T", String[Symbol]{NonTerminal("F")}},                                  // T → F
 					{"F", String[Symbol]{Terminal("("), NonTerminal("E"), Terminal(")")}},    // F → ( E )
 					{"F", String[Symbol]{Terminal("id")}},                                    // F → id
 				},
@@ -662,7 +425,7 @@ func TestGrammar_Equals(t *testing.T) {
 				[]Production{
 					{"F", String[Symbol]{Terminal("id")}},                                    // F → id
 					{"F", String[Symbol]{Terminal("("), NonTerminal("E"), Terminal(")")}},    // F → ( E )
-					{"E", String[Symbol]{NonTerminal("T")}},                                  // T → F
+					{"T", String[Symbol]{NonTerminal("F")}},                                  // T → F
 					{"T", String[Symbol]{NonTerminal("T"), Terminal("*"), NonTerminal("F")}}, // T → T * F
 					{"T", String[Symbol]{NonTerminal("T"), Terminal("/"), NonTerminal("F")}}, // T → T / F
 					{"E", String[Symbol]{NonTerminal("T")}},                                  // E → T
@@ -973,12 +736,18 @@ func TestGrammar_EliminateSingleProductions(t *testing.T) {
 					{"S", String[Symbol]{NonTerminal("E"), Terminal("-"), NonTerminal("T")}}, // S → E - T
 					{"S", String[Symbol]{NonTerminal("T"), Terminal("*"), NonTerminal("F")}}, // S → T * F
 					{"S", String[Symbol]{NonTerminal("T"), Terminal("/"), NonTerminal("F")}}, // S → T / F
+					{"S", String[Symbol]{Terminal("("), NonTerminal("E"), Terminal(")")}},    // S → ( E )
+					{"S", String[Symbol]{Terminal("id")}},                                    // S → id
 					{"E", String[Symbol]{NonTerminal("E"), Terminal("+"), NonTerminal("T")}}, // E → E + T
 					{"E", String[Symbol]{NonTerminal("E"), Terminal("-"), NonTerminal("T")}}, // E → E - T
 					{"E", String[Symbol]{NonTerminal("T"), Terminal("*"), NonTerminal("F")}}, // E → T * F
 					{"E", String[Symbol]{NonTerminal("T"), Terminal("/"), NonTerminal("F")}}, // E → T / F
+					{"E", String[Symbol]{Terminal("("), NonTerminal("E"), Terminal(")")}},    // E → ( E )
+					{"E", String[Symbol]{Terminal("id")}},                                    // E → id
 					{"T", String[Symbol]{NonTerminal("T"), Terminal("*"), NonTerminal("F")}}, // T → T * F
 					{"T", String[Symbol]{NonTerminal("T"), Terminal("/"), NonTerminal("F")}}, // T → T / F
+					{"T", String[Symbol]{Terminal("("), NonTerminal("E"), Terminal(")")}},    // T → ( E )
+					{"T", String[Symbol]{Terminal("id")}},                                    // T → id
 					{"F", String[Symbol]{Terminal("("), NonTerminal("E"), Terminal(")")}},    // F → ( E )
 					{"F", String[Symbol]{Terminal("id")}},                                    // F → id
 				},
@@ -1238,12 +1007,18 @@ func TestGrammar_EliminateCycles(t *testing.T) {
 					{"S", String[Symbol]{NonTerminal("E"), Terminal("-"), NonTerminal("T")}}, // S → E - T
 					{"S", String[Symbol]{NonTerminal("T"), Terminal("*"), NonTerminal("F")}}, // S → T * F
 					{"S", String[Symbol]{NonTerminal("T"), Terminal("/"), NonTerminal("F")}}, // S → T / F
+					{"S", String[Symbol]{Terminal("("), NonTerminal("E"), Terminal(")")}},    // S → ( E )
+					{"S", String[Symbol]{Terminal("id")}},                                    // S → id
 					{"E", String[Symbol]{NonTerminal("E"), Terminal("+"), NonTerminal("T")}}, // E → E + T
 					{"E", String[Symbol]{NonTerminal("E"), Terminal("-"), NonTerminal("T")}}, // E → E - T
 					{"E", String[Symbol]{NonTerminal("T"), Terminal("*"), NonTerminal("F")}}, // E → T * F
 					{"E", String[Symbol]{NonTerminal("T"), Terminal("/"), NonTerminal("F")}}, // E → T / F
+					{"E", String[Symbol]{Terminal("("), NonTerminal("E"), Terminal(")")}},    // E → ( E )
+					{"E", String[Symbol]{Terminal("id")}},                                    // E → id
 					{"T", String[Symbol]{NonTerminal("T"), Terminal("*"), NonTerminal("F")}}, // T → T * F
 					{"T", String[Symbol]{NonTerminal("T"), Terminal("/"), NonTerminal("F")}}, // T → T / F
+					{"T", String[Symbol]{Terminal("("), NonTerminal("E"), Terminal(")")}},    // T → ( E )
+					{"T", String[Symbol]{Terminal("id")}},                                    // T → id
 					{"F", String[Symbol]{Terminal("("), NonTerminal("E"), Terminal(")")}},    // F → ( E )
 					{"F", String[Symbol]{Terminal("id")}},                                    // F → id
 				},
@@ -1291,17 +1066,223 @@ func TestGrammar_EliminateCycles(t *testing.T) {
 	}
 }
 
-func TestGrammar_EliminateLeftRecursion(t *testing.T) {
+func TestGrammar_ChomskyNormalForm(t *testing.T) {
 	tests := []struct {
 		name            string
 		g               Grammar
-		expectedGrammar string
+		expectedGrammar Grammar
 	}{}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
+			g := tc.g.ChomskyNormalForm()
+			assert.True(t, g.Equals(tc.expectedGrammar))
+		})
+	}
+}
+
+func TestGrammar_EliminateLeftRecursion(t *testing.T) {
+	tests := []struct {
+		name            string
+		g               Grammar
+		expectedGrammar Grammar
+	}{
+		{
+			name: "1st",
+			g:    grammars[0],
+			expectedGrammar: New(
+				[]Terminal{"0", "1"},
+				[]NonTerminal{"S′", "X", "Y"},
+				[]Production{
+					{"S′", String[Symbol]{NonTerminal("X"), NonTerminal("Y"), NonTerminal("X")}}, // S′ → XYX
+					{"S′", String[Symbol]{NonTerminal("X"), NonTerminal("X")}},                   // S′ → XX
+					{"S′", String[Symbol]{NonTerminal("X"), NonTerminal("Y")}},                   // S′ → XY
+					{"S′", String[Symbol]{NonTerminal("Y"), NonTerminal("X")}},                   // S′ → YX
+					{"S′", String[Symbol]{Terminal("0"), NonTerminal("X")}},                      // S′ → 0X
+					{"S′", String[Symbol]{Terminal("1"), NonTerminal("Y")}},                      // S′ → 1Y
+					{"S′", String[Symbol]{Terminal("0")}},                                        // S′ → 0
+					{"S′", String[Symbol]{Terminal("1")}},                                        // S′ → 1
+					{"S′", ε},                                                                    // S′ → ε
+					{"X", String[Symbol]{Terminal("0"), NonTerminal("X")}},                       // X → 0X
+					{"X", String[Symbol]{Terminal("0")}},                                         // X → 0
+					{"Y", String[Symbol]{Terminal("1"), NonTerminal("Y")}},                       // Y → 1Y
+					{"Y", String[Symbol]{Terminal("1")}},                                         // Y → 1
+				},
+				"S′",
+			),
+		},
+		{
+			name: "2nd",
+			g:    grammars[1],
+			expectedGrammar: New(
+				[]Terminal{"a", "b"},
+				[]NonTerminal{"S′", "S"},
+				[]Production{
+					{"S′", String[Symbol]{Terminal("a"), NonTerminal("S"), Terminal("b"), NonTerminal("S")}}, // S′ → aSbS
+					{"S′", String[Symbol]{Terminal("b"), NonTerminal("S"), Terminal("a"), NonTerminal("S")}}, // S′ → bSaS
+					{"S′", String[Symbol]{Terminal("a"), NonTerminal("S"), Terminal("b")}},                   // S′ → aSb
+					{"S′", String[Symbol]{Terminal("a"), Terminal("b"), NonTerminal("S")}},                   // S′ → abS
+					{"S′", String[Symbol]{Terminal("b"), NonTerminal("S"), Terminal("a")}},                   // S′ → bSa
+					{"S′", String[Symbol]{Terminal("b"), Terminal("a"), NonTerminal("S")}},                   // S′ → baS
+					{"S′", String[Symbol]{Terminal("a"), Terminal("b")}},                                     // S′ → ab
+					{"S′", String[Symbol]{Terminal("b"), Terminal("a")}},                                     // S′ → ba
+					{"S′", ε}, // S′ → ε
+					{"S", String[Symbol]{Terminal("a"), NonTerminal("S"), Terminal("b"), NonTerminal("S")}}, // S → aSbS
+					{"S", String[Symbol]{Terminal("b"), NonTerminal("S"), Terminal("a"), NonTerminal("S")}}, // S → bSaS
+					{"S", String[Symbol]{Terminal("a"), NonTerminal("S"), Terminal("b")}},                   // S → aSb
+					{"S", String[Symbol]{Terminal("a"), Terminal("b"), NonTerminal("S")}},                   // S → abS
+					{"S", String[Symbol]{Terminal("b"), NonTerminal("S"), Terminal("a")}},                   // S → bSa
+					{"S", String[Symbol]{Terminal("b"), Terminal("a"), NonTerminal("S")}},                   // S → baS
+					{"S", String[Symbol]{Terminal("a"), Terminal("b")}},                                     // S → ab
+					{"S", String[Symbol]{Terminal("b"), Terminal("a")}},                                     // S → ba
+				},
+				"S′",
+			),
+		},
+		{
+			name: "3rd",
+			g:    grammars[2],
+			expectedGrammar: New(
+				[]Terminal{"a", "b"},
+				[]NonTerminal{"S", "A", "B"},
+				[]Production{
+					{"S", String[Symbol]{Terminal("a"), NonTerminal("B"), Terminal("a")}}, // S → aBa
+					{"S", String[Symbol]{NonTerminal("A"), Terminal("b")}},                // S → Ab
+					{"S", String[Symbol]{Terminal("a"), Terminal("a")}},                   // S → aa
+					{"S", String[Symbol]{Terminal("a")}},                                  // S → a
+					{"S", String[Symbol]{Terminal("b")}},                                  // S → b
+					{"A", String[Symbol]{Terminal("b")}},                                  // A → b
+					{"B", String[Symbol]{Terminal("b")}},                                  // B → b
+				},
+				"S",
+			),
+		},
+		{
+			name: "4th",
+			g:    grammars[3],
+			expectedGrammar: New(
+				[]Terminal{"b", "c", "d", "s"},
+				[]NonTerminal{"S"},
+				[]Production{
+					{"S", String[Symbol]{Terminal("b")}}, // S → b
+					{"S", String[Symbol]{Terminal("d")}}, // S → d
+					{"S", String[Symbol]{Terminal("s")}}, // S → s
+				},
+				"S",
+			),
+		},
+		{
+			name: "5th",
+			g:    grammars[4],
+			expectedGrammar: New(
+				[]Terminal{"a", "b", "c", "d"},
+				[]NonTerminal{"S", "A", "B"},
+				[]Production{
+					{"S", String[Symbol]{NonTerminal("A"), NonTerminal("B")}}, // S → AB
+					{"A", String[Symbol]{Terminal("a"), NonTerminal("A")}},    // A → aA
+					{"A", String[Symbol]{Terminal("a")}},                      // A → a
+					{"B", String[Symbol]{Terminal("b"), NonTerminal("B")}},    // B → bB
+					{"B", String[Symbol]{Terminal("b")}},                      // B → b
+				},
+				"S",
+			),
+		},
+		{
+			name: "6th",
+			g:    grammars[5],
+			expectedGrammar: New(
+				[]Terminal{"+", "-", "*", "/", "(", ")", "id"},
+				[]NonTerminal{"S", "E", "E′"},
+				[]Production{
+					{"S", String[Symbol]{NonTerminal("E"), Terminal("+"), NonTerminal("E")}},                 // S → E + E
+					{"S", String[Symbol]{NonTerminal("E"), Terminal("-"), NonTerminal("E")}},                 // S → E - E
+					{"S", String[Symbol]{NonTerminal("E"), Terminal("*"), NonTerminal("E")}},                 // S → E * E
+					{"S", String[Symbol]{NonTerminal("E"), Terminal("/"), NonTerminal("E")}},                 // S → E / E
+					{"S", String[Symbol]{Terminal("("), NonTerminal("E"), Terminal(")")}},                    // S → ( E )
+					{"S", String[Symbol]{Terminal("-"), NonTerminal("E")}},                                   // S → - E
+					{"S", String[Symbol]{Terminal("id")}},                                                    // S → id
+					{"E", String[Symbol]{Terminal("("), NonTerminal("E"), Terminal(")"), NonTerminal("E′")}}, // E → ( E ) E′
+					{"E", String[Symbol]{Terminal("-"), NonTerminal("E"), NonTerminal("E′")}},                // E → - E E′
+					{"E", String[Symbol]{Terminal("id"), NonTerminal("E′")}},                                 // E → id E′
+					{"E′", String[Symbol]{Terminal("+"), NonTerminal("E"), NonTerminal("E′")}},               // E′ → + E E′
+					{"E′", String[Symbol]{Terminal("-"), NonTerminal("E"), NonTerminal("E′")}},               // E′ → - E E′
+					{"E′", String[Symbol]{Terminal("*"), NonTerminal("E"), NonTerminal("E′")}},               // E′ → * E E′
+					{"E′", String[Symbol]{Terminal("/"), NonTerminal("E"), NonTerminal("E′")}},               // E′ → / E E′
+					{"E′", ε}, // E′ → ε
+				},
+				"S",
+			),
+		},
+		{
+			name: "7th",
+			g:    grammars[6],
+			expectedGrammar: New(
+				[]Terminal{"+", "-", "*", "/", "(", ")", "id"},
+				[]NonTerminal{"S", "E", "E′", "T", "T′", "F"},
+				[]Production{
+					{"S", String[Symbol]{NonTerminal("E"), Terminal("+"), NonTerminal("T")}},                    // S → E + T
+					{"S", String[Symbol]{NonTerminal("E"), Terminal("-"), NonTerminal("T")}},                    // S → E - T
+					{"S", String[Symbol]{NonTerminal("T"), Terminal("*"), NonTerminal("F")}},                    // S → T * F
+					{"S", String[Symbol]{NonTerminal("T"), Terminal("/"), NonTerminal("F")}},                    // S → T / F
+					{"S", String[Symbol]{Terminal("("), NonTerminal("E"), Terminal(")")}},                       // S → ( E )
+					{"S", String[Symbol]{Terminal("id")}},                                                       // S → id
+					{"E", String[Symbol]{NonTerminal("T"), Terminal("*"), NonTerminal("F"), NonTerminal("E′")}}, // E → T * F E′
+					{"E", String[Symbol]{NonTerminal("T"), Terminal("/"), NonTerminal("F"), NonTerminal("E′")}}, // E → T / F E′
+					{"E", String[Symbol]{Terminal("("), NonTerminal("E"), Terminal(")"), NonTerminal("E′")}},    // E → ( E ) E′
+					{"E", String[Symbol]{Terminal("id"), NonTerminal("E′")}},                                    // E → id E′
+					{"E′", String[Symbol]{Terminal("+"), NonTerminal("T"), NonTerminal("E′")}},                  // E′ → + T E′
+					{"E′", String[Symbol]{Terminal("-"), NonTerminal("T"), NonTerminal("E′")}},                  // E′ → - T E′
+					{"E′", ε}, // E′ → ε
+					{"T", String[Symbol]{Terminal("("), NonTerminal("E"), Terminal(")"), NonTerminal("T′")}}, // T → ( E ) T′
+					{"T", String[Symbol]{Terminal("id"), NonTerminal("T′")}},                                 // T → id T′
+					{"T′", String[Symbol]{Terminal("*"), NonTerminal("F"), NonTerminal("T′")}},               // T′ → * F T′
+					{"T′", String[Symbol]{Terminal("/"), NonTerminal("F"), NonTerminal("T′")}},               // T′ → / F T′
+					{"T′", ε}, // T′ → ε
+					{"F", String[Symbol]{Terminal("("), NonTerminal("E"), Terminal(")")}}, // F → ( E )
+					{"F", String[Symbol]{Terminal("id")}},                                 // F → id
+				},
+				"S",
+			),
+		},
+		{
+			name: "8th",
+			g:    grammars[7],
+			expectedGrammar: New(
+				[]Terminal{"=", "|", "(", ")", "[", "]", "{", "}", "{{", "}}", "GRAMMAR", "IDENT", "TOKEN", "STRING", "REGEX"},
+				[]NonTerminal{"grammar", "name", "decls", "decls′", "decl", "lhs", "rhs", "rhs′"},
+				[]Production{
+					{"grammar", String[Symbol]{NonTerminal("name"), NonTerminal("decls")}},                                  // grammar → name decls
+					{"grammar", String[Symbol]{Terminal("GRAMMAR"), Terminal("IDENT")}},                                     // grammar → GRAMMAR IDENT
+					{"name", String[Symbol]{Terminal("GRAMMAR"), Terminal("IDENT")}},                                        // name → GRAMMAR IDENT
+					{"decls", String[Symbol]{NonTerminal("lhs"), Terminal("="), NonTerminal("rhs"), NonTerminal("decls′")}}, // decls → lhs "=" rhs decls′
+					{"decls", String[Symbol]{Terminal("TOKEN"), Terminal("="), Terminal("REGEX"), NonTerminal("decls′")}},   // decls → TOKEN "=" REGEX decls′
+					{"decls", String[Symbol]{Terminal("TOKEN"), Terminal("="), Terminal("STRING"), NonTerminal("decls′")}},  // decls → TOKEN "=" STRING decls′
+					{"decls′", String[Symbol]{NonTerminal("decl"), NonTerminal("decls′")}},                                  // decls′ → decl decls′
+					{"decls′", ε}, // decls′ → ε
+					{"decl", String[Symbol]{Terminal("IDENT"), Terminal("="), NonTerminal("rhs")}},                   // decl → IDENT "=" rhs
+					{"decl", String[Symbol]{Terminal("TOKEN"), Terminal("="), Terminal("REGEX")}},                    // decl → TOKEN "=" REGEX
+					{"decl", String[Symbol]{Terminal("TOKEN"), Terminal("="), Terminal("STRING")}},                   // decl → TOKEN "=" STRING
+					{"lhs", String[Symbol]{Terminal("IDENT")}},                                                       // lhs → IDENT
+					{"rhs", String[Symbol]{Terminal("("), NonTerminal("rhs"), Terminal(")"), NonTerminal("rhs′")}},   // rhs → "(" rhs ")" rhs′
+					{"rhs", String[Symbol]{Terminal("["), NonTerminal("rhs"), Terminal("]"), NonTerminal("rhs′")}},   // rhs → "[" rhs "]" rhs′
+					{"rhs", String[Symbol]{Terminal("{"), NonTerminal("rhs"), Terminal("}"), NonTerminal("rhs′")}},   // rhs → "{" rhs "}" rhs′
+					{"rhs", String[Symbol]{Terminal("{{"), NonTerminal("rhs"), Terminal("}}"), NonTerminal("rhs′")}}, // rhs → "{{" rhs "}}" rhs′
+					{"rhs", String[Symbol]{Terminal("IDENT"), NonTerminal("rhs′")}},                                  // rhs → IDENT rhs′
+					{"rhs", String[Symbol]{Terminal("TOKEN"), NonTerminal("rhs′")}},                                  // rhs → TOKEN rhs′
+					{"rhs", String[Symbol]{Terminal("STRING"), NonTerminal("rhs′")}},                                 // rhs → STRING rhs′
+					{"rhs′", String[Symbol]{NonTerminal("rhs"), NonTerminal("rhs′")}},                                // rhs′ → rhs rhs′
+					{"rhs′", String[Symbol]{Terminal("|"), NonTerminal("rhs"), NonTerminal("rhs′")}},                 // rhs′ → "|" rhs rhs′
+					{"rhs′", ε}, // rhs′ → ε
+				},
+				"grammar",
+			),
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
 			g := tc.g.EliminateLeftRecursion()
-			assert.Equal(t, tc.expectedGrammar, g.String())
+			assert.True(t, g.Equals(tc.expectedGrammar))
 		})
 	}
 }
@@ -1310,28 +1291,13 @@ func TestGrammar_LeftFactor(t *testing.T) {
 	tests := []struct {
 		name            string
 		g               Grammar
-		expectedGrammar string
+		expectedGrammar Grammar
 	}{}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			g := tc.g.LeftFactor()
-			assert.Equal(t, tc.expectedGrammar, g.String())
-		})
-	}
-}
-
-func TestGrammar_ChomskyNormalForm(t *testing.T) {
-	tests := []struct {
-		name            string
-		g               Grammar
-		expectedGrammar string
-	}{}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			g := tc.g.ChomskyNormalForm()
-			assert.Equal(t, tc.expectedGrammar, g.String())
+			assert.True(t, g.Equals(tc.expectedGrammar))
 		})
 	}
 }
@@ -1345,42 +1311,42 @@ func TestGrammar_String(t *testing.T) {
 		{
 			name:           "1st",
 			g:              grammars[0],
-			expectedString: "Terminal Symbols: 0 1\nNon-Terminal Symbols: S X Y\nStart Symbol: S\nProduction Rules:\n  S → X Y X\n  X → 0 X\n  X → ε\n  Y → 1 Y\n  Y → ε\n",
+			expectedString: "Terminal Symbols: \"0\" \"1\"\nNon-Terminal Symbols: S X Y\nStart Symbol: S\nProduction Rules:\n  S → X Y X\n  X → \"0\" X | ε\n  Y → \"1\" Y | ε\n",
 		},
 		{
 			name:           "2nd",
 			g:              grammars[1],
-			expectedString: "Terminal Symbols: a b\nNon-Terminal Symbols: S\nStart Symbol: S\nProduction Rules:\n  S → a S b S\n  S → b S a S\n  S → ε\n",
+			expectedString: "Terminal Symbols: \"a\" \"b\"\nNon-Terminal Symbols: S\nStart Symbol: S\nProduction Rules:\n  S → \"a\" S \"b\" S | \"b\" S \"a\" S | ε\n",
 		},
 		{
 			name:           "3rd",
 			g:              grammars[2],
-			expectedString: "Terminal Symbols: a b\nNon-Terminal Symbols: S B A\nStart Symbol: S\nProduction Rules:\n  S → a B a\n  S → A b\n  S → a\n  B → A\n  B → b\n  A → b\n  A → ε\n",
+			expectedString: "Terminal Symbols: \"a\" \"b\"\nNon-Terminal Symbols: S B A\nStart Symbol: S\nProduction Rules:\n  S → \"a\" B \"a\" | A \"b\" | \"a\"\n  B → A | \"b\"\n  A → \"b\" | ε\n",
 		},
 		{
 			name:           "4th",
 			g:              grammars[3],
-			expectedString: "Terminal Symbols: b c d s\nNon-Terminal Symbols: S A B C D\nStart Symbol: S\nProduction Rules:\n  S → A\n  S → s\n  A → B\n  B → C\n  B → b\n  C → D\n  D → d\n",
+			expectedString: "Terminal Symbols: \"b\" \"c\" \"d\" \"s\"\nNon-Terminal Symbols: S A B C D\nStart Symbol: S\nProduction Rules:\n  S → A | \"s\"\n  A → B\n  B → C | \"b\"\n  C → D\n  D → \"d\"\n",
 		},
 		{
 			name:           "5th",
 			g:              grammars[4],
-			expectedString: "Terminal Symbols: a b c d\nNon-Terminal Symbols: S A B C D\nStart Symbol: S\nProduction Rules:\n  S → A B\n  A → a A\n  A → a\n  B → b B\n  B → b\n  C → c C\n  C → c\n  D → d\n",
+			expectedString: "Terminal Symbols: \"a\" \"b\" \"c\" \"d\"\nNon-Terminal Symbols: S A B C D\nStart Symbol: S\nProduction Rules:\n  S → A B\n  A → \"a\" A | \"a\"\n  B → \"b\" B | \"b\"\n  C → \"c\" C | \"c\"\n  D → \"d\"\n",
 		},
 		{
 			name:           "6th",
 			g:              grammars[5],
-			expectedString: "Terminal Symbols: ( ) * + - / id\nNon-Terminal Symbols: S E\nStart Symbol: S\nProduction Rules:\n  S → E\n  E → E * E\n  E → E + E\n  E → E - E\n  E → E / E\n  E → ( E )\n  E → - E\n  E → id\n",
+			expectedString: "Terminal Symbols: \"(\" \")\" \"*\" \"+\" \"-\" \"/\" \"id\"\nNon-Terminal Symbols: S E\nStart Symbol: S\nProduction Rules:\n  S → E\n  E → E \"*\" E | E \"+\" E | E \"-\" E | E \"/\" E | \"(\" E \")\" | \"-\" E | \"id\"\n",
 		},
 		{
 			name:           "7th",
 			g:              grammars[6],
-			expectedString: "Terminal Symbols: ( ) * + - / id\nNon-Terminal Symbols: S E T F\nStart Symbol: S\nProduction Rules:\n  S → E\n  E → E + T\n  E → E - T\n  E → T\n  T → T * F\n  T → T / F\n  F → ( E )\n  F → id\n",
+			expectedString: "Terminal Symbols: \"(\" \")\" \"*\" \"+\" \"-\" \"/\" \"id\"\nNon-Terminal Symbols: S E T F\nStart Symbol: S\nProduction Rules:\n  S → E\n  E → E \"+\" T | E \"-\" T | T\n  T → T \"*\" F | T \"/\" F | F\n  F → \"(\" E \")\" | \"id\"\n",
 		},
 		{
 			name:           "8th",
 			g:              grammars[7],
-			expectedString: "Terminal Symbols: ( ) = GRAMMAR IDENT REGEX STRING TOKEN [ ] { {{ | } }}\nNon-Terminal Symbols: grammar name decls decl rule token lhs rhs nonterm term\nStart Symbol: grammar\nProduction Rules:\n  grammar → name decls\n  name → GRAMMAR IDENT\n  decls → decls decl\n  decls → ε\n  decl → rule\n  decl → token\n  rule → lhs = rhs\n  token → TOKEN = REGEX\n  token → TOKEN = STRING\n  lhs → nonterm\n  rhs → rhs | rhs\n  rhs → rhs rhs\n  rhs → ( rhs )\n  rhs → [ rhs ]\n  rhs → { rhs }\n  rhs → {{ rhs }}\n  rhs → nonterm\n  rhs → term\n  nonterm → IDENT\n  term → STRING\n  term → TOKEN\n",
+			expectedString: "Terminal Symbols: \"(\" \")\" \"=\" \"GRAMMAR\" \"IDENT\" \"REGEX\" \"STRING\" \"TOKEN\" \"[\" \"]\" \"{\" \"{{\" \"|\" \"}\" \"}}\"\nNon-Terminal Symbols: grammar name decls decl rule token lhs rhs nonterm term\nStart Symbol: grammar\nProduction Rules:\n  grammar → name decls\n  name → \"GRAMMAR\" \"IDENT\"\n  decls → decls decl | ε\n  decl → rule | token\n  rule → lhs \"=\" rhs\n  token → \"TOKEN\" \"=\" \"REGEX\" | \"TOKEN\" \"=\" \"STRING\"\n  lhs → nonterm\n  rhs → rhs \"|\" rhs | rhs rhs | \"(\" rhs \")\" | \"[\" rhs \"]\" | \"{\" rhs \"}\" | \"{{\" rhs \"}}\" | nonterm | term\n  nonterm → \"IDENT\"\n  term → \"STRING\" | \"TOKEN\"\n",
 		},
 	}
 
@@ -1391,7 +1357,7 @@ func TestGrammar_String(t *testing.T) {
 	}
 }
 
-func TestGrammar_generateNewNonTerminal(t *testing.T) {
+func TestGrammar_addNewNonTerminal(t *testing.T) {
 	tests := []struct {
 		name                string
 		g                   Grammar
@@ -1420,7 +1386,7 @@ func TestGrammar_generateNewNonTerminal(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			nonTerm, ok := tc.g.generateNewNonTerminal(tc.prefix, tc.suffixes...)
+			nonTerm, ok := tc.g.addNewNonTerminal(tc.prefix, tc.suffixes...)
 			assert.Equal(t, tc.expectedOK, ok)
 			assert.Equal(t, tc.expectedNonTerminal, nonTerm)
 		})
@@ -1431,12 +1397,12 @@ func TestGrammar_orderTerminals(t *testing.T) {
 	tests := []struct {
 		name              string
 		g                 Grammar
-		expectedTerminals []string
+		expectedTerminals String[Terminal]
 	}{
 		{
 			name:              "OK",
 			g:                 grammars[4],
-			expectedTerminals: []string{"a", "b", "c", "d"},
+			expectedTerminals: String[Terminal]{"a", "b", "c", "d"},
 		},
 	}
 
@@ -1454,14 +1420,14 @@ func TestGrammar_orderNonTerminals(t *testing.T) {
 		g                    Grammar
 		expectedVisited      []NonTerminal
 		expectedUnvisited    []NonTerminal
-		expectedNonTerminals []string
+		expectedNonTerminals String[NonTerminal]
 	}{
 		{
 			name:                 "OK",
 			g:                    grammars[4],
 			expectedVisited:      []NonTerminal{"S", "A", "B"},
 			expectedUnvisited:    []NonTerminal{"C", "D"},
-			expectedNonTerminals: []string{"S", "A", "B", "C", "D"},
+			expectedNonTerminals: String[NonTerminal]{"S", "A", "B", "C", "D"},
 		},
 	}
 
@@ -1471,47 +1437,6 @@ func TestGrammar_orderNonTerminals(t *testing.T) {
 			assert.Equal(t, tc.expectedVisited, visited)
 			assert.Equal(t, tc.expectedUnvisited, unvisited)
 			assert.Equal(t, tc.expectedNonTerminals, nonTerms)
-		})
-	}
-}
-
-func TestGrammar_orderProductions(t *testing.T) {
-	s := set.New[Production](eqProduction)
-	s.Add(
-		Production{"E", String[Symbol]{Terminal("id")}},                                    // E → id
-		Production{"E", String[Symbol]{Terminal("-"), NonTerminal("E")}},                   // E → - E
-		Production{"E", String[Symbol]{Terminal("("), NonTerminal("E"), Terminal(")")}},    // E → ( E )
-		Production{"E", String[Symbol]{NonTerminal("E"), Terminal("+"), NonTerminal("E")}}, // E → E + E
-		Production{"E", String[Symbol]{NonTerminal("E"), Terminal("-"), NonTerminal("E")}}, // E → E - E
-		Production{"E", String[Symbol]{NonTerminal("E"), Terminal("*"), NonTerminal("E")}}, // E → E * E
-		Production{"E", String[Symbol]{NonTerminal("E"), Terminal("/"), NonTerminal("E")}}, // E → E / E
-	)
-
-	tests := []struct {
-		name                string
-		g                   Grammar
-		set                 set.Set[Production]
-		expectedProductions []Production
-	}{
-		{
-			name: "OK",
-			set:  s,
-			expectedProductions: []Production{
-				{"E", String[Symbol]{NonTerminal("E"), Terminal("*"), NonTerminal("E")}}, // E → E * E
-				{"E", String[Symbol]{NonTerminal("E"), Terminal("+"), NonTerminal("E")}}, // E → E + E
-				{"E", String[Symbol]{NonTerminal("E"), Terminal("-"), NonTerminal("E")}}, // E → E - E
-				{"E", String[Symbol]{NonTerminal("E"), Terminal("/"), NonTerminal("E")}}, // E → E / E
-				{"E", String[Symbol]{Terminal("("), NonTerminal("E"), Terminal(")")}},    // E → ( E )
-				{"E", String[Symbol]{Terminal("-"), NonTerminal("E")}},                   // E → - E
-				{"E", String[Symbol]{Terminal("id")}},                                    // E → id
-			},
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			prods := orderProductions(tc.set)
-			assert.Equal(t, tc.expectedProductions, prods)
 		})
 	}
 }
