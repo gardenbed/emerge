@@ -895,6 +895,109 @@ In fact, the notion of least-cost correction provides a benchmark for evaluating
 
 ## Core Algorithms
 
+### Identifying Nullable Non-Terminals
+
+```
+# INPUT:  Grammar G.
+# OUTPUT: A set of nullable non-terminals.
+# METHOD:
+#
+#   1. Initialize an empty set nullable = {}
+#
+#   2. For each production A → ε of the grammar:
+#        • Add A to nullable.
+#
+#   3. Repeat until no new non-terminals are added to nullable:
+#        For each production A → A₁A₂...Aₙ of the grammar, where A ∉ nullable:
+#          • Add A to nullable if all Aᵢ ∈ nullable.
+#
+```
+
+### Eliminating Empty Productions
+
+```
+# INPUT:  Grammar G.
+# OUTPUT: An equivalent ε-free grammar.
+# METHOD:
+#
+#   1. Identify all nullable non-terminals of the grammar.
+#
+#   2. For each production A → α of the grammar:
+#        • Generate all possible combinations of α by including and excluding nullable non-terminals of α (α₁α₂...αₙ).
+#        • For each combination αᵢ:
+#            • If αᵢ ≠ ε, add the production A → αᵢ to the new grammar (if not already added).
+#
+#   3. If the start symbol S ∈ nullable,
+#        • Add a new non-termnial S′ to the grammar
+#        • Add a new production S′ → S | ε to the grammar.
+#        • Set the start symbol of the new grammar to S′.
+#
+```
+
+### Eliminating Single Productions
+
+```
+# INPUT:  Grammar G.
+# OUTPUT: An equivalent grammar with no single productions.
+# METHOD:
+#
+#   1. Identify all single productions:
+#        • Initialize an empty map singles = {}
+#        • For each production A → α of the grammar:
+#            • If α is a single non-terminal B, add B to the set singles[A].
+#
+#   2. Compute the transitive closure of non-terminals:
+#        • Initialze an empty map closure = {}
+#        • For each non-terminal A:
+#            • Set closure[A][A] = true
+#        • For each single production A → B in singles:
+#            • Set closure[A][B] = true
+#
+#   3. Repeat until no new non-terminals are added to closure:
+#        • For every non-terminal A in closure:
+#            • For every non-terminal B in closure[A]:
+#                • For every non-terminal C in closure[B]:
+#                    • Set closure[A][C] = true
+#
+#   4. For every non-terminal A in closure:
+#        • For every non-terminal B in closure[A]:
+#            • For every production B → β:
+#                • If β is not a single non-terminal, add production A → β to the new grammar.
+#
+```
+
+### Eliminating Unreachable Productions
+
+```
+# INPUT:  Grammar G.
+# OUTPUT: An equivalent grammar with no unreachable productions.
+# METHOD:
+#
+#   1. Initialize a set reachable = {S}, where S is the start symbol of the grammar.
+#
+#   2. Repeat until no new non-terminals are added to reachable:
+#        • For each production A → α of the grammar, where A ∉ reachable:
+#            • For each non-terminal B in α:
+#                • If B ∉ reachable, add B to reachable.
+#
+#   3. For each production A → α of the grammar, where A ∈ reachable:
+#        • Add production A → α to the new grammar.
+#
+```
+
+### Eliminating Cycles
+
+```
+# INPUT:  Grammar G.
+# OUTPUT: An equivalent cycle-free grammar.
+# METHOD: 
+#
+#   1. Eliminate empty productions.
+#   2. Eliminate single productions.
+#   3. Eliminate unreachable productions.
+#
+```
+
 ### Eliminating Left Recursion
 
 ```
@@ -918,7 +1021,7 @@ for (each i from 1 to n)
 ```
 # INPUT:  Grammar G.
 # OUTPUT: An equivalent left-factored grammar.
-# METHOD: For each non-terminal A, finnd the longest prefix α common to two or more of its alternatives.
+# METHOD: For each non-terminal A, find the longest prefix α common to two or more of its alternatives.
 #         If α ≠ ε, there is a non-trivial common prefix, replace all of the A-productions
 #         A → αβ₁ | αβ₂ | ... | αβₙ | γ where γ represents all alternatives that do not begin with α by
 #
