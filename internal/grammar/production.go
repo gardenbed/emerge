@@ -65,9 +65,9 @@ func (p Production) IsLeftRecursive() bool {
 // Productions is the interface for a set of production rules in a grammar.
 type Productions interface {
 	fmt.Stringer
+	generic.Cloner[Productions]
 	generic.Equaler[Productions]
 
-	Clone() Productions
 	Add(...Production)
 	Remove(...Production)
 	RemoveAll(...NonTerminal)
@@ -112,12 +112,6 @@ func (p *productions) String() string {
 	return b.String()
 }
 
-// Equals determines whether or not two sets of production rules are the same.
-func (p *productions) Equals(rhs Productions) bool {
-	q, ok := rhs.(*productions)
-	return ok && p.table.Equals(q.table)
-}
-
 // Clone returns a deep copy of the production rules, ensuring the clone is independent of the original.
 func (p *productions) Clone() Productions {
 	newP := NewProductions()
@@ -126,6 +120,12 @@ func (p *productions) Clone() Productions {
 	}
 
 	return newP
+}
+
+// Equals determines whether or not two sets of production rules are the same.
+func (p *productions) Equals(rhs Productions) bool {
+	q, ok := rhs.(*productions)
+	return ok && p.table.Equals(q.table)
 }
 
 // Add adds a new production rule.

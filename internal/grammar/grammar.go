@@ -92,6 +92,16 @@ func (g Grammar) Equals(rhs Grammar) bool {
 		g.Start.Equals(rhs.Start)
 }
 
+// Clone returns a deep copy of a context-free grammar, ensuring the clone is independent of the original.
+func (g Grammar) Clone() Grammar {
+	return Grammar{
+		Terminals:    g.Terminals.Clone(),
+		NonTerminals: g.NonTerminals.Clone(),
+		Productions:  g.Productions.Clone(),
+		Start:        g.Start,
+	}
+}
+
 // nullableNonTerminals finds all non-terminal symbols in a context-free grammar
 // that can derive the empty string ε in one or more steps (A ⇒* ε for some non-terminal A).
 func (g Grammar) nullableNonTerminals() set.Set[NonTerminal] {
@@ -327,12 +337,7 @@ func (g Grammar) EliminateCycles() Grammar {
 //	where A, B, and C are non-terminal symbols, and a is a terminal symbol
 //	(with the possible exception of the empty string derived from the start symbol, S → ε).
 func (g Grammar) ChomskyNormalForm() Grammar {
-	newG := Grammar{
-		Terminals:    g.Terminals.Clone(),
-		NonTerminals: g.NonTerminals.Clone(),
-		Productions:  NewProductions(),
-		Start:        g.Start,
-	}
+	newG := g.Clone()
 
 	return newG
 }
@@ -431,16 +436,36 @@ func (g Grammar) EliminateLeftRecursion() Grammar {
 
 // LeftFactor converts a context-free grammar into an equivalent left-factored grammar.
 //
-// Left factoring is a grammar transformation for producing a grammar suitable for top-down parsing.
-// When the choice between two alternative A-productions is not clear, we may be able to rewrite the productions
-// to defer the decision until enough of the input has been seen that we can make the right choice.
+// Left factoring is a grammar transformation for producing a grammar suitable predictive for top-down parsing.
+// When the choice between two alternative A-productions is not clear,
+// we may be able to rewrite the productions to defer the decision
+// until enough of the input has been seen that we can make the right choice.
+//
+// For example, if we have the two productions
+//
+//	𝑠𝑡𝑚𝑡 → 𝐢𝐟 𝑒𝑥𝑝𝑟 𝐭𝐡𝐞𝐧 𝑠𝑡𝑚𝑡 𝐞𝐥𝐬𝐞 𝑠𝑡𝑚𝑡
+//	    | 𝐢𝐟 𝑒𝑥𝑝𝑟 𝐭𝐡𝐞𝐧 𝑠𝑡𝑚𝑡
+//
+// on seeing the input 𝐢𝐟, we cannot immediately tell which productions to choose to expand 𝑠𝑡𝑚𝑡.
 func (g Grammar) LeftFactor() Grammar {
-	newG := Grammar{
-		Terminals:    g.Terminals.Clone(),
-		NonTerminals: g.NonTerminals.Clone(),
-		Productions:  NewProductions(),
-		Start:        g.Start,
-	}
+	/*
+	 * For each non-terminal A, find the longest prefix α common to two or more A-productions.
+	 * If α ≠ ε, there is a non-trivial common prefix, replace all of the A-productions
+	 *
+	 *   A → αβ₁ | αβ₂ | ... | αβₙ | γ
+	 *
+	 * where γ represents all the alternative productions that do not being with α, by
+	 *
+	 *   A → αA′ | γ
+	 *   A′ → β₁ | β₂ | ... | βₙ
+	 *
+	 * We repeatedly apply this transformation until
+	 * no two alternative productions for a non-terminal have a common prefix.
+	 */
+
+	newG := g.Clone()
+
+	// TODO:
 
 	return newG
 }
@@ -514,8 +539,8 @@ func (g Grammar) orderTerminals() String[Terminal] {
 // orderTerminals orders the unordered set of grammar non-terminals in a deterministic way.
 //
 // The goal of this function is to ensure a consistent and deterministic order for any given set of non-terminals.
-func (g Grammar) orderNonTerminals() ([]NonTerminal, []NonTerminal, String[NonTerminal]) {
-	visited := make([]NonTerminal, 0)
+func (g Grammar) orderNonTerminals() (String[NonTerminal], String[NonTerminal], String[NonTerminal]) {
+	visited := make(String[NonTerminal], 0)
 	isVisited := func(n NonTerminal) bool {
 		for _, v := range visited {
 			if v == n {
@@ -547,7 +572,7 @@ func (g Grammar) orderNonTerminals() ([]NonTerminal, []NonTerminal, String[NonTe
 	}
 
 	// Identify any unvisited non-terminals in the grammar.
-	unvisited := make([]NonTerminal, 0)
+	unvisited := make(String[NonTerminal], 0)
 	for n := range g.NonTerminals.All() {
 		if !isVisited(n) {
 			unvisited = append(unvisited, n)
