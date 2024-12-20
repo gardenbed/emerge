@@ -1,8 +1,6 @@
 package grammar
 
-import (
-	"strings"
-)
+import "strings"
 
 // The empty string ε
 var ε = String[Symbol]{}
@@ -37,6 +35,18 @@ func (s String[T]) Equals(rhs String[T]) bool {
 	}
 
 	return true
+}
+
+// HasPrefix checks whether a string starts with the given prefix.
+func (s String[T]) HasPrefix(prefix String[T]) bool {
+	ls, lp := len(s), len(prefix)
+	return ls >= lp && s[:lp].Equals(prefix)
+}
+
+// HasSuffix checks whether a string ends with the given suffix.
+func (s String[T]) HasSuffix(prefix String[T]) bool {
+	ls, lp := len(s), len(prefix)
+	return ls >= lp && s[ls-lp:].Equals(prefix)
 }
 
 // Append appends new symbols to the current string and returns a new string
@@ -88,4 +98,25 @@ func (s String[Symbol]) NonTerminals() String[NonTerminal] {
 		}
 	}
 	return nonTerms
+}
+
+// LongestCommonPrefixOf computes the longest common prefix of a list of strings.
+// If the input is empty or there is no common prefix, it returns the empty string ε.
+func LongestCommonPrefixOf(ss ...String[Symbol]) String[Symbol] {
+	if len(ss) == 0 {
+		return ε
+	}
+
+	lcp := ss[0]
+
+	for i := 1; i < len(ss); i++ {
+		for !ss[i].HasPrefix(lcp) {
+			lcp = lcp[:len(lcp)-1]
+			if len(lcp) == 0 {
+				return ε
+			}
+		}
+	}
+
+	return lcp
 }

@@ -446,6 +446,26 @@ func TestGrammar_Equals(t *testing.T) {
 	}
 }
 
+func TestGrammar_Clone(t *testing.T) {
+	tests := []struct {
+		name string
+		g    Grammar
+	}{
+		{
+			name: "OK",
+			g:    grammars[1],
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			newG := tc.g.Clone()
+			assert.False(t, newG == tc.g)
+			assert.True(t, newG.Equals(tc.g))
+		})
+	}
+}
+
 func TestGrammar_nullableNonTerminals(t *testing.T) {
 	tests := []struct {
 		name              string
@@ -1292,7 +1312,48 @@ func TestGrammar_LeftFactor(t *testing.T) {
 		name            string
 		g               Grammar
 		expectedGrammar Grammar
-	}{}
+	}{
+		{
+			name:            "1st",
+			g:               grammars[0],
+			expectedGrammar: grammars[0],
+		},
+		{
+			name:            "2nd",
+			g:               grammars[1],
+			expectedGrammar: grammars[1],
+		},
+		{
+			name:            "3rd",
+			g:               grammars[2],
+			expectedGrammar: grammars[2],
+		},
+		{
+			name:            "4th",
+			g:               grammars[3],
+			expectedGrammar: grammars[3],
+		},
+		{
+			name:            "5th",
+			g:               grammars[4],
+			expectedGrammar: grammars[4],
+		},
+		{
+			name:            "6th",
+			g:               grammars[5],
+			expectedGrammar: grammars[5],
+		},
+		{
+			name:            "7th",
+			g:               grammars[6],
+			expectedGrammar: grammars[6],
+		},
+		{
+			name:            "8th",
+			g:               grammars[7],
+			expectedGrammar: grammars[7],
+		},
+	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -1418,15 +1479,15 @@ func TestGrammar_orderNonTerminals(t *testing.T) {
 	tests := []struct {
 		name                 string
 		g                    Grammar
-		expectedVisited      []NonTerminal
-		expectedUnvisited    []NonTerminal
+		expectedVisited      String[NonTerminal]
+		expectedUnvisited    String[NonTerminal]
 		expectedNonTerminals String[NonTerminal]
 	}{
 		{
 			name:                 "OK",
 			g:                    grammars[4],
-			expectedVisited:      []NonTerminal{"S", "A", "B"},
-			expectedUnvisited:    []NonTerminal{"C", "D"},
+			expectedVisited:      String[NonTerminal]{"S", "A", "B"},
+			expectedUnvisited:    String[NonTerminal]{"C", "D"},
 			expectedNonTerminals: String[NonTerminal]{"S", "A", "B", "C", "D"},
 		},
 	}

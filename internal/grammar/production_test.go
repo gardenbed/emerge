@@ -166,6 +166,36 @@ func TestProductions_String(t *testing.T) {
 	}
 }
 
+func TestProductions_Clone(t *testing.T) {
+	p := getTestProductions()
+
+	tests := []struct {
+		name string
+		p    *productions
+	}{
+		{
+			name: "1st",
+			p:    p[1],
+		},
+		{
+			name: "2nd",
+			p:    p[2],
+		},
+		{
+			name: "3rd",
+			p:    p[3],
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			newP := tc.p.Clone()
+			assert.False(t, newP == tc.p)
+			assert.True(t, newP.Equals(tc.p))
+		})
+	}
+}
+
 func TestProductions_Equals(t *testing.T) {
 	p := getTestProductions()
 
@@ -192,36 +222,6 @@ func TestProductions_Equals(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			assert.Equal(t, tc.expectedEquals, tc.p.Equals(tc.rhs))
-		})
-	}
-}
-
-func TestProductions_Clone(t *testing.T) {
-	p := getTestProductions()
-
-	tests := []struct {
-		name string
-		p    *productions
-	}{
-		{
-			name: "1st",
-			p:    p[1],
-		},
-		{
-			name: "2nd",
-			p:    p[2],
-		},
-		{
-			name: "3rd",
-			p:    p[3],
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			q := tc.p.Clone()
-			assert.False(t, q == tc.p)
-			assert.True(t, q.Equals(tc.p))
 		})
 	}
 }
