@@ -50,7 +50,7 @@ auto-generated parsers use a larger class of LR grammars.
 
 ## Context-Free Grammars
 
-A context-free grammar **`G`** is defined by four sets:
+A context-free grammar **`G = (V, Σ, R, S)`** is defined by four sets:
 
   1. **`V`** is a set of **terminal** symbols from which *strings* are formed.
      Terminal symbols are also referred to as **tokens**.
