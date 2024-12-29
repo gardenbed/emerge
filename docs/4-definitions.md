@@ -100,7 +100,7 @@ grammar = name { decl }
 name    = "grammar" IDENT
 decl    = token | rule
 token   = TOKEN "=" ( STRING | REGEX )
-rule    = lhs "=" rhs
+rule    = lhs "=" rhs | lhs "="
 lhs     = nonterm
 rhs     = nonterm | term | "(" rhs ")" | "[" rhs "]" | "{" rhs "}" | "{{" rhs "}}" | rhs rhs | rhs "|" rhs
 nonterm = IDENT
