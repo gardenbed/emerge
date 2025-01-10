@@ -1,6 +1,6 @@
 package parser
 
-import comb "github.com/gardenbed/emerge/internal/combinator"
+import comb "github.com/moorara/algo/parser/combinator"
 
 var (
 	// All characters from 0x00 to 0x7f

@@ -3,9 +3,8 @@ package ast
 import (
 	"testing"
 
+	comb "github.com/moorara/algo/parser/combinator"
 	"github.com/stretchr/testify/assert"
-
-	comb "github.com/gardenbed/emerge/internal/combinator"
 )
 
 func TestMappers_ToAnyChar(t *testing.T) {

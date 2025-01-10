@@ -4,7 +4,8 @@ import (
 	"errors"
 	"fmt"
 
-	comb "github.com/gardenbed/emerge/internal/combinator"
+	comb "github.com/moorara/algo/parser/combinator"
+
 	"github.com/gardenbed/emerge/internal/regex/parser"
 )
 

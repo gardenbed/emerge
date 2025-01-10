@@ -7,7 +7,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/gardenbed/emerge/internal/input"
+	"github.com/moorara/algo/parser/input"
 )
 
 const (

@@ -3,9 +3,8 @@ package parser
 import (
 	"testing"
 
+	comb "github.com/moorara/algo/parser/combinator"
 	"github.com/stretchr/testify/assert"
-
-	comb "github.com/gardenbed/emerge/internal/combinator"
 )
 
 func TestToDigit(t *testing.T) {
@@ -1565,7 +1564,7 @@ func TestParser_charGroup(t *testing.T) {
 					{OutOK: true},
 				},
 				ToCharGroupMocks: []MapperMock{
-					MapperMock{},
+					{},
 				},
 			},
 			in: newStringInput(`[ab]`),
@@ -1601,7 +1600,7 @@ func TestParser_charGroup(t *testing.T) {
 					{OutOK: true},
 				},
 				ToCharGroupMocks: []MapperMock{
-					MapperMock{},
+					{},
 				},
 			},
 			in: newStringInput(`[^ab]`),
@@ -1792,7 +1791,7 @@ func TestParser_match(t *testing.T) {
 					{OutOK: true},
 				},
 				ToMatchMocks: []MapperMock{
-					MapperMock{},
+					{},
 				},
 			},
 			in: newStringInput(`[:digit:]+`),
@@ -2087,7 +2086,7 @@ func TestParser_subexpr(t *testing.T) {
 					{OutOK: true},
 				},
 				ToSubexprMocks: []MapperMock{
-					MapperMock{},
+					{},
 				},
 			},
 			in: newStringInput(`ab`),

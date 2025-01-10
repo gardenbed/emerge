@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	auto "github.com/moorara/algo/automata"
+	comb "github.com/moorara/algo/parser/combinator"
 
-	comb "github.com/gardenbed/emerge/internal/combinator"
 	"github.com/gardenbed/emerge/internal/regex/parser"
 )
 
