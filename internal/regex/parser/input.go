@@ -1,6 +1,6 @@
 package parser
 
-import comb "github.com/gardenbed/emerge/internal/combinator"
+import comb "github.com/moorara/algo/parser/combinator"
 
 // stringInput implements the combinator.Input interface for strings.
 type stringInput struct {

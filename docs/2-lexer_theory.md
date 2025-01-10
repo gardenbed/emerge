@@ -257,7 +257,7 @@ A pointer keeps track of the portion of the input that has been analyzed;
 pushing back a character is implemented by moving back the pointer.
 
 The most common scheme involves two buffers that are alternately reloaded.
-Each buffer is of the same size `N` (`N` is usually the size of a disk block,`4096` bytes).
+Each buffer is of the same size `N` (`N` is usually the size of a disk block, `4096` bytes).
 If fewer than `N` characters remain in the input, then a special character (*EOF*) marks the end of the input.
 
 Two pointers to the input are maintained:

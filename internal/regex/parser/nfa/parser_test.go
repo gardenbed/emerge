@@ -4,9 +4,8 @@ import (
 	"testing"
 
 	auto "github.com/moorara/algo/automata"
+	comb "github.com/moorara/algo/parser/combinator"
 	"github.com/stretchr/testify/assert"
-
-	comb "github.com/gardenbed/emerge/internal/combinator"
 )
 
 func TestParse(t *testing.T) {
