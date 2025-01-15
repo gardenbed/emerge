@@ -261,6 +261,7 @@ Each buffer is of the same size `N` (`N` is usually the size of a disk block, `4
 If fewer than `N` characters remain in the input, then a special character (*EOF*) marks the end of the input.
 
 Two pointers to the input are maintained:
+
   1. Pointer `lexemeBegin`, marks the beginning of the current lexeme, whose extent we are attempting to determine.
   2. Pointer `forward` scans ahead until a pattern match is found.
 

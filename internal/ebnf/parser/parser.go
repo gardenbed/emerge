@@ -3,7 +3,9 @@ package parser
 import (
 	"io"
 
-	"github.com/gardenbed/emerge/internal/ebnf/lexer"
+	"github.com/moorara/algo/lexer"
+
+	ebnflexer "github.com/gardenbed/emerge/internal/ebnf/lexer"
 )
 
 // Lexer is an interface for the lexer.Lexer struct.
@@ -17,8 +19,8 @@ type Parser struct {
 }
 
 // New creates a new syntax analyzer for an extension of EBNF language.
-func New(src io.Reader) (*Parser, error) {
-	lex, err := lexer.New(src)
+func New(filename string, src io.Reader) (*Parser, error) {
+	lex, err := ebnflexer.New(filename, src)
 	if err != nil {
 		return nil, err
 	}

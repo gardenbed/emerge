@@ -8,22 +8,26 @@ import (
 	"testing"
 	"testing/iotest"
 
+	"github.com/moorara/algo/lexer"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNew(t *testing.T) {
 	tests := []struct {
 		name          string
+		filename      string
 		src           io.Reader
 		expectedError string
 	}{
 		{
 			name:          "Success",
+			filename:      "lorem_ipsum",
 			src:           strings.NewReader("Lorem ipsum"),
 			expectedError: "",
 		},
 		{
 			name:          "Failure",
+			filename:      "lorem_ipsum",
 			src:           iotest.ErrReader(errors.New("io error")),
 			expectedError: "io error",
 		},
@@ -31,7 +35,7 @@ func TestNew(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			lex, err := New(tc.src)
+			lex, err := New(tc.filename, tc.src)
 
 			if tc.expectedError == "" {
 				assert.NotNil(t, lex)
@@ -48,7 +52,7 @@ func TestLexer_NextToken(t *testing.T) {
 	tests := []struct {
 		name          string
 		l             *Lexer
-		expectedToken Token
+		expectedToken lexer.Token
 		expectedError string
 	}{
 		{
@@ -60,7 +64,7 @@ func TestLexer_NextToken(t *testing.T) {
 					},
 				},
 			},
-			expectedToken: Token{},
+			expectedToken: lexer.Token{},
 			expectedError: "io error",
 		},
 		{
@@ -72,7 +76,7 @@ func TestLexer_NextToken(t *testing.T) {
 					},
 				},
 			},
-			expectedToken: Token{},
+			expectedToken: lexer.Token{},
 			expectedError: "EOF",
 		},
 		{
@@ -83,12 +87,20 @@ func TestLexer_NextToken(t *testing.T) {
 						{OutRune: '#'},
 					},
 					LexemeMocks: []LexemeMock{
-						{OutVal: "#", OutPos: 2},
+						{
+							OutVal: "#",
+							OutPos: lexer.Position{
+								Filename: "test",
+								Offset:   2,
+								Line:     1,
+								Column:   3,
+							},
+						},
 					},
 				},
 			},
-			expectedToken: Token{},
-			expectedError: "lexical error at 2:#",
+			expectedToken: lexer.Token{},
+			expectedError: "lexical error at test:1:3:#",
 		},
 		{
 			name: "Identifier",
@@ -107,11 +119,28 @@ func TestLexer_NextToken(t *testing.T) {
 						{OutRune: '='},
 					},
 					LexemeMocks: []LexemeMock{
-						{OutVal: "statement", OutPos: 4},
+						{
+							OutVal: "statement",
+							OutPos: lexer.Position{
+								Filename: "test",
+								Offset:   4,
+								Line:     1,
+								Column:   5,
+							},
+						},
 					},
 				},
 			},
-			expectedToken: Token{IDENT, "statement", 4},
+			expectedToken: lexer.Token{
+				Terminal: IDENT,
+				Lexeme:   "statement",
+				Pos: lexer.Position{
+					Filename: "test",
+					Offset:   4,
+					Line:     1,
+					Column:   5,
+				},
+			},
 			expectedError: "",
 		},
 		{
@@ -134,14 +163,38 @@ func TestLexer_NextToken(t *testing.T) {
 						{OutRune: '='},
 					},
 					SkipMocks: []SkipMock{
-						{OutPos: 2},
+						{
+							OutPos: lexer.Position{
+								Filename: "test",
+								Offset:   2,
+								Line:     1,
+								Column:   3,
+							},
+						},
 					},
 					LexemeMocks: []LexemeMock{
-						{OutVal: "expression", OutPos: 4},
+						{
+							OutVal: "expression",
+							OutPos: lexer.Position{
+								Filename: "test",
+								Offset:   4,
+								Line:     1,
+								Column:   5,
+							},
+						},
 					},
 				},
 			},
-			expectedToken: Token{IDENT, "expression", 4},
+			expectedToken: lexer.Token{
+				Terminal: IDENT,
+				Lexeme:   "expression",
+				Pos: lexer.Position{
+					Filename: "test",
+					Offset:   4,
+					Line:     1,
+					Column:   5,
+				},
+			},
 			expectedError: "",
 		},
 		{
@@ -172,13 +225,43 @@ func TestLexer_NextToken(t *testing.T) {
 						{OutRune: ' '},
 					},
 					SkipMocks: []SkipMock{
-						{OutPos: 2},
-						{OutPos: 4},
-						{OutPos: 8},
+						{
+							OutPos: lexer.Position{
+								Filename: "test",
+								Offset:   2,
+								Line:     1,
+								Column:   3,
+							},
+						},
+						{
+							OutPos: lexer.Position{
+								Filename: "test",
+								Offset:   4,
+								Line:     1,
+								Column:   5,
+							},
+						},
+						{
+							OutPos: lexer.Position{
+								Filename: "test",
+								Offset:   8,
+								Line:     1,
+								Column:   9,
+							},
+						},
 					},
 				},
 			},
-			expectedToken: Token{GRAMMER, "grammar", 8},
+			expectedToken: lexer.Token{
+				Terminal: GRAMMER,
+				Lexeme:   "grammar",
+				Pos: lexer.Position{
+					Filename: "test",
+					Offset:   8,
+					Line:     1,
+					Column:   9,
+				},
+			},
 			expectedError: "",
 		},
 		{
@@ -210,13 +293,43 @@ func TestLexer_NextToken(t *testing.T) {
 						{OutRune: ' '},
 					},
 					SkipMocks: []SkipMock{
-						{OutPos: 2},
-						{OutPos: 4},
-						{OutPos: 8},
+						{
+							OutPos: lexer.Position{
+								Filename: "test",
+								Offset:   2,
+								Line:     1,
+								Column:   3,
+							},
+						},
+						{
+							OutPos: lexer.Position{
+								Filename: "test",
+								Offset:   4,
+								Line:     1,
+								Column:   5,
+							},
+						},
+						{
+							OutPos: lexer.Position{
+								Filename: "test",
+								Offset:   8,
+								Line:     1,
+								Column:   9,
+							},
+						},
 					},
 				},
 			},
-			expectedToken: Token{GRAMMER, "grammar", 8},
+			expectedToken: lexer.Token{
+				Terminal: GRAMMER,
+				Lexeme:   "grammar",
+				Pos: lexer.Position{
+					Filename: "test",
+					Offset:   8,
+					Line:     1,
+					Column:   9,
+				},
+			},
 			expectedError: "",
 		},
 	}
@@ -241,235 +354,544 @@ func TestLexer_evalDFA(t *testing.T) {
 		name          string
 		l             *Lexer
 		state         int
-		expectedToken Token
+		expectedToken lexer.Token
 	}{
 		{
 			name: "WS",
 			l: &Lexer{
 				in: &mockInputBuffer{
 					SkipMocks: []SkipMock{
-						{OutPos: 2},
+						{
+							OutPos: lexer.Position{
+								Filename: "test",
+								Offset:   2,
+								Line:     1,
+								Column:   3,
+							},
+						},
 					},
 				},
 			},
-			state:         1,
-			expectedToken: Token{WS, "", 2},
+			state: 1,
+			expectedToken: lexer.Token{
+				Terminal: WS,
+				Lexeme:   "",
+				Pos: lexer.Position{
+					Filename: "test",
+					Offset:   2,
+					Line:     1,
+					Column:   3,
+				},
+			},
 		},
 		{
 			name: "DEF",
 			l: &Lexer{
 				in: &mockInputBuffer{
 					SkipMocks: []SkipMock{
-						{OutPos: 4},
+						{
+							OutPos: lexer.Position{
+								Filename: "test",
+								Offset:   4,
+								Line:     1,
+								Column:   5,
+							},
+						},
 					},
 				},
 			},
-			state:         2,
-			expectedToken: Token{DEF, "=", 4},
+			state: 2,
+			expectedToken: lexer.Token{
+				Terminal: DEF,
+				Lexeme:   "=",
+				Pos: lexer.Position{
+					Filename: "test",
+					Offset:   4,
+					Line:     1,
+					Column:   5,
+				},
+			},
 		},
 		{
 			name: "ALT",
 			l: &Lexer{
 				in: &mockInputBuffer{
 					SkipMocks: []SkipMock{
-						{OutPos: 4},
+						{
+							OutPos: lexer.Position{
+								Filename: "test",
+								Offset:   4,
+								Line:     1,
+								Column:   5,
+							},
+						},
 					},
 				},
 			},
-			state:         3,
-			expectedToken: Token{ALT, "|", 4},
+			state: 3,
+			expectedToken: lexer.Token{
+				Terminal: ALT,
+				Lexeme:   "|",
+				Pos: lexer.Position{
+					Filename: "test",
+					Offset:   4,
+					Line:     1,
+					Column:   5,
+				},
+			},
 		},
 		{
 			name: "LPAREN",
 			l: &Lexer{
 				in: &mockInputBuffer{
 					SkipMocks: []SkipMock{
-						{OutPos: 4},
+						{
+							OutPos: lexer.Position{
+								Filename: "test",
+								Offset:   4,
+								Line:     1,
+								Column:   5,
+							},
+						},
 					},
 				},
 			},
-			state:         4,
-			expectedToken: Token{LPAREN, "(", 4},
+			state: 4,
+			expectedToken: lexer.Token{
+				Terminal: LPAREN,
+				Lexeme:   "(",
+				Pos: lexer.Position{
+					Filename: "test",
+					Offset:   4,
+					Line:     1,
+					Column:   5,
+				},
+			},
 		},
 		{
 			name: "RPAREN",
 			l: &Lexer{
 				in: &mockInputBuffer{
 					SkipMocks: []SkipMock{
-						{OutPos: 4},
+						{
+							OutPos: lexer.Position{
+								Filename: "test",
+								Offset:   4,
+								Line:     1,
+								Column:   5,
+							},
+						},
 					},
 				},
 			},
-			state:         5,
-			expectedToken: Token{RPAREN, ")", 4},
+			state: 5,
+			expectedToken: lexer.Token{
+				Terminal: RPAREN,
+				Lexeme:   ")",
+				Pos: lexer.Position{
+					Filename: "test",
+					Offset:   4,
+					Line:     1,
+					Column:   5,
+				},
+			},
 		},
 		{
 			name: "LBRACK",
 			l: &Lexer{
 				in: &mockInputBuffer{
 					SkipMocks: []SkipMock{
-						{OutPos: 4},
+						{
+							OutPos: lexer.Position{
+								Filename: "test",
+								Offset:   4,
+								Line:     1,
+								Column:   5,
+							},
+						},
 					},
 				},
 			},
-			state:         6,
-			expectedToken: Token{LBRACK, "[", 4},
+			state: 6,
+			expectedToken: lexer.Token{
+				Terminal: LBRACK,
+				Lexeme:   "[",
+				Pos: lexer.Position{
+					Filename: "test",
+					Offset:   4,
+					Line:     1,
+					Column:   5,
+				},
+			},
 		},
 		{
 			name: "RBRACK",
 			l: &Lexer{
 				in: &mockInputBuffer{
 					SkipMocks: []SkipMock{
-						{OutPos: 4},
+						{
+							OutPos: lexer.Position{
+								Filename: "test",
+								Offset:   4,
+								Line:     1,
+								Column:   5,
+							},
+						},
 					},
 				},
 			},
-			state:         7,
-			expectedToken: Token{RBRACK, "]", 4},
+			state: 7,
+			expectedToken: lexer.Token{
+				Terminal: RBRACK,
+				Lexeme:   "]",
+				Pos: lexer.Position{
+					Filename: "test",
+					Offset:   4,
+					Line:     1,
+					Column:   5,
+				},
+			},
 		},
 		{
 			name: "LBRACE",
 			l: &Lexer{
 				in: &mockInputBuffer{
 					SkipMocks: []SkipMock{
-						{OutPos: 4},
+						{
+							OutPos: lexer.Position{
+								Filename: "test",
+								Offset:   4,
+								Line:     1,
+								Column:   5,
+							},
+						},
 					},
 				},
 			},
-			state:         8,
-			expectedToken: Token{LBRACE, "{", 4},
+			state: 8,
+			expectedToken: lexer.Token{
+				Terminal: LBRACE,
+				Lexeme:   "{",
+				Pos: lexer.Position{
+					Filename: "test",
+					Offset:   4,
+					Line:     1,
+					Column:   5,
+				},
+			},
 		},
 		{
 			name: "LLBRACE",
 			l: &Lexer{
 				in: &mockInputBuffer{
 					SkipMocks: []SkipMock{
-						{OutPos: 4},
+						{
+							OutPos: lexer.Position{
+								Filename: "test",
+								Offset:   4,
+								Line:     1,
+								Column:   5,
+							},
+						},
 					},
 				},
 			},
-			state:         9,
-			expectedToken: Token{LLBRACE, "{{", 4},
+			state: 9,
+			expectedToken: lexer.Token{
+				Terminal: LLBRACE,
+				Lexeme:   "{{",
+				Pos: lexer.Position{
+					Filename: "test",
+					Offset:   4,
+					Line:     1,
+					Column:   5,
+				},
+			},
 		},
 		{
 			name: "RBRACE",
 			l: &Lexer{
 				in: &mockInputBuffer{
 					SkipMocks: []SkipMock{
-						{OutPos: 4},
+						{
+							OutPos: lexer.Position{
+								Filename: "test",
+								Offset:   4,
+								Line:     1,
+								Column:   5,
+							},
+						},
 					},
 				},
 			},
-			state:         10,
-			expectedToken: Token{RBRACE, "}", 4},
+			state: 10,
+			expectedToken: lexer.Token{
+				Terminal: RBRACE,
+				Lexeme:   "}",
+				Pos: lexer.Position{
+					Filename: "test",
+					Offset:   4,
+					Line:     1,
+					Column:   5,
+				},
+			},
 		},
 		{
 			name: "RRBRACE",
 			l: &Lexer{
 				in: &mockInputBuffer{
 					SkipMocks: []SkipMock{
-						{OutPos: 4},
+						{
+							OutPos: lexer.Position{
+								Filename: "test",
+								Offset:   4,
+								Line:     1,
+								Column:   5,
+							},
+						},
 					},
 				},
 			},
-			state:         11,
-			expectedToken: Token{RRBRACE, "}}", 4},
+			state: 11,
+			expectedToken: lexer.Token{
+				Terminal: RRBRACE,
+				Lexeme:   "}}",
+				Pos: lexer.Position{
+					Filename: "test",
+					Offset:   4,
+					Line:     1,
+					Column:   5,
+				},
+			},
 		},
 		{
 			name: "GRAMMER",
 			l: &Lexer{
 				in: &mockInputBuffer{
 					SkipMocks: []SkipMock{
-						{OutPos: 4},
+						{
+							OutPos: lexer.Position{
+								Filename: "test",
+								Offset:   4,
+								Line:     1,
+								Column:   5,
+							},
+						},
 					},
 				},
 			},
-			state:         18,
-			expectedToken: Token{GRAMMER, "grammar", 4},
+			state: 18,
+			expectedToken: lexer.Token{
+				Terminal: GRAMMER,
+				Lexeme:   "grammar",
+				Pos: lexer.Position{
+					Filename: "test",
+					Offset:   4,
+					Line:     1,
+					Column:   5,
+				},
+			},
 		},
 		{
 			name: "IDENT",
 			l: &Lexer{
 				in: &mockInputBuffer{
 					LexemeMocks: []LexemeMock{
-						{OutVal: "statement", OutPos: 8},
+						{
+							OutVal: "statement",
+							OutPos: lexer.Position{
+								Filename: "test",
+								Offset:   8,
+								Line:     1,
+								Column:   9,
+							},
+						},
 					},
 				},
 			},
-			state:         20,
-			expectedToken: Token{IDENT, "statement", 8},
+			state: 20,
+			expectedToken: lexer.Token{
+				Terminal: IDENT,
+				Lexeme:   "statement",
+				Pos: lexer.Position{
+					Filename: "test",
+					Offset:   8,
+					Line:     1,
+					Column:   9,
+				},
+			},
 		},
 		{
 			name: "TOKEN",
 			l: &Lexer{
 				in: &mockInputBuffer{
 					LexemeMocks: []LexemeMock{
-						{OutVal: "NUM", OutPos: 8},
+						{
+							OutVal: "NUM",
+							OutPos: lexer.Position{
+								Filename: "test",
+								Offset:   8,
+								Line:     1,
+								Column:   9,
+							},
+						},
 					},
 				},
 			},
-			state:         22,
-			expectedToken: Token{TOKEN, "NUM", 8},
+			state: 22,
+			expectedToken: lexer.Token{
+				Terminal: TOKEN,
+				Lexeme:   "NUM",
+				Pos: lexer.Position{
+					Filename: "test",
+					Offset:   8,
+					Line:     1,
+					Column:   9,
+				},
+			},
 		},
 		{
 			name: "STRING",
 			l: &Lexer{
 				in: &mockInputBuffer{
 					LexemeMocks: []LexemeMock{
-						{OutVal: `"foo"`, OutPos: 16},
+						{
+							OutVal: `"foo"`,
+							OutPos: lexer.Position{
+								Filename: "test",
+								Offset:   16,
+								Line:     1,
+								Column:   17,
+							},
+						},
 					},
 				},
 			},
-			state:         26,
-			expectedToken: Token{STRING, `foo`, 16},
+			state: 26,
+			expectedToken: lexer.Token{
+				Terminal: STRING,
+				Lexeme:   "foo",
+				Pos: lexer.Position{
+					Filename: "test",
+					Offset:   16,
+					Line:     1,
+					Column:   17,
+				},
+			},
 		},
 		{
 			name: "REGEX",
 			l: &Lexer{
 				in: &mockInputBuffer{
 					LexemeMocks: []LexemeMock{
-						{OutVal: `/[a-z]+/`, OutPos: 16},
+						{
+							OutVal: `/[a-z]+/`,
+							OutPos: lexer.Position{
+								Filename: "test",
+								Offset:   16,
+								Line:     1,
+								Column:   17,
+							},
+						},
 					},
 				},
 			},
-			state:         30,
-			expectedToken: Token{REGEX, `[a-z]+`, 16},
+			state: 30,
+			expectedToken: lexer.Token{
+				Terminal: REGEX,
+				Lexeme:   "[a-z]+",
+				Pos: lexer.Position{
+					Filename: "test",
+					Offset:   16,
+					Line:     1,
+					Column:   17,
+				},
+			},
 		},
 		{
 			name: "COMMENT_SingleLine",
 			l: &Lexer{
 				in: &mockInputBuffer{
 					SkipMocks: []SkipMock{
-						{OutPos: 32},
+						{
+							OutPos: lexer.Position{
+								Filename: "test",
+								Offset:   32,
+								Line:     1,
+								Column:   33,
+							},
+						},
 					},
 				},
 			},
-			state:         31,
-			expectedToken: Token{COMMENT, "", 32},
+			state: 31,
+			expectedToken: lexer.Token{
+				Terminal: COMMENT,
+				Lexeme:   "",
+				Pos: lexer.Position{
+					Filename: "test",
+					Offset:   32,
+					Line:     1,
+					Column:   33,
+				},
+			},
 		},
 		{
 			name: "COMMENT_MultiLine",
 			l: &Lexer{
 				in: &mockInputBuffer{
 					SkipMocks: []SkipMock{
-						{OutPos: 32},
+						{
+							OutPos: lexer.Position{
+								Filename: "test",
+								Offset:   32,
+								Line:     1,
+								Column:   33,
+							},
+						},
 					},
 				},
 			},
-			state:         34,
-			expectedToken: Token{COMMENT, "", 32},
+			state: 34,
+			expectedToken: lexer.Token{
+				Terminal: COMMENT,
+				Lexeme:   "",
+				Pos: lexer.Position{
+					Filename: "test",
+					Offset:   32,
+					Line:     1,
+					Column:   33,
+				},
+			},
 		},
 		{
 			name: "ERR",
 			l: &Lexer{
 				in: &mockInputBuffer{
 					LexemeMocks: []LexemeMock{
-						{OutVal: "foo", OutPos: 64},
+						{
+							OutVal: "foo",
+							OutPos: lexer.Position{
+								Filename: "test",
+								Offset:   64,
+								Line:     1,
+								Column:   65,
+							},
+						},
 					},
 				},
 			},
-			state:         12,
-			expectedToken: Token{ERR, "lexical error at 64:foo", 64},
+			state: 12,
+			expectedToken: lexer.Token{
+				Terminal: ERR,
+				Lexeme:   "lexical error at test:1:65:foo",
+				Pos: lexer.Position{
+					Filename: "test",
+					Offset:   64,
+					Line:     1,
+					Column:   65,
+				},
+			},
 		},
 	}
 
@@ -627,7 +1049,7 @@ func TestLexer(t *testing.T) {
 			assert.NoError(t, err)
 			defer f.Close()
 
-			lex, err := New(f)
+			lex, err := New(tc.file, f)
 			assert.NoError(t, err)
 
 			for token, err := lex.NextToken(); err != io.EOF; token, err = lex.NextToken() {
