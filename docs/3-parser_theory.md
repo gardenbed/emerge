@@ -48,6 +48,59 @@ auto-generated parsers use a larger class of LR grammars.
                          └───────────────────┘
 ```
 
+## Error-Recovery Strategies
+
+It is very important to plan for the error handling right from the begining,
+both at language design level and compiler design level.
+We can describe the common programming errors using the following categories:
+
+  - **Lexical errors**
+  - **Syntactic errors**
+  - **Semantic errors**
+  - **Logical errors**
+
+We want a parser to report errors clearly and accurately.
+We also want it to recover from each error quickly enough, so it can detect additional errors.
+If the number of errors exceeds from a limit,
+it is better for the parser to stop rather than producing an avalanche of errors.
+And all of that should not hurt the performance of parser significantly.
+
+A few semantic errors, such as type mismatches, can be detected during parsing too.
+In general, accurate detection of semantic and logical errors at compile time is not easy.
+
+### Panic-Mode Recovery
+
+In this method, when encountered with an error, the parser discards input symbols
+one at a time until one of a designated set of *synchronizing tokens* is found.
+The synchronizing tokens are well-defined symbols with clear and unambiguous role.
+
+Using this method, the compiler designer need to select the *synchronizing tokens*.
+Panic-mode often skips a considerable amount of input without checking it for additional errors;
+however, it is a simple method and guaranteed not to go into an infinite loop.
+
+### Phrase-Level Recovery
+
+In the second method, the parser performs a local correction on the remaining input when discovering an error.
+For example, it replaces the remaining input by a symbol that allows the parser to continue (replacing a comma with a semicolon).
+The compiler designer must be cautious about the replacement since it can lead to infinite loop.
+
+The major drawback of this method is the complexity when dealing with
+a situation in which the actual error has occurred before the point of detection.
+
+### Error Productions
+
+Another appraoch would be anticipating common errors that might be encountered.
+We can then augment the grammar with a set of auxiliary production rules that generate the erroneous constructs.
+The parser can then generate appropriate error detections and corrections for the erroneous constructs.
+
+### Global Correction
+
+Ideally, we want our parser to make as few changes as possible when dealing with an incorrect input string.
+There are algorithms for choosing a minimal sequence of changes to obtain a globally least-cost correction.
+These optimization methods are too expensive in terms of time and memory complexities.
+
+In fact, the notion of least-cost correction provides a benchmark for evaluating other practical error-recovery techniques.
+
 ## Context-Free Grammars
 
 A context-free grammar **`G = (V, Σ, R, S)`** is defined by four sets:
@@ -388,7 +441,7 @@ the second "L" for producing a *leftmost derivation*,
 and the "1" for using one input symbol of lookahead at each step.
 
 The class of LL(1) grammars is expressive enough to cover most programming constructs.
-There are a few considerations though. No *left-recursive* or *ambiguous* grammar can be LL(1).
+There are a few considerations though. **No *left-recursive* or *ambiguous* grammar can be LL(1).**
 
 A grammar `G` is LL(1) if and only if whenever `A → α | β` are two distinct productions of `G`,
 the following conditions hold:
@@ -405,12 +458,36 @@ and likewise if `ε` is in `FIRST(α)`.
 Predictive parsers can be constructed for LL(1) grammars since the proper production to
 apply for a non-terminal can be selected by looking only at the current input symbol.
 
+#### Predictive Parsing Tables
+
 This [algorithm](#construction-of-a-predictive-parsing-table) collects the information
 from `FIRST` and `FOLLOW` sets into a predictive parsing table `M[A,a]`,
 where `A` is a non-terminal, and `a` is a terminal or the symbol `$`, the input *endmarker*.
-if `G` is *left-recursive* or *ambiguous*, then `M` will have at least one multiply defined entry.
-There are some grammars for which no amount of alteration
-(left-recursion elimination and left factoring) will produce an LL(1) grammar.
+
+This algorithm can be applied to any grammar `G` to produce a parsing table `M`.
+If `G` is *left-recursive* or *ambiguous*, then `M` will have at least one multiply defined entry.
+There are some grammars for which no amount of alteration (left-recursion elimination and left factoring)
+will produce an LL(1) grammar.
+
+#### Predictive Parsing Transition Diagrams
+
+Transition diagrams are useful for visualizing predictive parsers.
+To construct a transition diagram for a grammar,
+first **eliminate left recursion** and then **left factor** the grammar.
+Now, for each non-terminal `A`,
+
+  1. Create an initial and final (return) state.
+  2. For each production `A → X₁X₂...Xₖ`, create a path from the initial to the final state,
+     with edges labeled `X₁`, `X₂`, ..., `Xₖ`. If `A → ε`, the path is an edge labeled `ε`.
+
+Predictive parsers have one transition diagram per non-terminal.
+Edge labels can be terminals or non-terminals:
+
+  - A transition labeled with a terminal is taken when that terminal matches the next input symbol.
+  - A transition labeled with a non-terminal requires invoking the corresponding diagram.
+
+In LL(1) grammars, ambiguity about whether to take an ϵ-transition can be resolved using lookahead.
+If no other transition applies, ϵ-transitions serve as the *default* choice.
 
 ### Non-Recursive Predictive Parsing
 
@@ -447,6 +524,37 @@ The parser takes `X`, the symbol on top of the stack, and `a`, the current input
 If `X` is a non-terminal, the parser chooses an X-production by consulting entry `M[X,a]`.
 Otherwise, it checks for a match between the terminal `X` and current input symbol `a`.
 This behavior is implemented using this [algorithm](#table-driven-predictive-parsing).
+
+### Error Recovery in Predictive Parsing
+
+Panic-mode error recovery works by discarding symbols from the input stream
+until a token from a designated set of synchronizing tokens is encountered.
+Its effectiveness relies on the selection of the synchronizing set.
+
+  1. **Using `FOLLOW(A)` as the Synchronizing Set:**
+     Start by including all symbols from `FOLLOW(A)` in the synchronizing set for non-terminal `A`.
+     Skipping tokens until a symbol in `FOLLOW(A)` is found allows the parser
+     to pop `A` from the stack and potentially resume parsing.
+
+  2. **Enhancing Synchronizing Sets with Higher-Level Constructs:**
+     `FOLLOW(A)` alone may not suffice.
+     For example, missing semicolons might cause keywords starting new statements to be skipped.
+     To handle hierarchical language structures, add symbols representing higher-level constructs (e.g., keywords)
+     to the synchronizing sets of lower-level constructs (e.g., expressions).
+
+  3. **Including `FIRST(A)` in Synchronizing Sets:**
+     Adding symbols from `FIRST(A)` to a non-terminal's synchronizing set can enable parsing
+     to resume under `A` if an appropriate token appears in the input.
+
+  4. **Handling Empty-String Productions:**
+     If a non-terminal can derive the empty string, its production can serve as a fallback.
+     While this may delay error detection,
+     it avoids missing errors and simplifies recovery by reducing the number of non-terminals to handle.
+
+  5. **Terminal Mismatch Recovery:**
+     If the terminal at the top of the stack does not match,
+     a simple strategy is to pop the terminal, issue an error message, and continue parsing.
+     This effectively treats all other tokens as the synchronizing set for that terminal.
 
 ## Bottom-Up Parsing
 
@@ -840,58 +948,7 @@ TBD
 
 ## Ambiguous Grammars
 
-## Error-Recovery Strategies
-
-It is very important to plan for the error handling right from the begining,
-both at language design level and compiler design level.
-We can describe the common programming errors using the following categories:
-
-  - **Lexical errors**
-  - **Syntactic errors**
-  - **Semantic errors**
-  - **Logical errors**
-
-We want a parser to report errors clearly and accurately.
-We also want it to recover from each error quickly enough, so it can detect additional errors.
-If the number of errors exceeds from a limit,
-it is better for the parser to stop rather than producing an avalanche of errors.
-And all of that should not hurt the performance of parser significantly.
-
-A few semantic errors, such as type mismatches, can be detected during parsing too.
-In general, accurate detection of semantic and logical errors at compile time is not easy.
-
-### Panic-Mode Recovery
-
-In this method, when encountered with an error, the parser discards input symbols
-one at a time until one of a designated set of *synchronizing tokens* is found.
-The synchronizing tokens are well-defined symbols with clear and unambiguous role.
-
-Using this method, the compiler designer need to select the *synchronizing tokens*.
-Panic-mode often skips a considerable amount of input without checking it for additional errors;
-however, it is a simple method and guaranteed not to go into an infinite loop.
-
-### Phrase-Level Recovery
-
-In the second method, the parser performs a local correction on the remaining input when discovering an error.
-For example, it replaces the remaining input by a symbol that allows the parser to continue (replacing a comma with a semicolon).
-The compiler designer must be cautious about the replacement since it can lead to infinite loop.
-
-The major drawback of this method is the complexity when dealing with
-a situation in which the actual error has occurred before the point of detection.
-
-### Error Productions
-
-Another appraoch would be anticipating common errors that might be encountered.
-We can then augment the grammar with a set of auxiliary production rules that generate the erroneous constructs.
-The parser can then generate appropriate error detections and corrections for the erroneous constructs.
-
-### Global Correction
-
-Ideally, we want our parser to make as few changes as possible when dealing with an incorrect input string.
-There are algorithms for choosing a minimal sequence of changes to obtain a globally least-cost correction.
-These optimization methods are too expensive in terms of time and memory complexities.
-
-In fact, the notion of least-cost correction provides a benchmark for evaluating other practical error-recovery techniques.
+TBD
 
 ## Core Algorithms
 

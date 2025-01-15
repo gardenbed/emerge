@@ -1,5 +1,7 @@
 package lexer
 
+import "github.com/moorara/algo/lexer"
+
 type (
 	NextMock struct {
 		OutRune  rune
@@ -13,11 +15,11 @@ type (
 
 	LexemeMock struct {
 		OutVal string
-		OutPos int
+		OutPos lexer.Position
 	}
 
 	SkipMock struct {
-		OutPos int
+		OutPos lexer.Position
 	}
 
 	mockInputBuffer struct {
@@ -25,9 +27,6 @@ type (
 		NextMocks []NextMock
 
 		RetractIndex int
-
-		PeekIndex int
-		PeekMocks []PeekMock
 
 		LexemeIndex int
 		LexemeMocks []LexemeMock
@@ -47,19 +46,13 @@ func (m *mockInputBuffer) Retract() {
 	m.RetractIndex++
 }
 
-func (m *mockInputBuffer) Peek() (rune, error) {
-	i := m.PeekIndex
-	m.PeekIndex++
-	return m.PeekMocks[i].OutRune, m.PeekMocks[i].OutError
-}
-
-func (m *mockInputBuffer) Lexeme() (string, int) {
+func (m *mockInputBuffer) Lexeme() (string, lexer.Position) {
 	i := m.LexemeIndex
 	m.LexemeIndex++
 	return m.LexemeMocks[i].OutVal, m.LexemeMocks[i].OutPos
 }
 
-func (m *mockInputBuffer) Skip() int {
+func (m *mockInputBuffer) Skip() lexer.Position {
 	i := m.SkipIndex
 	m.SkipIndex++
 	return m.SkipMocks[i].OutPos

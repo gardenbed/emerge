@@ -7,7 +7,9 @@ import (
 	"io"
 	"strings"
 
-	"github.com/moorara/algo/parser/input"
+	"github.com/moorara/algo/grammar"
+	"github.com/moorara/algo/lexer"
+	"github.com/moorara/algo/lexer/input"
 )
 
 const (
@@ -15,13 +17,51 @@ const (
 	bufferSize = 4096
 )
 
+const (
+	// ERR is the terminal for an error case.
+	ERR = grammar.Terminal("ERR")
+	// WS is the terminal for whitespace characters.
+	WS = grammar.Terminal("WS")
+	// DEF is the terminal for "=".
+	DEF = grammar.Terminal("DEF")
+	// ALT is the terminal for "|".
+	ALT = grammar.Terminal("ALT")
+	// LPAREN is the terminal for "(".
+	LPAREN = grammar.Terminal("LPAREN")
+	// RPAREN is the terminal for ")".
+	RPAREN = grammar.Terminal("RPAREN")
+	// LBRACK is the terminal for "[".
+	LBRACK = grammar.Terminal("LBRACK")
+	// RBRACK is the terminal for "]".
+	RBRACK = grammar.Terminal("RBRACK")
+	// LBRACE is the terminal for "{".
+	LBRACE = grammar.Terminal("LBRACE")
+	// RBRACE is the terminal for "}".
+	RBRACE = grammar.Terminal("RBRACE")
+	// LLBRACE is the terminal for "{{".
+	LLBRACE = grammar.Terminal("LLBRACE")
+	// RRBRACE is the terminal for "}}".
+	RRBRACE = grammar.Terminal("RRBRACE")
+	// GRAMMER is the terminal for "grammar".
+	GRAMMER = grammar.Terminal("GRAMMER")
+	// IDENT is the terminal for /[a-z][0-9a-z_]*/.
+	IDENT = grammar.Terminal("IDENT")
+	// TOKEN is the terminal for /[A-Z][0-9A-Z_]*/.
+	TOKEN = grammar.Terminal("TOKEN")
+	// STRING is the terminal for /"([\x21\x23-\x5B\x5D-\x7E]|\\[\x21-\x7E])+"/.
+	STRING = grammar.Terminal("STRING")
+	// REGEX is the terminal for /\/([\x20-\x2E\x30-\x5B\x5D-\x7E]|\\[\x20-\x7E])*\//.
+	REGEX = grammar.Terminal("REGEX")
+	// COMMENT is the terminal for single-line and multi-line comments.
+	COMMENT = grammar.Terminal("COMMENT")
+)
+
 // inputBuffer is an interface for the input.Input struct.
 type inputBuffer interface {
 	Next() (rune, error)
 	Retract()
-	Peek() (rune, error)
-	Lexeme() (string, int)
-	Skip() int
+	Lexeme() (string, lexer.Position)
+	Skip() lexer.Position
 }
 
 // Lexer is a lexical analyzer for an extension of EBNF language.
@@ -30,8 +70,8 @@ type Lexer struct {
 }
 
 // New creates a new lexical analyzer for an extension of EBNF language.
-func New(src io.Reader) (*Lexer, error) {
-	in, err := input.New(bufferSize, src)
+func New(filename string, src io.Reader) (*Lexer, error) {
+	in, err := input.New(filename, src, bufferSize)
 	if err != nil {
 		return nil, err
 	}
@@ -43,12 +83,12 @@ func New(src io.Reader) (*Lexer, error) {
 
 // NextToken returns the next token from the input.
 // An io.EOF error will be returned when the end of input is reached.
-func (l *Lexer) NextToken() (Token, error) {
+func (l *Lexer) NextToken() (lexer.Token, error) {
 	for curr, next := 0, 0; ; curr = next {
 		// Read the next character from the input
 		r, err := l.in.Next()
 		if err != nil {
-			return Token{}, err
+			return lexer.Token{}, err
 		}
 
 		// Simulate the DFA
@@ -58,9 +98,9 @@ func (l *Lexer) NextToken() (Token, error) {
 			l.in.Retract()
 
 			token := l.evalDFA(curr)
-			switch token.Tag {
+			switch token.Terminal {
 			case ERR:
-				return Token{}, errors.New(token.Lexeme)
+				return lexer.Token{}, errors.New(token.Lexeme)
 			case WS, COMMENT: // Skip whitespaces and comments
 				return l.NextToken()
 			default:
@@ -70,107 +110,107 @@ func (l *Lexer) NextToken() (Token, error) {
 	}
 }
 
-func (l *Lexer) evalDFA(state int) Token {
+func (l *Lexer) evalDFA(state int) lexer.Token {
 	switch state {
 	// Whitespace
 	case 1:
 		pos := l.in.Skip()
-		return Token{WS, "", pos}
+		return lexer.Token{Terminal: WS, Lexeme: "", Pos: pos}
 
 	// DEF
 	case 2:
 		pos := l.in.Skip()
-		return Token{DEF, "=", pos}
+		return lexer.Token{Terminal: DEF, Lexeme: "=", Pos: pos}
 
 	// ALT
 	case 3:
 		pos := l.in.Skip()
-		return Token{ALT, "|", pos}
+		return lexer.Token{Terminal: ALT, Lexeme: "|", Pos: pos}
 
 	// LPAREN
 	case 4:
 		pos := l.in.Skip()
-		return Token{LPAREN, "(", pos}
+		return lexer.Token{Terminal: LPAREN, Lexeme: "(", Pos: pos}
 
 	// RPAREN
 	case 5:
 		pos := l.in.Skip()
-		return Token{RPAREN, ")", pos}
+		return lexer.Token{Terminal: RPAREN, Lexeme: ")", Pos: pos}
 
 	// LBRACK
 	case 6:
 		pos := l.in.Skip()
-		return Token{LBRACK, "[", pos}
+		return lexer.Token{Terminal: LBRACK, Lexeme: "[", Pos: pos}
 
 	// RBRACK
 	case 7:
 		pos := l.in.Skip()
-		return Token{RBRACK, "]", pos}
+		return lexer.Token{Terminal: RBRACK, Lexeme: "]", Pos: pos}
 
 	// LBRACE
 	case 8:
 		pos := l.in.Skip()
-		return Token{LBRACE, "{", pos}
+		return lexer.Token{Terminal: LBRACE, Lexeme: "{", Pos: pos}
 
 	// LLBRACE
 	case 9:
 		pos := l.in.Skip()
-		return Token{LLBRACE, "{{", pos}
+		return lexer.Token{Terminal: LLBRACE, Lexeme: "{{", Pos: pos}
 
 	// RBRACE
 	case 10:
 		pos := l.in.Skip()
-		return Token{RBRACE, "}", pos}
+		return lexer.Token{Terminal: RBRACE, Lexeme: "}", Pos: pos}
 
 	// RRBRACE
 	case 11:
 		pos := l.in.Skip()
-		return Token{RRBRACE, "}}", pos}
+		return lexer.Token{Terminal: RRBRACE, Lexeme: "}}", Pos: pos}
 
 	// GRAMMER
 	case 18:
 		pos := l.in.Skip()
-		return Token{GRAMMER, "grammar", pos}
+		return lexer.Token{Terminal: GRAMMER, Lexeme: "grammar", Pos: pos}
 
 	// IDENT
 	case 20:
 		lexeme, pos := l.in.Lexeme()
-		return Token{IDENT, lexeme, pos}
+		return lexer.Token{Terminal: IDENT, Lexeme: lexeme, Pos: pos}
 
 	// TOKEN
 	case 22:
 		lexeme, pos := l.in.Lexeme()
-		return Token{TOKEN, lexeme, pos}
+		return lexer.Token{Terminal: TOKEN, Lexeme: lexeme, Pos: pos}
 
 	// STRING
 	case 26:
 		lexeme, pos := l.in.Lexeme()
 		lexeme = lexeme[1 : len(lexeme)-1]
-		return Token{STRING, lexeme, pos}
+		return lexer.Token{Terminal: STRING, Lexeme: lexeme, Pos: pos}
 
 	// REGEX
 	case 30:
 		lexeme, pos := l.in.Lexeme()
 		lexeme = strings.Trim(lexeme, "/")
-		return Token{REGEX, lexeme, pos}
+		return lexer.Token{Terminal: REGEX, Lexeme: lexeme, Pos: pos}
 
 	// Single-Line COMMENT
 	case 31:
 		pos := l.in.Skip()
-		return Token{COMMENT, "", pos}
+		return lexer.Token{Terminal: COMMENT, Lexeme: "", Pos: pos}
 
 	// Multi-Line COMMENT
 	case 34:
 		pos := l.in.Skip()
-		return Token{COMMENT, "", pos}
+		return lexer.Token{Terminal: COMMENT, Lexeme: "", Pos: pos}
 	}
 
 	// ERR
 	val, pos := l.in.Lexeme()
-	return Token{
-		Tag:    ERR,
-		Lexeme: fmt.Sprintf("lexical error at %d:%s", pos, val),
-		Pos:    pos,
+	return lexer.Token{
+		Terminal: ERR,
+		Lexeme:   fmt.Sprintf("lexical error at %s:%s", pos, val),
+		Pos:      pos,
 	}
 }
 
