@@ -152,7 +152,7 @@ func (a *AST) followPos(p Pos) Poses {
 func (a *AST) ToDFA() *auto.DFA {
 	dfa := auto.NewDFA(0, nil)
 	Dstates := list.NewSoftQueue[Poses](func(p, q Poses) bool {
-		return p.Equals(q)
+		return p.Equal(q)
 	})
 
 	// Initialize Dstates to contain only the firstpos(n0), where n0 is the root of syntax tree for (r)µ
@@ -386,7 +386,7 @@ func (p Poses) Contains(q Pos) bool {
 	return false
 }
 
-func (p Poses) Equals(q Poses) bool {
+func (p Poses) Equal(q Poses) bool {
 	for _, pos := range p {
 		if !q.Contains(pos) {
 			return false

@@ -3,8 +3,9 @@ package generator
 import (
 	"testing"
 
-	auto "github.com/moorara/algo/automata"
 	"github.com/stretchr/testify/assert"
+
+	auto "github.com/moorara/algo/automata"
 )
 
 func TestStringToDFA(t *testing.T) {
@@ -32,7 +33,7 @@ func TestStringToDFA(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			dfa := StringToDFA(tc.s)
-			assert.True(t, dfa.Equals(tc.expectedDFA))
+			assert.True(t, dfa.Equal(tc.expectedDFA))
 		})
 	}
 }

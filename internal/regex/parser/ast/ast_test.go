@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	auto "github.com/moorara/algo/automata"
 	"github.com/stretchr/testify/assert"
+
+	auto "github.com/moorara/algo/automata"
 )
 
 func TestParse(t *testing.T) {
@@ -363,7 +364,7 @@ func TestAST_ToDFA(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			dfa := tc.a.ToDFA()
 			fmt.Println(dfa.DOT())
-			assert.True(t, dfa.Equals(tc.expectedDFA))
+			assert.True(t, dfa.Equal(tc.expectedDFA))
 		})
 	}
 }
@@ -628,7 +629,7 @@ func TestPoses(t *testing.T) {
 		expected bool
 	}
 
-	type EqualsTests struct {
+	type EqualTests struct {
 		q        Poses
 		expected bool
 	}
@@ -645,7 +646,7 @@ func TestPoses(t *testing.T) {
 		LessTests     []LessTest
 		SwapTests     []SwapTest
 		ContainsTests []ContainsTest
-		EqualsTests   []EqualsTests
+		EqualTests    []EqualTests
 		UnionTests    []UnionTest
 	}{
 		{
@@ -664,7 +665,7 @@ func TestPoses(t *testing.T) {
 				{8, true},
 				{13, false},
 			},
-			EqualsTests: []EqualsTests{
+			EqualTests: []EqualTests{
 				{Poses{1, 2, 3, 5}, false},
 				{Poses{1, 2, 3, 5, 8}, true},
 				{Poses{2, 1, 3, 5, 8}, true},
@@ -698,13 +699,13 @@ func TestPoses(t *testing.T) {
 				assert.Equal(t, tc.expected, p.Contains(tc.q))
 			}
 
-			for _, tc := range tc.EqualsTests {
-				assert.Equal(t, tc.expected, p.Equals(tc.q))
+			for _, tc := range tc.EqualTests {
+				assert.Equal(t, tc.expected, p.Equal(tc.q))
 			}
 
 			for _, tc := range tc.UnionTests {
 				u := p.Union(tc.q)
-				assert.True(t, u.Equals(tc.expected))
+				assert.True(t, u.Equal(tc.expected))
 			}
 		})
 	}

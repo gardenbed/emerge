@@ -3,9 +3,10 @@ package nfa
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	auto "github.com/moorara/algo/automata"
 	comb "github.com/moorara/algo/parser/combinator"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestParse(t *testing.T) {
@@ -51,7 +52,7 @@ func TestParse(t *testing.T) {
 				assert.EqualError(t, err, tc.expectedError)
 			} else {
 				assert.NoError(t, err)
-				assert.True(t, nfa.Equals(tc.expectedNFA))
+				assert.True(t, nfa.Equal(tc.expectedNFA))
 			}
 		})
 	}
@@ -1923,7 +1924,7 @@ func EqualResults(t *testing.T, expectedResult, res comb.Result) {
 		return
 	}
 
-	assert.True(t, nfa.Equals(expectedNFA))
+	assert.True(t, nfa.Equal(expectedNFA))
 	assert.Equal(t, expectedResult.Pos, res.Pos)
 	assert.Equal(t, expectedResult.Bag, res.Bag)
 }

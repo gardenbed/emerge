@@ -107,7 +107,7 @@ nonterm = IDENT
 term    = TOKEN | STRING
 ```
 
-### Precedences
+### Precedence and Associativity
 
 TBD
 
