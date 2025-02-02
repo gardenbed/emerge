@@ -55,6 +55,14 @@ Here is a summary of some of the other similar projects.
     It is used for reading, processing, executing, or translating structured text or binary files.
   - [Participle](https://github.com/alecthomas/participle) is simple Go library for building parsers from grammars.
     A grammar is an annotated Go structure used for defining both the grammar and the abstract syntax tree.
+  - [PEG](https://github.com/pointlander/peg) is an implementation of the [Packrat](https://en.wikipedia.org/wiki/Packrat_parser)
+    parser generator originally implemented as [peg/leg](https://www.piumarta.com/software/peg/).
+    A Packrat parser is a *top-down* *recursive-descent parser* capable of *backtracking*
+    that uses memoization to achieve linear time complexity `O(n)`.
+    It is commonly used in *Parsing Expression Grammars* (PEGs).
+    A Parsing Expression Grammar (PEG) is a formal grammar framework used to define
+    the syntax of languages in a way that enables efficient top-down recursive-descent parsing.
+    Unlike Context-Free Grammars (CFGs), PEGs are *deterministic* and eliminate ambiguity by using *ordered choice*.
 
 ## Table of Contents
 
