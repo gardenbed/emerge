@@ -8,8 +8,9 @@ import (
 	"testing"
 	"testing/iotest"
 
-	"github.com/moorara/algo/lexer"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/moorara/algo/lexer"
 )
 
 func TestNew(t *testing.T) {
@@ -581,7 +582,7 @@ func TestLexer_evalDFA(t *testing.T) {
 			},
 		},
 		{
-			name: "LLBRACE",
+			name: "RBRACE",
 			l: &Lexer{
 				in: &mockInputBuffer{
 					SkipMocks: []SkipMock{
@@ -598,8 +599,8 @@ func TestLexer_evalDFA(t *testing.T) {
 			},
 			state: 9,
 			expectedToken: lexer.Token{
-				Terminal: LLBRACE,
-				Lexeme:   "{{",
+				Terminal: RBRACE,
+				Lexeme:   "}",
 				Pos: lexer.Position{
 					Filename: "test",
 					Offset:   4,
@@ -609,7 +610,7 @@ func TestLexer_evalDFA(t *testing.T) {
 			},
 		},
 		{
-			name: "RBRACE",
+			name: "LLBRACE",
 			l: &Lexer{
 				in: &mockInputBuffer{
 					SkipMocks: []SkipMock{
@@ -626,8 +627,8 @@ func TestLexer_evalDFA(t *testing.T) {
 			},
 			state: 10,
 			expectedToken: lexer.Token{
-				Terminal: RBRACE,
-				Lexeme:   "}",
+				Terminal: LLBRACE,
+				Lexeme:   "{{",
 				Pos: lexer.Position{
 					Filename: "test",
 					Offset:   4,
@@ -665,6 +666,119 @@ func TestLexer_evalDFA(t *testing.T) {
 			},
 		},
 		{
+			name: "LASSOC",
+			l: &Lexer{
+				in: &mockInputBuffer{
+					SkipMocks: []SkipMock{
+						{
+							OutPos: lexer.Position{
+								Filename: "test",
+								Offset:   4,
+								Line:     1,
+								Column:   5,
+							},
+						},
+					},
+				},
+			},
+			state: 16,
+			expectedToken: lexer.Token{
+				Terminal: LASSOC,
+				Lexeme:   "@left",
+				Pos: lexer.Position{
+					Filename: "test",
+					Offset:   4,
+					Line:     1,
+					Column:   5,
+				},
+			},
+		},
+		{
+			name: "RASSOC",
+			l: &Lexer{
+				in: &mockInputBuffer{
+					SkipMocks: []SkipMock{
+						{
+							OutPos: lexer.Position{
+								Filename: "test",
+								Offset:   4,
+								Line:     1,
+								Column:   5,
+							},
+						},
+					},
+				},
+			},
+			state: 21,
+			expectedToken: lexer.Token{
+				Terminal: RASSOC,
+				Lexeme:   "@right",
+				Pos: lexer.Position{
+					Filename: "test",
+					Offset:   4,
+					Line:     1,
+					Column:   5,
+				},
+			},
+		},
+		{
+			name: "NOASSOC",
+			l: &Lexer{
+				in: &mockInputBuffer{
+					SkipMocks: []SkipMock{
+						{
+							OutPos: lexer.Position{
+								Filename: "test",
+								Offset:   4,
+								Line:     1,
+								Column:   5,
+							},
+						},
+					},
+				},
+			},
+			state: 25,
+			expectedToken: lexer.Token{
+				Terminal: NOASSOC,
+				Lexeme:   "@none",
+				Pos: lexer.Position{
+					Filename: "test",
+					Offset:   4,
+					Line:     1,
+					Column:   5,
+				},
+			},
+		},
+		{
+			name: "PREDEF",
+			l: &Lexer{
+				in: &mockInputBuffer{
+					LexemeMocks: []LexemeMock{
+						{
+							OutVal: "$STRING",
+							OutPos: lexer.Position{
+								Filename: "test",
+								Offset:   4,
+								Line:     1,
+								Column:   5,
+							},
+						},
+					},
+				},
+			},
+			state: 27,
+			expectedToken: lexer.Token{
+				Terminal: PREDEF,
+				Lexeme:   "$STRING",
+				Pos: lexer.Position{
+					Filename: "test",
+					Offset:   4,
+					Line:     1,
+					Column:   5,
+				},
+			},
+		},
+		{
 			name: "GRAMMER",
 			l: &Lexer{
 				in: &mockInputBuffer{
@@ -680,7 +794,7 @@ func TestLexer_evalDFA(t *testing.T) {
 					},
 				},
 			},
-			state: 18,
+			state: 34,
 			expectedToken: lexer.Token{
 				Terminal: GRAMMER,
 				Lexeme:   "grammar",
@@ -709,7 +823,7 @@ func TestLexer_evalDFA(t *testing.T) {
 					},
 				},
 			},
-			state: 20,
+			state: 36,
 			expectedToken: lexer.Token{
 				Terminal: IDENT,
 				Lexeme:   "statement",
@@ -738,7 +852,7 @@ func TestLexer_evalDFA(t *testing.T) {
 					},
 				},
 			},
-			state: 22,
+			state: 38,
 			expectedToken: lexer.Token{
 				Terminal: TOKEN,
 				Lexeme:   "NUM",
@@ -767,7 +881,7 @@ func TestLexer_evalDFA(t *testing.T) {
 					},
 				},
 			},
-			state: 26,
+			state: 42,
 			expectedToken: lexer.Token{
 				Terminal: STRING,
 				Lexeme:   "foo",
@@ -796,7 +910,7 @@ func TestLexer_evalDFA(t *testing.T) {
 					},
 				},
 			},
-			state: 30,
+			state: 46,
 			expectedToken: lexer.Token{
 				Terminal: REGEX,
 				Lexeme:   "[a-z]+",
@@ -824,7 +938,7 @@ func TestLexer_evalDFA(t *testing.T) {
 					},
 				},
 			},
-			state: 31,
+			state: 47,
 			expectedToken: lexer.Token{
 				Terminal: COMMENT,
 				Lexeme:   "",
@@ -852,7 +966,7 @@ func TestLexer_evalDFA(t *testing.T) {
 					},
 				},
 			},
-			state: 34,
+			state: 50,
 			expectedToken: lexer.Token{
 				Terminal: COMMENT,
 				Lexeme:   "",
@@ -925,93 +1039,134 @@ func TestAdvanceDFA(t *testing.T) {
 		{"0_LBRACK", 0, '[', 6},
 		{"0_RBRACK", 0, ']', 7},
 		{"0_LBRACE", 0, '{', 8},
-		{"0_RBRACE", 0, '}', 10},
-		{"8_LLBRACE", 8, '{', 9},
-		{"10_RRBRACE", 10, '}', 11},
+		{"0_RBRACE", 0, '}', 9},
+		{"8_LBRACE", 8, '{', 10},
+		{"9_RBRACE", 9, '}', 11},
 
-		{"0_g", 0, 'g', 12},
-		{"12_r", 12, 'r', 13},
-		{"13_a", 13, 'a', 14},
-		{"14_m", 14, 'm', 15},
-		{"15_m", 15, 'm', 16},
-		{"16_a", 16, 'a', 17},
-		{"17_r", 17, 'r', 18},
+		// @
+		{"0_@", 0, '@', 12},
 
-		{"12_a", 12, 'a', 20},
-		{"13_b", 13, 'b', 20},
-		{"14_c", 14, 'c', 20},
-		{"15_d", 15, 'd', 20},
-		{"16_e", 16, 'e', 20},
-		{"17_f", 17, 'f', 20},
-		{"18_g", 18, 'g', 20},
-		{"20_h", 20, 'h', 20},
+		// @left
+		{"12_l", 12, 'l', 13},
+		{"13_e", 13, 'e', 14},
+		{"14_f", 14, 'f', 15},
+		{"15_t", 15, 't', 16},
 
-		{"0_d", 0, 'd', 19},
-		{"19_e", 19, 'e', 20},
-		{"20_c", 20, 'c', 20},
-		{"20_l", 20, 'l', 20},
+		// @ right
+		{"12_r", 12, 'r', 17},
+		{"17_i", 17, 'i', 18},
+		{"18_g", 18, 'g', 19},
+		{"19_h", 19, 'h', 20},
+		{"20_t", 20, 't', 21},
 
-		{"0_N", 0, 'N', 21},
-		{"21_A", 21, 'A', 22},
-		{"22_M", 22, 'M', 22},
-		{"22_E", 22, 'E', 22},
+		// @none
+		{"12_n", 12, 'n', 22},
+		{"22_o", 22, 'o', 23},
+		{"23_n", 23, 'n', 24},
+		{"24_e", 24, 'e', 25},
 
-		{"0_QUOT", 0, '"', 23},
-		{"23_f", 23, 'f', 25},
-		{"25_o", 25, 'o', 25},
-		{"25_o", 25, 'o', 25},
-		{"25_QUOT", 25, '"', 26},
+		// $
+		{"0_$", 0, '$', 26},
 
-		{"0_QUOT", 0, '"', 23},
-		{"23_BSOL", 23, '\\', 24},
-		{"24_QUOT", 24, '"', 25},
-		{"25_BSOL", 25, '\\', 24},
-		{"24_BSOL", 24, '\\', 25},
-		{"25_QUOT", 25, '"', 26},
+		// $STRING
+		{"26_S", 26, 'S', 27},
+		{"27_T", 27, 'S', 27},
+		{"27_R", 27, 'R', 27},
+		{"27_I", 27, 'I', 27},
+		{"27_N", 27, 'N', 27},
+		{"27_G", 27, 'G', 27},
 
-		{"0_SOL", 0, '/', 27},
-		{"27_LSQB", 27, '[', 29},
-		{"29_a", 29, 'a', 29},
-		{"29_MINUS", 29, '-', 29},
-		{"29_z", 29, 'z', 29},
-		{"29_RSQB", 29, ']', 29},
-		{"29_PLUS", 29, '+', 29},
-		{"29_SOL", 29, '/', 30},
+		// grammar
+		{"0_g", 0, 'g', 28},
+		{"28_r", 28, 'r', 29},
+		{"29_a", 29, 'a', 30},
+		{"30_m", 30, 'm', 31},
+		{"31_m", 31, 'm', 32},
+		{"32_a", 32, 'a', 33},
+		{"33_r", 33, 'r', 34},
 
-		{"0_SOL", 0, '/', 27},
-		{"27_BSOL", 27, '\\', 28},
-		{"28_LCUB", 28, '{', 29},
-		{"29_BSOL", 29, '\\', 28},
-		{"28_RCUB", 28, '}', 29},
-		{"29_SOL", 29, '/', 30},
+		{"28_o", 28, 'o', 36}, // go
+		{"29_e", 29, 'e', 36}, // gre
+		{"30_n", 30, 'n', 36}, // gran
+		{"31_s", 31, 's', 36}, // grams
+		{"32_o", 32, 'o', 36}, // grammo
+		{"33_t", 33, 't', 36}, // grammat
+		{"34_i", 34, 'i', 36}, // grammari
+		{"36_n", 36, 'n', 36}, // grammarian
 
-		{"0_SOL", 0, '/', 27},
-		{"27_SOL", 27, '/', 31},
-		{"31_C", 31, 'C', 31},
-		{"31_o", 31, 'o', 31},
-		{"31_m", 31, 'm', 31},
-		{"31_m", 31, 'm', 31},
-		{"31_e", 31, 'e', 31},
-		{"31_n", 31, 'n', 31},
-		{"31_t", 31, 't', 31},
+		// decl
+		{"0_d", 0, 'd', 35},
+		{"35_e", 35, 'e', 36},
+		{"36_c", 36, 'c', 36},
+		{"36_l", 36, 'l', 36},
 
-		{"0_SOL", 0, '/', 27},
-		{"27_AST", 27, '*', 32},
-		{"32_F", 32, 'F', 32},
-		{"32_i", 32, 'i', 32},
-		{"32_r", 32, 'r', 32},
-		{"32_s", 32, 's', 32},
-		{"32_t", 32, 't', 32},
-		{"32_AST", 32, '*', 33},
-		{"33_S", 33, 'S', 32},
-		{"32_e", 32, 's', 32},
-		{"32_c", 32, 'c', 32},
-		{"32_o", 32, 'o', 32},
-		{"32_n", 32, 'n', 32},
-		{"32_d", 32, 'd', 32},
-		{"32_AST", 32, '*', 33},
-		{"33_SOL", 33, '/', 34},
+		// NAME
+		{"0_N", 0, 'N', 37},
+		{"37_A", 37, 'A', 38},
+		{"38_M", 38, 'M', 38},
+		{"38_E", 38, 'E', 38},
 
+		// "foo"
+		{"0_QUOT", 0, '"', 39},
+		{"39_f", 39, 'f', 41},
+		{"41_o", 41, 'o', 41},
+		{"41_o", 41, 'o', 41},
+		{"41_QUOT", 41, '"', 42},
+
+		// "\"\\"
+		{"0_QUOT", 0, '"', 39},
+		{"39_BSOL", 39, '\\', 40},
+		{"40_QUOT", 40, '"', 41},
+		{"41_BSOL", 41, '\\', 40},
+		{"40_BSOL", 40, '\\', 41},
+		{"41_QUOT", 41, '"', 42},
+
+		// /[a-z]+/
+		{"0_SOL", 0, '/', 43},
+		{"43_LSQB", 43, '[', 45},
+		{"45_a", 45, 'a', 45},
+		{"45_MINUS", 45, '-', 45},
+		{"45_z", 45, 'z', 45},
+		{"45_RSQB", 45, ']', 45},
+		{"45_PLUS", 45, '+', 45},
+		{"45_SOL", 45, '/', 46},
+
+		// /\{\}/
+		{"0_SOL", 0, '/', 43},
+		{"43_BSOL", 43, '\\', 44},
+		{"44_LCUB", 44, '{', 45},
+		{"45_BSOL", 45, '\\', 44},
+		{"44_RCUB", 44, '}', 45},
+		{"45_SOL", 45, '/', 46},
+
+		// // comment
+		{"0_SOL", 0, '/', 43},
+		{"43_SOL", 43, '/', 47},
+		{"47_Space", 47, ' ', 47},
+		{"47_c", 47, 'c', 47},
+		{"47_o", 47, 'o', 47},
+		{"47_m", 47, 'm', 47},
+		{"47_m", 47, 'm', 47},
+		{"47_e", 47, 'e', 47},
+		{"47_n", 47, 'n', 47},
+		{"47_t", 47, 't', 47},
+
+		// /* foo*bar */
+		{"0_SOL", 0, '/', 43},
+		{"43_AST", 43, '*', 48},
+		{"48_Space", 48, ' ', 48},
+		{"48_f", 48, 'f', 48},
+		{"48_o", 48, 'o', 48},
+		{"48_o", 48, 'o', 48},
+		{"48_AST", 48, '*', 49},
+		{"33_b", 49, 'b', 48},
+		{"48_a", 48, 'a', 48},
+		{"48_r", 48, 'r', 48},
+		{"48_Space", 48, ' ', 48},
+		{"48_AST", 48, '*', 49},
+		{"49_SOL", 49, '/', 50},
+
+		// ERR
 		{"0_0", 0, '0', -1},
 		{"0_1", 0, '1', -1},
 		{"0_2", 0, '2', -1},

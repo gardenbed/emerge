@@ -56,7 +56,7 @@ func getTestNFAs() []*auto.NFA {
 func TestEmpty(t *testing.T) {
 	nfa := empty()
 	expectedNFA := getTestNFAs()[0]
-	assert.True(t, nfa.Equals(expectedNFA))
+	assert.True(t, nfa.Equal(expectedNFA))
 }
 
 func TestConcat(t *testing.T) {
@@ -77,7 +77,7 @@ func TestConcat(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			nfa := concat(tc.ns...)
-			assert.True(t, nfa.Equals(tc.expectedNFA))
+			assert.True(t, nfa.Equal(tc.expectedNFA))
 		})
 	}
 }

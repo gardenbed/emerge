@@ -1,11 +1,11 @@
 module github.com/gardenbed/emerge
 
-go 1.23.4
+go 1.23.5
 
 require (
 	github.com/gardenbed/charm v0.1.4
 	github.com/mitchellh/cli v1.1.5
-	github.com/moorara/algo v0.10.1
+	github.com/moorara/algo v0.10.7
 	github.com/stretchr/testify v1.10.0
 )
 
@@ -31,7 +31,7 @@ require (
 	github.com/shopspring/decimal v1.2.0 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a // indirect
-	golang.org/x/exp v0.0.0-20250106191152-7588d65b2ba8 // indirect
+	golang.org/x/exp v0.0.0-20250128182459-e0ece0dbea4c // indirect
 	golang.org/x/sys v0.0.0-20190412213103-97732733099d // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
