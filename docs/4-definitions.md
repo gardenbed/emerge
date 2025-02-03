@@ -93,7 +93,7 @@ a  b  c  d  e  f  g  h  i  j  k  l  m  n  o  p  q  r  s  t  u  v  w  x  y  z
 | `TOKEN`   | `/[A-Z][0-9A-Z_]*/` | Regex for declaring and referencing *terminal* symbols |
 | `STRING`  | `/"([\x21\x23-\x5B\x5D-\x7E]\|\\[\x21-\x7E])+"/` | Regex for defining *string* patterns |
 | `REGEX`   | `/\/([\x20-\x2E\x30-\x5B\x5D-\x7E]\|\\[\x20-\x7E])*\//` | Regex for defining *regular expression* patterns |
-| `PREDEF`  | `/\$(WS\|EOL\|ID\|INT\|UINT\|FLOAT\|STRING\|COMMENT)/` | predefined token definitions |
+| `PREDEF`  | `/\$[A-Z][0-9A-Z_]*/` | predefined token definitions |
 
 Tokens can be declared and defined explicitly or implicitly.
 
