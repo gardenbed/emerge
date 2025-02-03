@@ -61,7 +61,7 @@ letter           = "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" | "
 The formal language we use for describing [context-free grammars](https://en.wikipedia.org/wiki/Context-free_grammar)
 is a subset of [EBNF](https://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_form) notation.
 
-## Alphabet
+### Alphabet
 
 ```
 "  /  =  |  (  )  [  ]  {  }
@@ -71,12 +71,12 @@ a  b  c  d  e  f  g  h  i  j  k  l  m  n  o  p  q  r  s  t  u  v  w  x  y  z
 !  #  $  %  &  '  *  +  ,  -  .  :  ;  <  >  ?  @  \  ^  _  `  ~
 ```
 
-## Tokens
+### Tokens
 
-| **Token** | **Pattern** | **Description**|
+| **Token** | **Lexeme** | **Description**|
 |-----------|-------------|----------------|
 | `DEF`     | `"="`  | Symbol for *rule definition* |
-| `ALT`     | `"\|"` | Separator symbol for *alternation* |
+| `ALT`     | `"\|"` | Symbol for *alternation* |
 | `LPAREN`  | `"("`  | Start symbol for *grouping* |
 | `RPAREN`  | `")"`  | End symbol for *grouping* |
 | `LBRACK`  | `"["`  | Start symbol for *optional* |
@@ -86,31 +86,47 @@ a  b  c  d  e  f  g  h  i  j  k  l  m  n  o  p  q  r  s  t  u  v  w  x  y  z
 | `LLBRACE` | `"{{"` | Start symbol for *repetition (Kleene Plus)* |
 | `RRBRACE` | `"}}"` | End symbol for *repetition (Kleene Plus)* |
 | `GRAMMER` | `"grammar"` | Keyword for declaring grammar name |
+| `LASSOC`  | `"@left"` | keyword for specifying left-associative terminals |
+| `RASSOC`  | `"@right"` | keyword for specifying right-associative terminals |
+| `NOASSOC` | `"@none""` | keyword for specifying non-associative terminals |
 | `IDENT`   | `/[a-z][0-9a-z_]*/` | Regex for grammar name and *non-terminal* symbols |
 | `TOKEN`   | `/[A-Z][0-9A-Z_]*/` | Regex for declaring and referencing *terminal* symbols |
 | `STRING`  | `/"([\x21\x23-\x5B\x5D-\x7E]\|\\[\x21-\x7E])+"/` | Regex for defining *string* patterns |
 | `REGEX`   | `/\/([\x20-\x2E\x30-\x5B\x5D-\x7E]\|\\[\x20-\x7E])*\//` | Regex for defining *regular expression* patterns |
+| `PREDEF`  | `/\$(WS\|EOL\|ID\|INT\|UINT\|FLOAT\|STRING\|COMMENT)/` | predefined token definitions |
 
 Tokens can be declared and defined explicitly or implicitly.
 
-## Grammar
+### Grammar
 
 ```
-grammar = name { decl }
-name    = "grammar" IDENT
-decl    = token | rule
-token   = TOKEN "=" ( STRING | REGEX )
-rule    = lhs "=" rhs | lhs "="
-lhs     = nonterm
-rhs     = nonterm | term | "(" rhs ")" | "[" rhs "]" | "{" rhs "}" | "{{" rhs "}}" | rhs rhs | rhs "|" rhs
-nonterm = IDENT
-term    = TOKEN | STRING
+grammar   = name {decl}
+name      = "grammar" IDENT
+decl      = token | directive | rule
+token     = TOKEN "=" (STRING | REGEX | PREDEF)
+directive = ("@left" | "@right" | "@none") {{term | rule}}
+rule      = lhs "=" rhs | lhs "="
+lhs       = nonterm
+rhs       = nonterm | term | rhs rhs | "(" rhs ")" | "[" rhs "]" | "{" rhs "}" | "{{" rhs "}}" | rhs "|" rhs
+nonterm   = IDENT
+term      = TOKEN | STRING
 ```
 
 ### Precedence and Associativity
 
-TBD
+The grammar above, as it stands, is ambiguous.
+Below are the associativity and precedence rules for an LR parser to resolve the conflicts.
 
-## Semantic
+```
+@left  rhs = rhs rhs
+@left  "(" "[" "{" "{{" IDENT TOKEN STRING
+@right "|"
+@none  "="
+```
 
-TBD
+  1. The production rule `rhs = rhs rhs` (concatenating two `rhs`)
+     has the highest precedence and is *left-associative*.
+  2. The next highest precedence is assigned to the terminals
+     `"("`, `"["`, `"{"`, `"{{"`, `IDENT`, `TOKEN`, and `STRING`, all of which are *left-associative*.
+  3. The `"|"` terminal is assigned the next level of precedence and is *right-associative*.
+  4. Finally, the `"="` terminal has the lowest precedence and is *non-associative*.
