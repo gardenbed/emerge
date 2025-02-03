@@ -228,9 +228,9 @@ it may be more eficient to skip the step of constructing a DFA and simulate the 
 
 ```
                     ┌────────────┐       ┌──────────────────┐
-    EBNF            │ Lexer      │       │ Transition Table │
+    EBNF            │   Lexer    │       │ Transition Table │
  Description ──────►│ Generator  ├──────►├──────────────────┤
-                    │ (Compiler) │       │ Actions          │
+                    │            │       │ Actions          │
                     └────────────┘       └─────────▲────────┘
                                                    │
                                                    │

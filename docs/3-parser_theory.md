@@ -1562,7 +1562,185 @@ for ( each item A → α.β in K ) {
 
 ## Implementation
 
-### LR Parsers
+### Parsing Strategy
+
+The most important choice when it comes to implementing a parser or parser generator,
+is the kind of parsing strategy or parsing approach which is equivalent to
+how we want to traverse the parsing tree, a.k.a abstract syntax tree (explicitly or implicitly).
+Here is a quick overview of our options:
+
+  - **Top-Down**
+    - Recursive-Descent Parsing
+      - Parser Combinators
+      - Predictive Parsing
+  - **Bottom-Up**
+    - LR Parsing
+      - SLR Parsing
+      - GLR Parsing
+      - LALR Parsing
+
+#### Top-Down vs. Bottom-Up
+
+A parse tree for an input string is an n-ary tree where the root node represents the start symbol of the grammar.
+Each internal node corresponds to a non-terminal symbol and is associated with a production rule.
+The children of a node represent the grammar symbols on the right-hand side of that production rule.
+Each leaf node corresponds to a terminal symbol in the grammar.
+
+The parse tree visually illustrates the syntactic structure of the input string based on the given grammar rules.
+Here is an example:
+
+<img alt="Parse Tree Example" src="./parse-tree.png" width="400" height="366">
+
+**Top-down** parsing is a parsing technique in which the parser starts constructing the parse tree
+from the root (the start symbol of the grammar) and proceeds downwards toward the leaves (terminal symbols).
+It attempts to match the input string with the production rules of the grammar by expanding non-terminals recursively.
+This approach is analogous to a **preorder traversal** (VLR) of the parse tree,
+where the root node is visited first, followed by its children, usually from left to right.
+
+**Bottom-Up** parsing is a parsing technique that starts from the input symbols (leaves) and
+constructs the parse tree up to the start symbol (root) by reducing the input string using the grammar rules.
+It follows the shift-reduce approach, meaning it shifts input symbols onto a stack and reduces them using production rules.
+This method is equivalent to a **postorder traversal** (RLV) of the parse tree,
+where children are visited first, typically from right to left, before visiting their parent node.
+
+#### Recursive-Descent Parsing
+
+**Recursive-descent parsing** is a *top-down* parsing technique where
+each non-terminal in the grammar is implemented as a recursive function.
+This approach is often chosen when manually implementing a parser, as
+it follows the structure of the grammar closely, making the code easier to write, debug, maintain, and update.
+
+The parser attempts to match the input against the grammar using recursive functions,
+where each function corresponds to a non-terminal symbol.
+When a terminal symbol is encountered, it checks if it matches the expected token in the input.
+If there is a mismatch, the parser may backtrack and try different functions based on other production rules.
+Backtracking involves undoing decisions when a parsing path is incorrect.
+
+The running time of a recursive-descent parser with backtracking depends on the grammar and input.
+In the best case (no backtracking), the time complexity is `O(n)`,
+but in the worst case (with significant backtracking), it can be exponential, `O(2ⁿ)`.
+Left-recursive grammars or those requiring heavy backtracking can make the parser inefficient.
+However, **memoization** (a.k.a. **packrat parsing**) can optimize the parser,
+reducing its time complexity to `O(n)` by caching previously computed parsing results.
+
+**Parser combinators** are a functional programming paradigm for
+constructing parsers by combining simpler parsers into more complex ones.
+A parser combinator is a higher-order function that
+takes one or more parsers as input and returns a new parser as output.
+Each production rule is implemented as a function, creating a modular and composable parser.
+This approach is especially useful for domain-specific languages (DSLs)
+and grammars with small input strings, such as regular expressions.
+However, the running time of parser combinators can be exponential and result in high memory consumption.
+
+**Predictive parsing** is another top-down technique similar to recursive-descent parsing,
+but it eliminates backtracking by using lookahead tokens.
+It is typically implemented non-recursively and *iteratively* through a parsing table.
+Predictive parsing is designed for `LL(1)` grammars,
+where "LL" means the parser reads input from left to right and produces a leftmost derivation.
+The time complexity of a predictive parser is linear, O(n), but the LL(1) grammar class is restrictive.
+For an LL(1) parser to function properly, it must be able to choose the production rule with a single lookahead token.
+Left-recursive grammars pose a challenge, and eliminating left-recursion involves removing empty or single productions.
+To make a grammar suitable for predictive parsing, it typically undergoes many transformations,
+which can make the final grammar quite different from the original specification of the grammar.
+
+#### LR Parsing
+
+**LR parsing** is a bottom-up technique used for grammars in the `LR(k)` class,
+where "L" stands for left-to-right input scanning, "R" refers to constructing the right-most derivation,
+and "k" indicates the number of lookahead symbols.
+LR parsers utilize the **shift-reduce** method, where symbols are shifted onto a stack,
+and once the right-hand side of a production rule appears,
+they are reduced to the corresponding non-terminal symbol on the left-hand side.
+LR parsing is ideal for generating parsers and parser generators,
+and it can handle more expressive grammars compared to `LL(1)`.
+LR parsers are also better for evaluating the input string or translating the input in one pass,
+as the parse tree is constructed from the leaves to the root.
+
+`LR(1)` grammars are flexible and do not require significant transformations,
+maintaining a structure that is close to natural language.
+LR parser generators can handle ambiguous grammars by
+resolving shift/reduce and reduce/reduce conflicts through precedence information.
+
+**SLR** (Simple LR) Parser uses canonical `LR(0)` items to construct a state machine (DFA).
+While it simplifies the construction process,
+it is less powerful than GLR parsers, sacrificing parsing ability for simplicity.
+
+**GLR** (General LR) Parser, also known as the canonical LR parser,
+makes full use of lookahead symbols and employs `LR(1)` items to
+handle a wider range of grammars compared to SLR parsers.
+It can process more complex grammars but requires more resources.
+
+**LALR** (Look-Ahead LR) Parser strikes a balance between LR and GLR parsing.
+Like the SLR parser, it uses canonical `LR(0)` items for the state machine,
+but refines the states by incorporating lookahead symbols.
+LALR merges states with identical core `LR(0)` items, handling lookahead symbols separately,
+which makes it more precise than SLR and resolves many of the conflicts SLR might encounter.
+LALR is more powerful than SLR but less powerful than GLR due to state merging,
+which can occasionally lead to conflicts when distinctions in lookahead contexts are lost.
+LALR parsing is the preferred choice for most grammars and languages,
+and many parser generators default to generating LALR parsers.
+
+### Error Recovery Strategy
+
+Adopting an error recovery strategy is another important decision for implementing a parser or building a parser generator.
+
+In **panic-mode** recovery, the parser discards input symbols one at a time
+until it encounters a designated **synchronizing token**.
+Once this token is found, the parser resumes normal parsing.
+This method allows the parser to continue parsing after encountering an error,
+enabling it to detect additional errors in the input.
+A major advantage of panic-mode is its simplicity and speed, as it guarantees the parser will not enter an infinite loop.
+However, it comes at the cost of skipping over large portions of the input,
+such as entire code blocks, without checking for further errors.
+Additionally, the synchronizing tokens must be chosen ahead of time, which can be challenging in some cases.
+
+In **phrase-level** recovery, the parser attempts to make local corrections when it encounters an error,
+such as replacing a misplaced comma with a semicolon to allow parsing to continue.
+This approach is more precise than panic-mode because
+it attempts to preserve context by fixing specific errors instead of skipping input.
+Phrase-level recovery offers more detailed error handling and is particularly useful when errors are minor.
+However, this method is more complex as it requires careful selection of replacement symbols
+to avoid introducing infinite loops or further errors.
+Additionally, phrase-level recovery can struggle with errors that are caused earlier in the input,
+which may complicate the recovery process.
+
+**Error productions** involve augmenting the grammar with special auxiliary production rules to handle common errors.
+These rules allow the parser to recognize and correct erroneous constructs directly.
+This method provides structured and systematic error recovery,
+helping to pinpoint specific issues in the input without skipping large sections.
+However, error productions are often highly specific to the grammar being parsed, making them difficult to generalize.
+This method can be effective when manually building a parser for a specific language,
+but it is challenging to apply in a parser generator context,
+where anticipating all possible errors in arbitrary grammars is not feasible.
+
+### Parser Architecture
+
+```
+                    ┌─────────────┐       ┌───────────────┐
+    EBNF            │   Parser    │       │    PARSING    │
+ Description ──────►│  Generator  ├──────►│     TABLE     │
+                    └─────────────┘       │     (DFA)     │
+                                          └───────▲───────┘
+                                                  │
+                                                  │
+                    ┌─────────────┐       ┌───────┴───────┐
+                    │   Lexer     │       │    PARSER     │
+       INPUT ──────►│ (Generated) ├──────►│   Procedure   ├──────►│      │
+                    └─────────────┘       └───────┬───────┘       ├──────┤
+                                                  ┆               │      │
+                                                  ┆               ├──────┤
+                                          ┌───────▼───────┐       │      │
+                                          │    Symbol     │       ├──────┤
+                                          │     Table     │       │      │
+                                          └───────────────┘       └──────┘
+                                                                   STACK
+```
+
+A parser may optionally consult a [symbol table](https://en.wikipedia.org/wiki/Symbol_table).
+A symbol table is a data structure used to store information about the
+variables, functions, objects, and other entities encountered during parsing.
+It serves as a central repository for storing attributes of identifiers (such as *type*, *scope*, etc.),
+which are essential for semantic analysis, code generation, and optimization during compilation.
 
 ## More Resources
 
