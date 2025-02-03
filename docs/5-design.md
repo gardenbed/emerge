@@ -412,12 +412,35 @@ digraph "Lexer DFA" {
 
 #### Input Buffer
 
-We employ the *two-buffer* scheme explained [here](./2-lexer_theory.md#input-buffering).
+A *two-buffer* scheme, explained [here](./2-lexer_theory.md#input-buffering), is employed for implementing the EBNF lexer.
 The two buffers are implemented as one buffer divided into two halves.
 
 ### Parser Design
 
-TBD
+The EBNF parser is implemented as a [bottom-up](./3-parser_theory.md#bottom-up-parsing)
+[LALR](./3-parser_theory.md#lalr-parsers) parser, ensuring efficient and deterministic parsing.
+
+The parsing table for EBNF is generated using this
+[algorithm](https://pkg.go.dev/github.com/moorara/algo/parser/lr/lookahead#BuildParsingTable)
+based on the grammar and precedence rules defined [here](./4-definitions.md#extended-backus-naur-form).
+
+To implement an LR parser, the grammar must be in `LR(1)` form.
+LR(1) grammars require minimal transformations, often closely resembling natural language structures.
+[Ambiguous grammars](./3-parser_theory.md#ambiguous-grammars) can also be handled using precedence rules.
+
+The Emerge parser generator also produces `LALR` parsers for the same reasons mentioned above,
+balancing efficiency and expressiveness.
+
+For error handling, the [panic-mode](./3-parser_theory.md#panic-mode-recovery) error recovery method is used
+due to its simplicity and adaptability to any arbitrary grammar.
+
+The generated parser offers three primary modes of operation, similar to the examples
+[here](https://pkg.go.dev/github.com/moorara/algo/parser/lr/lookahead#pkg-examples):
+
+  - **Tokenization and Production Extraction**: Outputs tokens and their corresponding productions.
+  - **Abstract Syntax Tree (AST) Construction**: Builds an AST based on the grammar's production rules.
+  - **Rule-based Evaluation and Direct Translation**: Evaluates production rules
+    alongside previously computed values, enabling direct translation of the parsed input.
 
 ## Resources
 
