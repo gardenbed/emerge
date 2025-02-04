@@ -60,9 +60,9 @@ The Solidus (Slash) character (`/`) is added to the Emerge's EBNF language for d
   - The DFA's final state is evaluated only after encountering an invalid input symbol,
     triggering an error for the next state.
     - States `8` and `10` are only assessed after an invalid symbol is processed,
-      ensuring the DFA correctly identifies `{` or `{{` tokens.
+      ensuring the DFA correctly identifies `{` or {% raw %}`{{`{% endraw %} tokens.
     - Similarly, states `9` and `11` are evaluated only after an invalid symbol is encountered,
-      allowing the DFA to correctly recognize `}` or `}}` tokens.
+      allowing the DFA to correctly recognize `}` or {% raw %}`}}`{% endraw %} tokens.
   - After evaluating and reading a lexeme from the input, the DFA resets its current state to `0`.
   - Tokens that begin with any prefix `grammar`, including `grammar` itself, are permitted.
   - `TOKEN` tokens must start with a lowercase letter (`a`–`z`).
