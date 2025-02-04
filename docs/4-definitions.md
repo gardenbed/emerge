@@ -134,6 +134,6 @@ Below are the associativity and precedence rules for an LR parser to resolve the
   1. The production rule `rhs = rhs rhs` (concatenating two `rhs`)
      has the highest precedence and is *left-associative*.
   2. The next highest precedence is assigned to the terminals
-     `"("`, `"["`, `"{"`, `"{{"`, `IDENT`, `TOKEN`, and `STRING`, all of which are *left-associative*.
+     `"("`, `"["`, `"{"`, {% raw %}`"{{"`{% endraw %}, `IDENT`, `TOKEN`, and `STRING`, all of which are *left-associative*.
   3. The `"|"` terminal is assigned the next level of precedence and is *right-associative*.
   4. Finally, the `"="` terminal has the lowest precedence and is *non-associative*.
