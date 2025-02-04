@@ -122,6 +122,7 @@ Below are the associativity and precedence rules for an LR parser to resolve the
 @left  "(" "[" "{" "{{" IDENT TOKEN STRING
 @right "|"
 @none  "="
+@none  "@left" "@right" "@none"
 ```
 
   1. The production rule `rhs = rhs rhs` (concatenating two `rhs`)
