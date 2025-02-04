@@ -20,6 +20,7 @@ we can define the regular expression language using the EBNF notation as well
 
 ### Grammar
 
+{% raw %}
 ```
 regex            = [ "^" ] expr
 expr             = subexpr [ "|" expr ]
@@ -55,6 +56,7 @@ hex_digit        = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "
 letter           = "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" | "K" | "L" | "M" | "N" | "O" | "P" | "Q" | "R" | "S" | "T" | "U" | "V" | "W" | "X" | "Y" | "Z"
                  | "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z"
 ```
+{% endraw %}
 
 ## Extended Backus-Naur Form
 
@@ -83,7 +85,7 @@ a  b  c  d  e  f  g  h  i  j  k  l  m  n  o  p  q  r  s  t  u  v  w  x  y  z
 | `RBRACK`  | `"]"`  | End symbol for *optional* |
 | `LBRACE`  | `"{"`  | Start symbol for *repetition (Kleene Star)* |
 | `RBRACE`  | `"}"`  | End symbol for *repetition (Kleene Star)* |
-| `LLBRACE` | `"{{"` | Start symbol for *repetition (Kleene Plus)* |
+| `LLBRACE` | {% raw %}`"{{"`{% endraw %} | Start symbol for *repetition (Kleene Plus)* |
 | `RRBRACE` | `"}}"` | End symbol for *repetition (Kleene Plus)* |
 | `GRAMMER` | `"grammar"` | Keyword for declaring grammar name |
 | `LASSOC`  | `"@left"` | keyword for specifying left-associative terminals |
@@ -99,6 +101,7 @@ Tokens can be declared and defined explicitly or implicitly.
 
 ### Grammar
 
+{% raw %}
 ```
 grammar   = name {decl}
 name      = "grammar" IDENT
@@ -111,18 +114,22 @@ rhs       = nonterm | term | rhs rhs | "(" rhs ")" | "[" rhs "]" | "{" rhs "}" |
 nonterm   = IDENT
 term      = TOKEN | STRING
 ```
+{% endraw %}
 
 ### Precedence and Associativity
 
 The grammar above, as it stands, is ambiguous.
 Below are the associativity and precedence rules for an LR parser to resolve the conflicts.
 
+{% raw %}
 ```
 @left  rhs = rhs rhs
 @left  "(" "[" "{" "{{" IDENT TOKEN STRING
 @right "|"
 @none  "="
+@none  "@left" "@right" "@none"
 ```
+{% endraw %}
 
   1. The production rule `rhs = rhs rhs` (concatenating two `rhs`)
      has the highest precedence and is *left-associative*.
