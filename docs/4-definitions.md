@@ -107,11 +107,11 @@ a  b  c  d  e  f  g  h  i  j  k  l  m  n  o  p  q  r  s  t  u  v  w  x  y  z
 {% raw %}
 ```
 grammar   = name {decl}
-name      = "grammar" IDENT
-decl      = token | directive | rule
+name      = "grammar" IDENT [";"]
+decl      = token [";"] | directive [";"] | rule ";"
 token     = TOKEN "=" (STRING | REGEX | PREDEF)
 directive = ("@left" | "@right" | "@none") {{term | "<" rule ">"}}
-rule      = lhs "=" rhs ";" | lhs "=" ";"
+rule      = lhs "=" rhs | lhs "="
 lhs       = nonterm
 rhs       = rhs rhs | "(" rhs ")" | "[" rhs "]" | "{" rhs "}" | "{{" rhs "}}" | rhs "|" rhs | rhs "|" | nonterm | term
 nonterm   = IDENT
@@ -121,7 +121,8 @@ term      = TOKEN | STRING
 
   - Tokens can be defined **explicitly** using *token declarations*
     or **implicitly** by using *string literals* in rule definitions.
-  - The rule `rule = lhs "=" ";"` allows the definition of *empty productions*, such as `A → ε`.
+  - A semicolon at the end of *grammar name*, *token definitions*, or *directives* is optional.
+  - The rule `rule = lhs "="` allows the definition of *empty productions*, such as `A → ε`.
   - The rule `rhs = rhs "|"` permits trailing empty alternatives in production rules,
     enabling definitions like `A → B | C | ε`.
   - The addition of the `";"` token helps distinguish between successive rule definitions,
@@ -147,11 +148,11 @@ Below are the associativity and precedence rules for an LR parser to resolve the
 @none  "="
 @none  "@left" "@right" "@none"
 ```
-{% endraw %}
 
   1. The production rule `rhs = rhs rhs` (concatenating two `rhs`)
      has the highest precedence and is *left-associative*.
   2. The next highest precedence is assigned to the terminals
-     `"("`, `"["`, `"{"`, {% raw %}`"{{"`{% endraw %}, `IDENT`, `TOKEN`, and `STRING`, all of which are *left-associative*.
+     `"("`, `"["`, `"{"`, `"{{"`, `IDENT`, `TOKEN`, and `STRING`, all of which are *left-associative*.
   3. The `"|"` terminal is assigned the next level of precedence and is *right-associative*.
   4. Finally, the `"="` terminal has the lowest precedence and is *non-associative*.
+{% endraw %}

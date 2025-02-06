@@ -8,24 +8,21 @@ import (
 	ebnflexer "github.com/gardenbed/emerge/internal/ebnf/lexer"
 )
 
-// Lexer is an interface for the lexer.Lexer struct.
-type Lexer interface {
-	NextToken() (lexer.Token, error)
-}
-
-// Parser is a syntax analyzer for an extension of EBNF language.
+// Parser is a parser (a.k.a. syntax analyzer) for the EBNF language.
+// EBNF (Extended Backus-Naur Form) is used to define context-free grammars and their corresponding languages.
 type Parser struct {
-	lex Lexer
+	L lexer.Lexer
 }
 
-// New creates a new syntax analyzer for an extension of EBNF language.
+// New creates a new parser (a.k.a. syntax analyzer) for the EBNF language.
+// EBNF (Extended Backus-Naur Form) is used to define context-free grammars and their corresponding languages.
 func New(filename string, src io.Reader) (*Parser, error) {
-	lex, err := ebnflexer.New(filename, src)
+	L, err := ebnflexer.New(filename, src)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Parser{
-		lex: lex,
+		L: L,
 	}, nil
 }
