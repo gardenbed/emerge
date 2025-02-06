@@ -106,16 +106,16 @@ a  b  c  d  e  f  g  h  i  j  k  l  m  n  o  p  q  r  s  t  u  v  w  x  y  z
 
 {% raw %}
 ```
-grammar   = name {decl}
-name      = "grammar" IDENT [";"]
-decl      = token [";"] | directive [";"] | rule ";"
-token     = TOKEN "=" (STRING | REGEX | PREDEF)
-directive = ("@left" | "@right" | "@none") {{term | "<" rule ">"}}
-rule      = lhs "=" rhs | lhs "="
-lhs       = nonterm
-rhs       = rhs rhs | "(" rhs ")" | "[" rhs "]" | "{" rhs "}" | "{{" rhs "}}" | rhs "|" rhs | rhs "|" | nonterm | term
-nonterm   = IDENT
-term      = TOKEN | STRING
+grammar   = name {decl};
+name      = "grammar" IDENT [";"];
+decl      = token [";"] | directive [";"] | rule ";";
+token     = TOKEN "=" (STRING | REGEX | PREDEF);
+directive = ("@left" | "@right" | "@none") {{term | "<" rule ">"}};
+rule      = lhs "=" rhs | lhs "=";
+lhs       = nonterm;
+rhs       = rhs rhs | "(" rhs ")" | "[" rhs "]" | "{" rhs "}" | "{{" rhs "}}" | rhs "|" rhs | rhs "|" | nonterm | term;
+nonterm   = IDENT;
+term      = TOKEN | STRING;
 ```
 {% endraw %}
 
