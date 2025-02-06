@@ -37,8 +37,8 @@ github.com/mitchellh/copystructure v1.0.0 h1:Laisrj+bAB6b/yJwB5Bt3ITZhGJdqmxquMK
 github.com/mitchellh/copystructure v1.0.0/go.mod h1:SNtv71yrdKgLRyLFxmLdkAbkKEFWgYaq1OVrnRcwhnw=
 github.com/mitchellh/reflectwalk v1.0.0 h1:9D+8oIskB4VJBN5SFlmc27fSlIBZaov1Wpk/IfikLNY=
 github.com/mitchellh/reflectwalk v1.0.0/go.mod h1:mSTlrgnPZtwu0c4WaC2kGObEpuNDbx0jmZXqmk4esnw=
-github.com/moorara/algo v0.10.8 h1:pIQlZJRk9jnw+A/mrK9QfOIu8kl21rNMr0/BW2UG05g=
-github.com/moorara/algo v0.10.8/go.mod h1:R8435vKqk+tayYlYqC/wQwIzaTd7xg9Yw5t34fcw6X4=
+github.com/moorara/algo v0.10.9 h1:XfFCYpupOK34FtOVDW/T2TklFWzWeJXSZEFegIBgrc8=
+github.com/moorara/algo v0.10.9/go.mod h1:R8435vKqk+tayYlYqC/wQwIzaTd7xg9Yw5t34fcw6X4=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/posener/complete v1.1.1 h1:ccV59UEOTzVDnDUEFdT95ZzHVZ+5+158q8+SJb2QV5w=
