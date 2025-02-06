@@ -15,6 +15,16 @@ import (
 	ebnflexer "github.com/gardenbed/emerge/internal/ebnf/lexer"
 )
 
+type (
+	// ProductionFunc is similar to parser.ProductionFunc but passes
+	// the index of a production rule instead of the production itself.
+	ProductionFunc func(int) error
+
+	// EvaluateFunc is similar to parser.EvaluateFunc but passes
+	// the index of a production rule instead of the production itself.
+	EvaluateFunc func(int, []*lr.Value) (any, error)
+)
+
 // Parser is a parser (a.k.a. syntax analyzer) for the EBNF language.
 // EBNF (Extended Backus-Naur Form) is used to define context-free grammars and their corresponding languages.
 type Parser struct {
@@ -55,7 +65,7 @@ func (p *Parser) nextToken() (lexer.Token, error) {
 //
 // An error is returned if the input fails to conform to the grammar rules, indicating a syntax issue,
 // or if any of the provided functions return an error, indicating a semantic issue.
-func (p *Parser) Parse(tokenF parser.TokenFunc, prodF parser.ProductionFunc) error {
+func (p *Parser) Parse(tokenF parser.TokenFunc, prodF ProductionFunc) error {
 	stack := list.NewStack[int](1024, generic.NewEqualFunc[int]())
 	stack.Push(0)
 
@@ -99,8 +109,7 @@ func (p *Parser) Parse(tokenF parser.TokenFunc, prodF parser.ProductionFunc) err
 			}
 
 		case lr.REDUCE:
-			prod := productions[param]
-			A, β := prod.Head, prod.Body
+			A, β := productions[param].Head, productions[param].Body
 
 			for range len(β) {
 				stack.Pop()
@@ -116,7 +125,7 @@ func (p *Parser) Parse(tokenF parser.TokenFunc, prodF parser.ProductionFunc) err
 
 			// Yield the production.
 			if prodF != nil {
-				if err := prodF(prod); err != nil {
+				if err := prodF(param); err != nil {
 					return &parser.ParseError{Cause: err}
 				}
 			}
@@ -153,7 +162,9 @@ func (p *Parser) ParseAndBuildAST() (parser.Node, error) {
 
 			return nil
 		},
-		func(prod *grammar.Production) error {
+		func(i int) error {
+			prod := productions[i]
+
 			in := &parser.InternalNode{
 				NonTerminal: prod.Head,
 				Production:  prod,
@@ -190,7 +201,7 @@ func (p *Parser) ParseAndBuildAST() (parser.Node, error) {
 //
 // An error is returned if the input fails to conform to the grammar rules, indicating a syntax issue,
 // or if the evaluation function returns an error, indicating a semantic issue.
-func (p *Parser) ParseAndEvaluate(eval lr.EvaluateFunc) (*lr.Value, error) {
+func (p *Parser) ParseAndEvaluate(eval EvaluateFunc) (*lr.Value, error) {
 	// Stack for constructing the abstract syntax tree.
 	nodes := list.NewStack[*lr.Value](1024, nil)
 
@@ -204,8 +215,8 @@ func (p *Parser) ParseAndEvaluate(eval lr.EvaluateFunc) (*lr.Value, error) {
 
 			return nil
 		},
-		func(prod *grammar.Production) error {
-			l := len(prod.Body)
+		func(i int) error {
+			l := len(productions[i].Body)
 			rhs := make([]*lr.Value, l)
 
 			// Maintain correct production body order
@@ -214,7 +225,7 @@ func (p *Parser) ParseAndEvaluate(eval lr.EvaluateFunc) (*lr.Value, error) {
 				rhs[i] = v
 			}
 
-			lhs, err := eval(prod, rhs)
+			lhs, err := eval(i, rhs)
 			if err != nil {
 				return err
 			}
