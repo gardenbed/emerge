@@ -86,188 +86,192 @@ import (
 
 func main() {
 	dfa := NewDFA(0, States{
-		1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, // WS, DEF, ALT, LPAREN, RPAREN, LBRACK, RBRACK, LBRACE, RBRACE, LLBRACE, RRBRACE
-		16, 21, 25, // LASSOC, RASSOC, NOASSOC
-		27,         // PREDEF
-		34, 36, 38, // GRAMMER, IDENT, TOKEN
-		42, 46, // STRING, REGEX
-		47, 50, //  COMMENT, COMMENT
+		1, 2,
+		3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+		17,
+		22, 27, 31,
+		38, 40, 42,
+		46, 50,
+		51, 54,
 	})
 
 	//====================< WHITESPACES >====================
 
 	dfa.Add(0, '\t', 1)
-	dfa.Add(0, '\n', 1)
-	dfa.Add(0, '\v', 1)
-	dfa.Add(0, '\f', 1)
-	dfa.Add(0, '\r', 1)
 	dfa.Add(0, ' ', 1)
 
 	dfa.Add(1, '\t', 1)
-	dfa.Add(1, '\n', 1)
-	dfa.Add(1, '\v', 1)
-	dfa.Add(1, '\f', 1)
-	dfa.Add(1, '\r', 1)
 	dfa.Add(1, ' ', 1)
+
+	//====================< NEWLINES >====================
+
+	dfa.Add(0, '\n', 2)
+	dfa.Add(0, '\r', 2)
+
+	dfa.Add(2, '\n', 2)
+	dfa.Add(2, '\r', 2)
 
 	//====================< MISC TOKENS >====================
 
-	dfa.Add(0, '=', 2)
-	dfa.Add(0, '|', 3)
-	dfa.Add(0, '(', 4)
-	dfa.Add(0, ')', 5)
-	dfa.Add(0, '[', 6)
-	dfa.Add(0, ']', 7)
-	dfa.Add(0, '{', 8)
-	dfa.Add(0, '}', 9)
-	dfa.Add(8, '{', 10)
-	dfa.Add(9, '}', 11)
-
-	//====================< ASSOCIATIVITY TOKENS >====================
-
-	dfa.Add(0, '@', 12)
-
-	dfa.Add(12, 'l', 13)
-	dfa.Add(13, 'e', 14)
-	dfa.Add(14, 'f', 15)
-	dfa.Add(15, 't', 16)
-
-	dfa.Add(12, 'r', 17)
-	dfa.Add(17, 'i', 18)
-	dfa.Add(18, 'g', 19)
-	dfa.Add(19, 'h', 20)
-	dfa.Add(20, 't', 21)
-
-	dfa.Add(12, 'n', 22)
-	dfa.Add(22, 'o', 23)
-	dfa.Add(23, 'n', 24)
-	dfa.Add(24, 'e', 25)
+	dfa.Add(0, '=', 3)
+	dfa.Add(0, ';', 4)
+	dfa.Add(0, '|', 5)
+	dfa.Add(0, '(', 6)
+	dfa.Add(0, ')', 7)
+	dfa.Add(0, '[', 8)
+	dfa.Add(0, ']', 9)
+	dfa.Add(0, '{', 10)
+	dfa.Add(0, '}', 11)
+	dfa.Add(10, '{', 12)
+	dfa.Add(11, '}', 13)
+	dfa.Add(0, '<', 14)
+	dfa.Add(0, '>', 15)
 
 	//====================< PREDEF >====================
 
-	dfa.Add(0, '$', 26)
+	dfa.Add(0, '$', 16)
 
 	for _, r := range []rune("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_") {
 		if 'A' <= r && r <= 'Z' {
-			dfa.Add(26, Symbol(r), 27)
+			dfa.Add(16, Symbol(r), 17)
 		}
 
-		dfa.Add(27, Symbol(r), 27)
+		dfa.Add(17, Symbol(r), 17)
 	}
+
+	//====================< ASSOCIATIVITY TOKENS >====================
+
+	dfa.Add(0, '@', 18)
+
+	dfa.Add(18, 'l', 19)
+	dfa.Add(19, 'e', 20)
+	dfa.Add(20, 'f', 21)
+	dfa.Add(21, 't', 22)
+
+	dfa.Add(18, 'r', 23)
+	dfa.Add(23, 'i', 24)
+	dfa.Add(24, 'g', 25)
+	dfa.Add(25, 'h', 26)
+	dfa.Add(26, 't', 27)
+
+	dfa.Add(18, 'n', 28)
+	dfa.Add(28, 'o', 29)
+	dfa.Add(29, 'n', 30)
+	dfa.Add(30, 'e', 31)
 
 	//====================< GRAMMER, IDENT >====================
 
-	dfa.Add(0, 'g', 28)
-	dfa.Add(28, 'r', 29)
-	dfa.Add(29, 'a', 30)
-	dfa.Add(30, 'm', 31)
-	dfa.Add(31, 'm', 32)
-	dfa.Add(32, 'a', 33)
-	dfa.Add(33, 'r', 34)
+	dfa.Add(0, 'g', 32)
+	dfa.Add(32, 'r', 33)
+	dfa.Add(33, 'a', 34)
+	dfa.Add(34, 'm', 35)
+	dfa.Add(35, 'm', 36)
+	dfa.Add(36, 'a', 37)
+	dfa.Add(37, 'r', 38)
 
 	for _, r := range []rune("0123456789_abcdefghijklmnopqrstuvwxyz") {
 		if 'a' <= r && r != 'g' {
-			dfa.Add(0, Symbol(r), 35)
+			dfa.Add(0, Symbol(r), 39)
 		}
 
 		if r != 'r' {
-			dfa.Add(28, Symbol(r), 36)
-			dfa.Add(33, Symbol(r), 36)
+			dfa.Add(32, Symbol(r), 40)
+			dfa.Add(37, Symbol(r), 40)
 		}
 
 		if r != 'a' {
-			dfa.Add(29, Symbol(r), 36)
-			dfa.Add(32, Symbol(r), 36)
+			dfa.Add(33, Symbol(r), 40)
+			dfa.Add(36, Symbol(r), 40)
 		}
 
 		if r != 'm' {
-			dfa.Add(30, Symbol(r), 36)
-			dfa.Add(31, Symbol(r), 36)
+			dfa.Add(34, Symbol(r), 40)
+			dfa.Add(35, Symbol(r), 40)
 		}
 
-		dfa.Add(34, Symbol(r), 36)
-		dfa.Add(35, Symbol(r), 36)
-		dfa.Add(36, Symbol(r), 36)
+		dfa.Add(38, Symbol(r), 40)
+		dfa.Add(39, Symbol(r), 40)
+		dfa.Add(40, Symbol(r), 40)
 	}
 
 	//====================< TOKEN >====================
 
 	for _, r := range []rune("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_") {
 		if 'A' <= r && r <= 'Z' {
-			dfa.Add(0, Symbol(r), 37)
+			dfa.Add(0, Symbol(r), 41)
 		}
 
-		dfa.Add(37, Symbol(r), 38)
-		dfa.Add(38, Symbol(r), 38)
+		dfa.Add(41, Symbol(r), 42)
+		dfa.Add(42, Symbol(r), 42)
 	}
 
 	//====================< STRING >====================
 
-	dfa.Add(0, '"', 39)
-	dfa.Add(39, '\\', 40)
-
-	for r := 0x21; r <= 0x7E; r++ {
-		dfa.Add(40, Symbol(r), 41)
-
-		if r != '"' && r != '\\' {
-			dfa.Add(39, Symbol(r), 41)
-			dfa.Add(41, Symbol(r), 41)
-		}
-	}
-
-	dfa.Add(41, '\\', 40)
-	dfa.Add(41, '"', 42)
-
-	//====================< REGEX >====================
-
-	dfa.Add(0, '/', 43)
+	dfa.Add(0, '"', 43)
 	dfa.Add(43, '\\', 44)
 
-	for r := 0x20; r <= 0x7E; r++ {
+	for r := 0x21; r <= 0x7E; r++ {
 		dfa.Add(44, Symbol(r), 45)
 
-		if r != '/' && r != '\\' && r != '*' {
+		if r != '"' && r != '\\' {
 			dfa.Add(43, Symbol(r), 45)
-		}
-
-		if r != '/' && r != '\\' {
 			dfa.Add(45, Symbol(r), 45)
 		}
 	}
 
 	dfa.Add(45, '\\', 44)
-	dfa.Add(45, '/', 46)
+	dfa.Add(45, '"', 46)
+
+	//====================< REGEX >====================
+
+	dfa.Add(0, '/', 47)
+	dfa.Add(47, '\\', 48)
+
+	for r := 0x20; r <= 0x7E; r++ {
+		dfa.Add(48, Symbol(r), 49)
+
+		if r != '/' && r != '\\' && r != '*' {
+			dfa.Add(47, Symbol(r), 49)
+		}
+
+		if r != '/' && r != '\\' {
+			dfa.Add(49, Symbol(r), 49)
+		}
+	}
+
+	dfa.Add(49, '\\', 48)
+	dfa.Add(49, '/', 50)
 
 	//====================< SINGLE-LINE COMMENT >====================
 
-	dfa.Add(43, '/', 47)
+	dfa.Add(47, '/', 51)
 
-	dfa.Add(47, '\t', 47)
+	dfa.Add(51, '\t', 51)
 	for r := 0x20; r <= 0x7E; r++ {
-		dfa.Add(47, Symbol(r), 47)
+		dfa.Add(51, Symbol(r), 51)
 	}
 
 	//====================< MULTI-LINE COMMENT >====================
 
-	dfa.Add(43, '*', 48)
+	dfa.Add(47, '*', 52)
 
 	for _, r := range []rune("\t\n\r") {
-		dfa.Add(48, Symbol(r), 48)
-		dfa.Add(49, Symbol(r), 48)
+		dfa.Add(52, Symbol(r), 52)
+		dfa.Add(53, Symbol(r), 52)
 	}
 
 	for r := 0x20; r <= 0x7E; r++ {
 		if r != '*' {
-			dfa.Add(48, Symbol(r), 48)
+			dfa.Add(52, Symbol(r), 52)
 		}
 
 		if r != '/' {
-			dfa.Add(49, Symbol(r), 48)
+			dfa.Add(53, Symbol(r), 52)
 		}
 	}
 
-	dfa.Add(48, '*', 49)
-	dfa.Add(49, '/', 50)
+	dfa.Add(52, '*', 53)
+	dfa.Add(53, '/', 54)
 
 	//====================< END >====================
 
@@ -279,133 +283,144 @@ func main() {
 digraph "Lexer DFA" {
   rankdir=LR;
   concentrate=false;
+
   node [style=bold];
   edge [color=darkblue fontcolor=red]
 
   start [style=invis];
-  0  [label="0" shape=circle style=filled color=teal];
-  1  [label="1" shape=doublecircle style=filled color=khaki];
-  2  [label="2" shape=doublecircle style=filled color=skyblue];
-  3  [label="3" shape=doublecircle style=filled color=skyblue];
-  4  [label="4" shape=doublecircle style=filled color=skyblue];
-  5  [label="5" shape=doublecircle style=filled color=skyblue];
-  6  [label="6" shape=doublecircle style=filled color=skyblue];
-  7  [label="7" shape=doublecircle style=filled color=skyblue];
-  8  [label="8" shape=doublecircle style=filled color=skyblue];
-  9  [label="9" shape=doublecircle style=filled color=skyblue];
-  10 [label="10" shape=doublecircle style=filled color=skyblue];
-  11 [label="11" shape=doublecircle style=filled color=skyblue];
-  12 [label="12" shape=circle];
-  13 [label="13" shape=circle];
-  14 [label="14" shape=circle];
-  15 [label="15" shape=circle];
-  16 [label="16" shape=doublecircle style=filled color=orchid1];
-  17 [label="17" shape=circle];
-  18 [label="18" shape=circle];
-  19 [label="19" shape=circle];
-  20 [label="20" shape=circle];
-  21 [label="21" shape=doublecircle style=filled color=orchid1];
-  22 [label="22" shape=circle];
-  23 [label="23" shape=circle];
-  24 [label="24" shape=circle];
-  25 [label="25" shape=doublecircle style=filled color=orchid1];
-  26 [label="26" shape=circle];
-  27 [label="27" shape=doublecircle style=filled color=tan1];
-  28 [label="28" shape=circle];
-  29 [label="29" shape=circle];
-  30 [label="30" shape=circle];
-  31 [label="31" shape=circle];
-  32 [label="32" shape=circle];
-  33 [label="33" shape=circle];
-  34 [label="34" shape=doublecircle style=filled color=chocolate];
-  35 [label="35" shape=circle];
-  36 [label="36" shape=doublecircle style=filled color=orangered];
-  37 [label="37" shape=circle];
-  38 [label="38" shape=doublecircle style=filled color=dodgerblue];
-  39 [label="39" shape=circle];
-  40 [label="40" shape=circle];
-  41 [label="41" shape=circle];
-  42 [label="42" shape=doublecircle style=filled color=gold];
-  43 [label="43" shape=circle];
-  44 [label="44" shape=circle];
-  45 [label="45" shape=circle];
-  46 [label="46" shape=doublecircle style=filled color=gold];
-  47 [label="47" shape=doublecircle style=filled color=turquoise];
-  48 [label="48" shape=circle];
-  49 [label="49" shape=circle];
-  50 [label="50" shape=doublecircle style=filled color=turquoise];
+  0  [label="0", shape=circle style=filled color=teal];
+  1  [label="1", shape=doublecircle style=filled color=khaki];
+  2  [label="2", shape=doublecircle style=filled color=khaki];
+  3  [label="3", shape=doublecircle style=filled color=skyblue];
+  4  [label="4", shape=doublecircle style=filled color=skyblue];
+  5  [label="5", shape=doublecircle style=filled color=skyblue];
+  6  [label="6", shape=doublecircle style=filled color=skyblue];
+  7  [label="7", shape=doublecircle style=filled color=skyblue];
+  8  [label="8", shape=doublecircle style=filled color=skyblue];
+  9  [label="9", shape=doublecircle style=filled color=skyblue];
+  10 [label="10", shape=doublecircle style=filled color=skyblue];
+  11 [label="11", shape=doublecircle style=filled color=skyblue];
+  12 [label="12", shape=doublecircle style=filled color=skyblue];
+  13 [label="13", shape=doublecircle style=filled color=skyblue];
+  14 [label="14", shape=doublecircle style=filled color=skyblue];
+  15 [label="15", shape=doublecircle style=filled color=skyblue];
+  16 [label="16", shape=circle];
+  17 [label="17", shape=doublecircle style=filled color=tan1];
+  18 [label="18", shape=circle];
+  19 [label="19", shape=circle];
+  20 [label="20", shape=circle];
+  21 [label="21", shape=circle];
+  22 [label="22", shape=doublecircle style=filled color=orchid1];
+  23 [label="23", shape=circle];
+  24 [label="24", shape=circle];
+  25 [label="25", shape=circle];
+  26 [label="26", shape=circle];
+  27 [label="27", shape=doublecircle style=filled color=orchid1];
+  28 [label="28", shape=circle];
+  29 [label="29", shape=circle];
+  30 [label="30", shape=circle];
+  31 [label="31", shape=doublecircle style=filled color=orchid1];
+  32 [label="32", shape=circle];
+  33 [label="33", shape=circle];
+  34 [label="34", shape=circle];
+  35 [label="35", shape=circle];
+  36 [label="36", shape=circle];
+  37 [label="37", shape=circle];
+  38 [label="38", shape=doublecircle style=filled color=chocolate];
+  39 [label="39", shape=circle];
+  40 [label="40", shape=doublecircle style=filled color=orangered];
+  41 [label="41", shape=circle];
+  42 [label="42", shape=doublecircle style=filled color=dodgerblue];
+  43 [label="43", shape=circle];
+  44 [label="44", shape=circle];
+  45 [label="45", shape=circle];
+  46 [label="46", shape=doublecircle style=filled color=gold];
+  47 [label="47", shape=circle];
+  48 [label="48", shape=circle];
+  49 [label="49", shape=circle];
+  50 [label="50", shape=doublecircle style=filled color=gold];
+  51 [label="51", shape=doublecircle style=filled color=turquoise];
+  52 [label="52", shape=circle];
+  53 [label="53", shape=circle];
+  54 [label="54", shape=doublecircle style=filled color=turquoise];
 
   start -> 0 [];
-  0 -> 1   [label="whitespace"];
-  0 -> 2   [label="="];
-  0 -> 3   [label="|"];
-  0 -> 4   [label="("];
-  0 -> 5   [label=")"];
-  0 -> 6   [label="["];
-  0 -> 7   [label="]"];
-  0 -> 8   [label="{"];
-  0 -> 9   [label="}"];
-  0 -> 12  [label="@"];
-  0 -> 26  [label="$"];
-  0 -> 28  [label="g"];
-  0 -> 35  [label="a ... f h ... z"];
-  0 -> 37  [label="A ... Z"];
-  0 -> 39  [label="\""];
-  0 -> 43  [label="/"];
-  1 -> 1   [label="whitespace"];
-  8 -> 10  [label="{"];
-  9 -> 11  [label="}"];
-  12 -> 13 [label="l"];
-  12 -> 17 [label="r"];
-  12 -> 22 [label="n"];
-  13 -> 14 [label="e"];
-  14 -> 15 [label="f"];
-  15 -> 16 [label="t"];
-  17 -> 18 [label="i"];
-  18 -> 19 [label="g"];
-  19 -> 20 [label="h"];
-  20 -> 21 [label="t"];
-  22 -> 23 [label="o"];
-  23 -> 24 [label="n"];
-  24 -> 25 [label="e"];
-  26 -> 27 [label="A ... Z"];
-  27 -> 27 [label="0 ... 9 A ... Z _"];
-  28 -> 29 [label="r"];
-  28 -> 36 [label="0 ... 9 _ a ... q s ... z"];
-  29 -> 30 [label="a"];
-  29 -> 36 [label="0 ... 9 _ b ... z"];
-  30 -> 31 [label="m"];
-  30 -> 36 [label="0 ... 9 _ a ... l n ... z"];
-  31 -> 32 [label="m"];
-  31 -> 36 [label="0 ... 9 _ a ... l n ... z"];
-  32 -> 33 [label="a"];
-  32 -> 36 [label="0 ... 9 _ b ... z"];
-  33 -> 34 [label="r"];
-  33 -> 36 [label="0 ... 9 _ a ... q s ... z"];
-  34 -> 36 [label="0 ... 9 _ a ... z"];
-  35 -> 36 [label="0 ... 9 _ a ... z"];
-  36 -> 36 [label="0 ... 9 _ a ... z"];
-  37 -> 38 [label="0 ... 9 A ... Z _"];
-  38 -> 38 [label="0 ... 9 A ... Z _"];
-  39 -> 40 [label="\\"];
-  39 -> 41 [label="all except \\ \""];
-  40 -> 41 [label="all"];
-  41 -> 40 [label="\\"];
-  41 -> 41 [label="all except \\ \""];
-  41 -> 42 [label="\""];
+
+  0 -> 1   [label="\\t space"];
+  0 -> 2   [label="\\n \\r"];
+  0 -> 3   [label="="];
+  0 -> 4   [label=";"];
+  0 -> 5   [label="|"];
+  0 -> 6   [label="("];
+  0 -> 7   [label=")"];
+  0 -> 8   [label="["];
+  0 -> 9   [label="]"];
+  0 -> 10  [label="{"];
+  0 -> 11  [label="}"];
+  0 -> 14  [label="<"];
+  0 -> 15  [label=">"];
+  0 -> 16  [label="$"];
+  0 -> 18  [label="@"];
+  0 -> 32  [label="g"];
+  0 -> 39  [label="a ... f h ... z"];
+  0 -> 41  [label="A ... Z"];
+  0 -> 43  [label="\""];
+  0 -> 47  [label="/"];
+  1 -> 1   [label="\\t space"];
+  2 -> 2   [label="\\n \\r"];
+  10 -> 12 [label="{"];
+  11 -> 13 [label="}"];
+  16 -> 17 [label="A ... Z"];
+  17 -> 17 [label="0 ... 9 A ... Z _"];
+  18 -> 19 [label="l"];
+  18 -> 23 [label="r"];
+  18 -> 28 [label="n"];
+  19 -> 20 [label="e"];
+  20 -> 21 [label="f"];
+  21 -> 22 [label="t"];
+  23 -> 24 [label="i"];
+  24 -> 25 [label="g"];
+  25 -> 26 [label="h"];
+  26 -> 27 [label="t"];
+  28 -> 29 [label="o"];
+  29 -> 30 [label="n"];
+  30 -> 31 [label="e"];
+  32 -> 33 [label="r"];
+  32 -> 40 [label="0 ... 9 _ a ... q s ... z"];
+  33 -> 34 [label="a"];
+  33 -> 40 [label="0 ... 9 _ b ... z"];
+  34 -> 35 [label="m"];
+  34 -> 40 [label="0 ... 9 _ a ... l n ... z"];
+  35 -> 36 [label="m"];
+  35 -> 40 [label="0 ... 9 _ a ... l n ... z"];
+  36 -> 37 [label="a"];
+  36 -> 40 [label="0 ... 9 _ b ... z"];
+  37 -> 38 [label="r"];
+  37 -> 40 [label="0 ... 9 _ a ... q s ... z"];
+  38 -> 40 [label="0 ... 9 _ a ... z"];
+  39 -> 40 [label="0 ... 9 _ a ... z"];
+  40 -> 40 [label="0 ... 9 _ a ... z"];
+  41 -> 42 [label="0 ... 9 A ... Z _"];
+  42 -> 42 [label="0 ... 9 A ... Z _"];
   43 -> 44 [label="\\"];
-  43 -> 45 [label="space, all except / * \\"];
-  43 -> 47 [label="/"];
-  43 -> 48 [label="*"];
-  44 -> 45 [label="space, all"];
+  43 -> 45 [label="all except \\ \""];
+  44 -> 45 [label="all"];
   45 -> 44 [label="\\"];
-  45 -> 45 [label="space, all except / \\"];
-  45 -> 46 [label="/"];
-  47 -> 47 [label="tab, space, all"];
-  48 -> 48 [label="whitespace, all except *"];
-  48 -> 49 [label="*"];
-  49 -> 48 [label="whitespace, all except /"];
+  45 -> 45 [label="all except \\ \""];
+  45 -> 46 [label="\""];
+  47 -> 48 [label="\\"];
+  47 -> 49 [label="space, all except / * \\"];
+  47 -> 51 [label="/"];
+  47 -> 52 [label="*"];
+  48 -> 49 [label="space, all"];
+  49 -> 48 [label="\\"];
+  49 -> 49 [label="space, all except / \\"];
   49 -> 50 [label="/"];
+  51 -> 51 [label="tab, space, all"];
+  52 -> 52 [label="whitespace, newline, all except *"];
+  52 -> 53 [label="*"];
+  53 -> 52 [label="whitespace, newline, all except /"];
+  53 -> 54 [label="/"];
 }
 ```
 </details>
