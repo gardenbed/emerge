@@ -1,0 +1,24 @@
+grammar ebnf
+
+PREDEF = /\$[A-Z][0-9A-Z_]*/
+IDENT  = /[a-z][0-9a-z_]*/
+TOKEN  = /[A-Z][0-9A-Z_]*/
+STRING = /"([\x21\x23-\x5B\x5D-\x7E]\|\\[\x21-\x7E])+"/
+REGEX  = /\/([\x20-\x2E\x30-\x5B\x5D-\x7E]\|\\[\x20-\x7E])*\//
+
+@left  <rhs = rhs rhs>
+@left  "(" "[" "{" "{{" IDENT TOKEN STRING
+@right "|"
+@none  "="
+@none  "@left" "@right" "@none"
+
+start     = name {decl};
+name      = "grammar" IDENT [";"];
+decl      = token [";"] | directive [";"] | rule ";";
+token     = TOKEN "=" (STRING | REGEX | PREDEF);
+directive = ("@left" | "@right" | "@none") {{term | "<" rule ">"}};
+rule      = lhs "=" rhs | lhs "=";
+lhs       = nonterm;
+rhs       = rhs rhs | "(" rhs ")" | "[" rhs "]" | "{" rhs "}" | "{{" rhs "}}" | rhs "|" rhs | rhs "|" | nonterm | term;
+nonterm   = IDENT;
+term      = TOKEN | STRING;
