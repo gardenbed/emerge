@@ -18,28 +18,32 @@ const (
 )
 
 const (
-	ERR     = grammar.Terminal("ERR")     // ERR is the terminal for an error case.
-	WS      = grammar.Terminal("WS")      // WS is the terminal for whitespace characters.
-	DEF     = grammar.Terminal("DEF")     // DEF is the terminal for "=".
-	ALT     = grammar.Terminal("ALT")     // ALT is the terminal for "|".
-	LPAREN  = grammar.Terminal("LPAREN")  // LPAREN is the terminal for "(".
-	RPAREN  = grammar.Terminal("RPAREN")  // RPAREN is the terminal for ")".
-	LBRACK  = grammar.Terminal("LBRACK")  // LBRACK is the terminal for "[".
-	RBRACK  = grammar.Terminal("RBRACK")  // RBRACK is the terminal for "]".
-	LBRACE  = grammar.Terminal("LBRACE")  // LBRACE is the terminal for "{".
-	RBRACE  = grammar.Terminal("RBRACE")  // RBRACE is the terminal for "}".
-	LLBRACE = grammar.Terminal("LLBRACE") // LLBRACE is the terminal for "{{".
-	RRBRACE = grammar.Terminal("RRBRACE") // RRBRACE is the terminal for "}}".
-	GRAMMER = grammar.Terminal("GRAMMER") // GRAMMER is the terminal for "grammar".
-	LASSOC  = grammar.Terminal("LASSOC")  // LASSOC  is the terminal for "@left".
-	RASSOC  = grammar.Terminal("RASSOC")  // RASSOC  is the terminal for "@right".
-	NOASSOC = grammar.Terminal("NOASSOC") // NOASSOC is the terminal for "@none".
-	IDENT   = grammar.Terminal("IDENT")   // IDENT is the terminal for /[a-z][0-9a-z_]*/.
-	TOKEN   = grammar.Terminal("TOKEN")   // TOKEN is the terminal for /[A-Z][0-9A-Z_]*/.
-	STRING  = grammar.Terminal("STRING")  // STRING is the terminal for /"([\x21\x23-\x5B\x5D-\x7E]|\\[\x21-\x7E])+"/.
-	REGEX   = grammar.Terminal("REGEX")   // REGEX is the terminal for /\/([\x20-\x2E\x30-\x5B\x5D-\x7E]|\\[\x20-\x7E])*\//.
-	PREDEF  = grammar.Terminal("PREDEF")  // PREDEF is the terminal for /\$[A-Z][0-9A-Z_]*/.
-	COMMENT = grammar.Terminal("COMMENT") // COMMENT is the terminal for single-line and multi-line comments.
+	ERR     = grammar.Terminal("ERR")     // ERR is the error token.
+	WS      = grammar.Terminal("WS")      // WS is the token for whitespace characters.
+	EOL     = grammar.Terminal("EOL")     // WS is the token for newline characters.
+	DEF     = grammar.Terminal("=")       // DEF is the token for "=".
+	SEMI    = grammar.Terminal(";")       // SEMI is the token for ";".
+	ALT     = grammar.Terminal("|")       // ALT is the token for "|".
+	LPAREN  = grammar.Terminal("(")       // LPAREN is the token for "(".
+	RPAREN  = grammar.Terminal(")")       // RPAREN is the token for ")".
+	LBRACK  = grammar.Terminal("[")       // LBRACK is the token for "[".
+	RBRACK  = grammar.Terminal("]")       // RBRACK is the token for "]".
+	LBRACE  = grammar.Terminal("{")       // LBRACE is the token for "{".
+	RBRACE  = grammar.Terminal("}")       // RBRACE is the token for "}".
+	LLBRACE = grammar.Terminal("{{")      // LLBRACE is the token for "{{".
+	RRBRACE = grammar.Terminal("}}")      // RRBRACE is the token for "}}".
+	LANGEL  = grammar.Terminal("<")       // LANGEL  is the token for "<".
+	RANGEL  = grammar.Terminal(">")       // RANGEL  is the token for ">".
+	PREDEF  = grammar.Terminal("PREDEF")  // PREDEF is the token for /\$[A-Z][0-9A-Z_]*/.
+	LASSOC  = grammar.Terminal("@left")   // LASSOC  is the token for "@left".
+	RASSOC  = grammar.Terminal("@right")  // RASSOC  is the token for "@right".
+	NOASSOC = grammar.Terminal("@none")   // NOASSOC is the token for "@none".
+	GRAMMER = grammar.Terminal("grammar") // GRAMMER is the token for "grammar".
+	IDENT   = grammar.Terminal("IDENT")   // IDENT is the token for /[a-z][0-9a-z_]*/.
+	TOKEN   = grammar.Terminal("TOKEN")   // TOKEN is the token for /[A-Z][0-9A-Z_]*/.
+	STRING  = grammar.Terminal("STRING")  // STRING is the token for /"([\x21\x23-\x5B\x5D-\x7E]|\\[\x21-\x7E])+"/.
+	REGEX   = grammar.Terminal("REGEX")   // REGEX is the token for /\/([\x20-\x2E\x30-\x5B\x5D-\x7E]|\\[\x20-\x7E])*\//.
+	COMMENT = grammar.Terminal("COMMENT") // COMMENT is the token for single-line and multi-line comments.
 )
 
 // inputBuffer is an interface for the input.Input struct.
@@ -92,8 +96,8 @@ func (l *Lexer) NextToken() (lexer.Token, error) {
 			switch token.Terminal {
 			case ERR:
 				return lexer.Token{}, errors.New(token.Lexeme)
-			case WS, COMMENT:
-				// Skip whitespace and comments.
+			case WS, EOL, COMMENT:
+				// Skip whitespaces, newlines, and comments.
 				return l.NextToken()
 			default:
 				return token, nil
@@ -112,110 +116,130 @@ func (l *Lexer) evalDFA(state int) lexer.Token {
 		pos := l.in.Skip()
 		return lexer.Token{Terminal: WS, Lexeme: "", Pos: pos}
 
-	// DEF
+	// Newline
 	case 2:
+		pos := l.in.Skip()
+		return lexer.Token{Terminal: EOL, Lexeme: "", Pos: pos}
+
+	// DEF
+	case 3:
 		pos := l.in.Skip()
 		return lexer.Token{Terminal: DEF, Lexeme: "=", Pos: pos}
 
+	// SEMI
+	case 4:
+		pos := l.in.Skip()
+		return lexer.Token{Terminal: SEMI, Lexeme: ";", Pos: pos}
+
 	// ALT
-	case 3:
+	case 5:
 		pos := l.in.Skip()
 		return lexer.Token{Terminal: ALT, Lexeme: "|", Pos: pos}
 
 	// LPAREN
-	case 4:
+	case 6:
 		pos := l.in.Skip()
 		return lexer.Token{Terminal: LPAREN, Lexeme: "(", Pos: pos}
 
 	// RPAREN
-	case 5:
+	case 7:
 		pos := l.in.Skip()
 		return lexer.Token{Terminal: RPAREN, Lexeme: ")", Pos: pos}
 
 	// LBRACK
-	case 6:
+	case 8:
 		pos := l.in.Skip()
 		return lexer.Token{Terminal: LBRACK, Lexeme: "[", Pos: pos}
 
 	// RBRACK
-	case 7:
+	case 9:
 		pos := l.in.Skip()
 		return lexer.Token{Terminal: RBRACK, Lexeme: "]", Pos: pos}
 
 	// LBRACE
-	case 8:
+	case 10:
 		pos := l.in.Skip()
 		return lexer.Token{Terminal: LBRACE, Lexeme: "{", Pos: pos}
 
 	// RBRACE
-	case 9:
+	case 11:
 		pos := l.in.Skip()
 		return lexer.Token{Terminal: RBRACE, Lexeme: "}", Pos: pos}
 
 	// LLBRACE
-	case 10:
+	case 12:
 		pos := l.in.Skip()
 		return lexer.Token{Terminal: LLBRACE, Lexeme: "{{", Pos: pos}
 
 	// RRBRACE
-	case 11:
+	case 13:
 		pos := l.in.Skip()
 		return lexer.Token{Terminal: RRBRACE, Lexeme: "}}", Pos: pos}
 
+	// LANGEL
+	case 14:
+		pos := l.in.Skip()
+		return lexer.Token{Terminal: LANGEL, Lexeme: "<", Pos: pos}
+
+	// RANGEL
+	case 15:
+		pos := l.in.Skip()
+		return lexer.Token{Terminal: RANGEL, Lexeme: ">", Pos: pos}
+
+	// PREDEF
+	case 17:
+		lexeme, pos := l.in.Lexeme()
+		return lexer.Token{Terminal: PREDEF, Lexeme: lexeme, Pos: pos}
+
 	// LASSOC
-	case 16:
+	case 22:
 		pos := l.in.Skip()
 		return lexer.Token{Terminal: LASSOC, Lexeme: "@left", Pos: pos}
 
 	// RASSOC
-	case 21:
+	case 27:
 		pos := l.in.Skip()
 		return lexer.Token{Terminal: RASSOC, Lexeme: "@right", Pos: pos}
 
 	// NOASSOC
-	case 25:
+	case 31:
 		pos := l.in.Skip()
 		return lexer.Token{Terminal: NOASSOC, Lexeme: "@none", Pos: pos}
 
-	// PREDEF
-	case 27:
-		lexeme, pos := l.in.Lexeme()
-		return lexer.Token{Terminal: PREDEF, Lexeme: lexeme, Pos: pos}
-
 	// GRAMMER
-	case 34:
+	case 38:
 		pos := l.in.Skip()
 		return lexer.Token{Terminal: GRAMMER, Lexeme: "grammar", Pos: pos}
 
 	// IDENT
-	case 36:
+	case 40:
 		lexeme, pos := l.in.Lexeme()
 		return lexer.Token{Terminal: IDENT, Lexeme: lexeme, Pos: pos}
 
 	// TOKEN
-	case 38:
+	case 42:
 		lexeme, pos := l.in.Lexeme()
 		return lexer.Token{Terminal: TOKEN, Lexeme: lexeme, Pos: pos}
 
 	// STRING
-	case 42:
+	case 46:
 		lexeme, pos := l.in.Lexeme()
 		lexeme = lexeme[1 : len(lexeme)-1]
 		return lexer.Token{Terminal: STRING, Lexeme: lexeme, Pos: pos}
 
 	// REGEX
-	case 46:
+	case 50:
 		lexeme, pos := l.in.Lexeme()
 		lexeme = strings.Trim(lexeme, "/")
 		return lexer.Token{Terminal: REGEX, Lexeme: lexeme, Pos: pos}
 
 	// Single-Line COMMENT
-	case 47:
+	case 51:
 		pos := l.in.Skip()
 		return lexer.Token{Terminal: COMMENT, Lexeme: "", Pos: pos}
 
 	// Multi-Line COMMENT
-	case 50:
+	case 54:
 		pos := l.in.Skip()
 		return lexer.Token{Terminal: COMMENT, Lexeme: "", Pos: pos}
 	}
@@ -236,307 +260,280 @@ func advanceDFA(state int, r rune) int {
 	switch state {
 	case 0:
 		switch r {
-		case '\t', '\n', '\v', '\f', '\r', ' ':
+		case '\t', ' ':
 			return 1
 
-		case '=':
+		case '\n', '\r':
 			return 2
 
-		case '|':
+		case '=':
 			return 3
 
-		case '(':
+		case ';':
 			return 4
 
-		case ')':
+		case '|':
 			return 5
 
-		case '[':
+		case '(':
 			return 6
 
-		case ']':
+		case ')':
 			return 7
 
-		case '{':
+		case '[':
 			return 8
 
-		case '}':
+		case ']':
 			return 9
 
-		case '@':
-			return 12
+		case '{':
+			return 10
+
+		case '}':
+			return 11
+
+		case '<':
+			return 14
+
+		case '>':
+			return 15
 
 		case '$':
-			return 26
+			return 16
+
+		case '@':
+			return 18
 
 		case 'g':
-			return 28
+			return 32
 
 		case 'a', 'b', 'c', 'd', 'e', 'f' /*g*/, 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z':
-			return 35
-
-		case 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z':
-			return 37
-
-		case '"':
 			return 39
 
-		case '/':
+		case 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z':
+			return 41
+
+		case '"':
 			return 43
+
+		case '/':
+			return 47
 		}
 
 	case 1:
 		switch r {
-		case '\t', '\n', '\v', '\f', '\r', ' ':
+		case '\t', ' ':
 			return 1
 		}
 
-	case 8:
+	case 2:
+		switch r {
+		case '\n', '\r':
+			return 2
+		}
+
+	case 10:
 		switch r {
 		case '{':
-			return 10
+			return 12
 		}
 
-	case 9:
+	case 11:
 		switch r {
 		case '}':
-			return 11
-		}
-
-	case 12:
-		switch r {
-		case 'l':
 			return 13
+		}
 
-		case 'r':
+	case 16:
+		switch r {
+		case 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z':
 			return 17
-
-		case 'n':
-			return 22
-		}
-
-	case 13:
-		switch r {
-		case 'e':
-			return 14
-		}
-
-	case 14:
-		switch r {
-		case 'f':
-			return 15
-		}
-
-	case 15:
-		switch r {
-		case 't':
-			return 16
 		}
 
 	case 17:
 		switch r {
-		case 'i':
-			return 18
+		case '_',
+			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+			'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z':
+			return 17
 		}
 
 	case 18:
 		switch r {
-		case 'g':
+		case 'l':
 			return 19
+
+		case 'r':
+			return 23
+
+		case 'n':
+			return 28
 		}
 
 	case 19:
 		switch r {
-		case 'h':
+		case 'e':
 			return 20
 		}
 
 	case 20:
 		switch r {
-		case 't':
+		case 'f':
 			return 21
 		}
 
-	case 22:
+	case 21:
 		switch r {
-		case 'o':
-			return 23
+		case 't':
+			return 22
 		}
 
 	case 23:
 		switch r {
-		case 'n':
+		case 'i':
 			return 24
 		}
 
 	case 24:
 		switch r {
-		case 'e':
+		case 'g':
 			return 25
+		}
+
+	case 25:
+		switch r {
+		case 'h':
+			return 26
 		}
 
 	case 26:
 		switch r {
-		case 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z':
-			return 27
-		}
-
-	case 27:
-		switch r {
-		case '_',
-			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-			'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z':
+		case 't':
 			return 27
 		}
 
 	case 28:
 		switch r {
-		case 'r':
+		case 'o':
 			return 29
-
-		case '_',
-			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-			'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q' /*r*/, 's', 't', 'u', 'v', 'w', 'x', 'y', 'z':
-			return 36
 		}
 
 	case 29:
 		switch r {
-		case 'a':
+		case 'n':
 			return 30
-
-		case '_',
-			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-			/*a*/ 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z':
-			return 36
 		}
 
 	case 30:
 		switch r {
-		case 'm':
+		case 'e':
 			return 31
-
-		case '_',
-			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-			'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l' /*m*/, 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z':
-			return 36
-		}
-
-	case 31:
-		switch r {
-		case 'm':
-			return 32
-
-		case '_',
-			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-			'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l' /*m*/, 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z':
-			return 36
 		}
 
 	case 32:
 		switch r {
-		case 'a':
+		case 'r':
 			return 33
 
 		case '_',
 			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-			/*a*/ 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z':
-			return 36
+			'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q' /*r*/, 's', 't', 'u', 'v', 'w', 'x', 'y', 'z':
+			return 40
 		}
 
 	case 33:
 		switch r {
-		case 'r':
+		case 'a':
 			return 34
 
 		case '_',
 			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-			'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q' /*r*/, 's', 't', 'u', 'v', 'w', 'x', 'y', 'z':
-			return 36
+			/*a*/ 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z':
+			return 40
 		}
 
 	case 34:
 		switch r {
+		case 'm':
+			return 35
+
 		case '_',
 			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-			'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z':
-			return 36
+			'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l' /*m*/, 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z':
+			return 40
 		}
 
 	case 35:
 		switch r {
+		case 'm':
+			return 36
+
 		case '_',
 			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-			'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z':
-			return 36
+			'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l' /*m*/, 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z':
+			return 40
 		}
 
 	case 36:
 		switch r {
+		case 'a':
+			return 37
+
 		case '_',
 			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-			'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z':
-			return 36
+			/*a*/ 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z':
+			return 40
 		}
 
 	case 37:
 		switch r {
+		case 'r':
+			return 38
+
 		case '_',
 			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-			'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z':
-			return 38
+			'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q' /*r*/, 's', 't', 'u', 'v', 'w', 'x', 'y', 'z':
+			return 40
 		}
 
 	case 38:
 		switch r {
 		case '_',
 			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-			'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z':
-			return 38
+			'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z':
+			return 40
 		}
 
 	case 39:
 		switch r {
-		case '\\':
-			return 40
-
-		case '!' /*"*/, '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/',
+		case '_',
 			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-			':', ';', '<', '=', '>', '?', '@',
-			'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-			'[', ']', '^', '_', '`',
-			'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-			'{', '|', '}', '~':
-			return 41
+			'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z':
+			return 40
 		}
 
 	case 40:
 		switch r {
-		case '!', '"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/',
+		case '_',
 			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-			':', ';', '<', '=', '>', '?', '@',
-			'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-			'[', '\\', ']', '^', '_', '`',
-			'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-			'{', '|', '}', '~':
-			return 41
+			'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z':
+			return 40
 		}
 
 	case 41:
 		switch r {
-		case '\\':
-			return 40
-
-		case '!' /*"*/, '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/',
+		case '_',
 			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-			':', ';', '<', '=', '>', '?', '@',
-			'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-			'[' /*\*/, ']', '^', '_', '`',
-			'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-			'{', '|', '}', '~':
-			return 41
+			'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z':
+			return 42
+		}
 
-		case '"':
+	case 42:
+		switch r {
+		case '_',
+			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+			'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z':
 			return 42
 		}
 
@@ -545,7 +542,7 @@ func advanceDFA(state int, r rune) int {
 		case '\\':
 			return 44
 
-		case ' ', '!', '"', '#', '$', '%', '&', '\'', '(', ')' /***/, '+', ',', '-', '.', /*/*/
+		case '!' /*"*/, '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/',
 			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
 			':', ';', '<', '=', '>', '?', '@',
 			'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
@@ -553,17 +550,11 @@ func advanceDFA(state int, r rune) int {
 			'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
 			'{', '|', '}', '~':
 			return 45
-
-		case '/':
-			return 47
-
-		case '*':
-			return 48
 		}
 
 	case 44:
 		switch r {
-		case ' ', '!', '"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/',
+		case '!', '"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/',
 			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
 			':', ';', '<', '=', '>', '?', '@',
 			'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
@@ -578,7 +569,7 @@ func advanceDFA(state int, r rune) int {
 		case '\\':
 			return 44
 
-		case ' ', '!', '"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', /*/*/
+		case '!' /*"*/, '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/',
 			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
 			':', ';', '<', '=', '>', '?', '@',
 			'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
@@ -587,11 +578,62 @@ func advanceDFA(state int, r rune) int {
 			'{', '|', '}', '~':
 			return 45
 
-		case '/':
+		case '"':
 			return 46
 		}
 
 	case 47:
+		switch r {
+		case '\\':
+			return 48
+
+		case ' ', '!', '"', '#', '$', '%', '&', '\'', '(', ')' /***/, '+', ',', '-', '.', /*/*/
+			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+			':', ';', '<', '=', '>', '?', '@',
+			'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+			'[' /*\*/, ']', '^', '_', '`',
+			'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+			'{', '|', '}', '~':
+			return 49
+
+		case '/':
+			return 51
+
+		case '*':
+			return 52
+		}
+
+	case 48:
+		switch r {
+		case ' ', '!', '"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/',
+			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+			':', ';', '<', '=', '>', '?', '@',
+			'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+			'[', '\\', ']', '^', '_', '`',
+			'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+			'{', '|', '}', '~':
+			return 49
+		}
+
+	case 49:
+		switch r {
+		case '\\':
+			return 48
+
+		case ' ', '!', '"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', /*/*/
+			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+			':', ';', '<', '=', '>', '?', '@',
+			'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+			'[' /*\*/, ']', '^', '_', '`',
+			'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+			'{', '|', '}', '~':
+			return 49
+
+		case '/':
+			return 50
+		}
+
+	case 51:
 		switch r {
 		case '\t',
 			' ', '!', '"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/',
@@ -601,10 +643,10 @@ func advanceDFA(state int, r rune) int {
 			'[', '\\', ']', '^', '_', '`',
 			'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
 			'{', '|', '}', '~':
-			return 47
+			return 51
 		}
 
-	case 48:
+	case 52:
 		switch r {
 		case '\t', '\n', '\r',
 			' ', '!', '"', '#', '$', '%', '&', '\'', '(', ')' /***/, '+', ',', '-', '.', '/',
@@ -614,13 +656,13 @@ func advanceDFA(state int, r rune) int {
 			'[', '\\', ']', '^', '_', '`',
 			'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
 			'{', '|', '}', '~':
-			return 48
+			return 52
 
 		case '*':
-			return 49
+			return 53
 		}
 
-	case 49:
+	case 53:
 		switch r {
 		case '\t', '\n', '\r',
 			' ', '!', '"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', /*/*/
@@ -630,10 +672,10 @@ func advanceDFA(state int, r rune) int {
 			'[', '\\', ']', '^', '_', '`',
 			'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
 			'{', '|', '}', '~':
-			return 48
+			return 52
 
 		case '/':
-			return 50
+			return 54
 		}
 	}
 

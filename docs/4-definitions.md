@@ -75,9 +75,11 @@ a  b  c  d  e  f  g  h  i  j  k  l  m  n  o  p  q  r  s  t  u  v  w  x  y  z
 
 ### Tokens
 
-| **Token** | **Lexeme** | **Description**|
+{% raw %}
+| **Token** | **Lexeme**  | **Description**|
 |-----------|-------------|----------------|
-| `DEF`     | `"="`  | Symbol for *rule definition* |
+| `DEF`     | `"="`  | Symbol for *rule* definition |
+| `SEMI`    | `";"`  | Symbol for end of *rule* definition |
 | `ALT`     | `"\|"` | Symbol for *alternation* |
 | `LPAREN`  | `"("`  | Start symbol for *grouping* |
 | `RPAREN`  | `")"`  | End symbol for *grouping* |
@@ -85,36 +87,53 @@ a  b  c  d  e  f  g  h  i  j  k  l  m  n  o  p  q  r  s  t  u  v  w  x  y  z
 | `RBRACK`  | `"]"`  | End symbol for *optional* |
 | `LBRACE`  | `"{"`  | Start symbol for *repetition (Kleene Star)* |
 | `RBRACE`  | `"}"`  | End symbol for *repetition (Kleene Star)* |
-| `LLBRACE` | {% raw %}`"{{"`{% endraw %} | Start symbol for *repetition (Kleene Plus)* |
+| `LLBRACE` | `"{{"` | Start symbol for *repetition (Kleene Plus)* |
 | `RRBRACE` | `"}}"` | End symbol for *repetition (Kleene Plus)* |
-| `GRAMMER` | `"grammar"` | Keyword for declaring grammar name |
-| `LASSOC`  | `"@left"` | keyword for specifying left-associative terminals |
+| `LANGEL`  | `"<"`  | Star symbol for *rule* reference |
+| `RANGEL`  | `">"`  | End symbol for *rule* reference |
+| `PREDEF`  | `/\$[A-Z][0-9A-Z_]*/` | predefined *token* definitions |
+| `LASSOC`  | `"@left"`  | keyword for specifying left-associative terminals |
 | `RASSOC`  | `"@right"` | keyword for specifying right-associative terminals |
 | `NOASSOC` | `"@none""` | keyword for specifying non-associative terminals |
+| `GRAMMER` | `"grammar"` | Keyword for declaring grammar name |
 | `IDENT`   | `/[a-z][0-9a-z_]*/` | Regex for grammar name and *non-terminal* symbols |
 | `TOKEN`   | `/[A-Z][0-9A-Z_]*/` | Regex for declaring and referencing *terminal* symbols |
 | `STRING`  | `/"([\x21\x23-\x5B\x5D-\x7E]\|\\[\x21-\x7E])+"/` | Regex for defining *string* patterns |
 | `REGEX`   | `/\/([\x20-\x2E\x30-\x5B\x5D-\x7E]\|\\[\x20-\x7E])*\//` | Regex for defining *regular expression* patterns |
-| `PREDEF`  | `/\$[A-Z][0-9A-Z_]*/` | predefined token definitions |
-
-Tokens can be declared and defined explicitly or implicitly.
+{% endraw %}
 
 ### Grammar
 
 {% raw %}
 ```
 grammar   = name {decl}
-name      = "grammar" IDENT
-decl      = token | directive | rule
+name      = "grammar" IDENT [";"]
+decl      = token [";"] | directive [";"] | rule ";"
 token     = TOKEN "=" (STRING | REGEX | PREDEF)
-directive = ("@left" | "@right" | "@none") {{term | rule}}
+directive = ("@left" | "@right" | "@none") {{term | "<" rule ">"}}
 rule      = lhs "=" rhs | lhs "="
 lhs       = nonterm
-rhs       = nonterm | term | rhs rhs | "(" rhs ")" | "[" rhs "]" | "{" rhs "}" | "{{" rhs "}}" | rhs "|" rhs
+rhs       = rhs rhs | "(" rhs ")" | "[" rhs "]" | "{" rhs "}" | "{{" rhs "}}" | rhs "|" rhs | rhs "|" | nonterm | term
 nonterm   = IDENT
 term      = TOKEN | STRING
 ```
 {% endraw %}
+
+  - Tokens can be defined **explicitly** using *token declarations*
+    or **implicitly** by using *string literals* in rule definitions.
+  - A semicolon at the end of *grammar name*, *token definitions*, or *directives* is optional.
+  - The rule `rule = lhs "="` allows the definition of *empty productions*, such as `A → ε`.
+  - The rule `rhs = rhs "|"` permits trailing empty alternatives in production rules,
+    enabling definitions like `A → B | C | ε`.
+  - The addition of the `";"` token helps distinguish between successive rule definitions,
+    eliminating ambiguity in the grammar. Other ways to achieve this include:
+      - Using newlines to separate rules and indentation to break a rule definition into multiple lines.
+      - Introducing a special keyword at the beginning of each rule to explicitly mark its start.
+      - Enclosing each rule with special delimiter tokens to clearly indicate its boundaries.
+      - Modifying the rule `rhs → rhs rhs` to `rhs → rhs "," rhs`
+        to prevent unintended chaining of the next rule's head into the current rule’s body.
+  - The `"<"` and "`>`" tokens allow multiple rules to be referenced in the same line when
+    specifying *associativity* and *precedence*, ensuring they are not mistakenly mixed with actual rule definitions.
 
 ### Precedence and Associativity
 
@@ -123,17 +142,17 @@ Below are the associativity and precedence rules for an LR parser to resolve the
 
 {% raw %}
 ```
-@left  rhs = rhs rhs
+@left  <rhs = rhs rhs>
 @left  "(" "[" "{" "{{" IDENT TOKEN STRING
 @right "|"
 @none  "="
 @none  "@left" "@right" "@none"
 ```
-{% endraw %}
 
   1. The production rule `rhs = rhs rhs` (concatenating two `rhs`)
      has the highest precedence and is *left-associative*.
   2. The next highest precedence is assigned to the terminals
-     `"("`, `"["`, `"{"`, {% raw %}`"{{"`{% endraw %}, `IDENT`, `TOKEN`, and `STRING`, all of which are *left-associative*.
+     `"("`, `"["`, `"{"`, `"{{"`, `IDENT`, `TOKEN`, and `STRING`, all of which are *left-associative*.
   3. The `"|"` terminal is assigned the next level of precedence and is *right-associative*.
   4. Finally, the `"="` terminal has the lowest precedence and is *non-associative*.
+{% endraw %}
