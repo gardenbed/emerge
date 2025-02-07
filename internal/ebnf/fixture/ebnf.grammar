@@ -17,7 +17,7 @@ name      = "grammar" IDENT [";"];
 decl      = token [";"] | directive [";"] | rule ";";
 token     = TOKEN "=" (STRING | REGEX | PREDEF);
 directive = ("@left" | "@right" | "@none") {{term | "<" rule ">"}};
-rule      = lhs "=" rhs | lhs "=";
+rule      = lhs "=" [rhs];
 lhs       = nonterm;
 rhs       = rhs rhs | "(" rhs ")" | "[" rhs "]" | "{" rhs "}" | "{{" rhs "}}" | rhs "|" rhs | rhs "|" | nonterm | term;
 nonterm   = IDENT;

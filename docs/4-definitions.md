@@ -111,7 +111,7 @@ name      = "grammar" IDENT [";"];
 decl      = token [";"] | directive [";"] | rule ";";
 token     = TOKEN "=" (STRING | REGEX | PREDEF);
 directive = ("@left" | "@right" | "@none") {{term | "<" rule ">"}};
-rule      = lhs "=" rhs | lhs "=";
+rule      = lhs "=" [rhs];
 lhs       = nonterm;
 rhs       = rhs rhs | "(" rhs ")" | "[" rhs "]" | "{" rhs "}" | "{{" rhs "}}" | rhs "|" rhs | rhs "|" | nonterm | term;
 nonterm   = IDENT;
@@ -122,7 +122,7 @@ term      = TOKEN | STRING;
   - Tokens can be defined **explicitly** using *token declarations*
     or **implicitly** by using *string literals* in rule definitions.
   - A semicolon at the end of *grammar name*, *token definitions*, or *directives* is optional.
-  - The rule `rule = lhs "="` allows the definition of *empty productions*, such as `A → ε`.
+  - The rule `rule = lhs "=" [rhs]` allows the definition of *empty productions*, such as `A → ε`.
   - The rule `rhs = rhs "|"` permits trailing empty alternatives in production rules,
     enabling definitions like `A → B | C | ε`.
   - The addition of the `";"` token helps distinguish between successive rule definitions,
