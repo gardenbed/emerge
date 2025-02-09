@@ -32,8 +32,8 @@ const (
 	RBRACE  = grammar.Terminal("}")       // RBRACE is the token for "}".
 	LLBRACE = grammar.Terminal("{{")      // LLBRACE is the token for "{{".
 	RRBRACE = grammar.Terminal("}}")      // RRBRACE is the token for "}}".
-	LANGEL  = grammar.Terminal("<")       // LANGEL  is the token for "<".
-	RANGEL  = grammar.Terminal(">")       // RANGEL  is the token for ">".
+	LANGLE  = grammar.Terminal("<")       // LANGLE  is the token for "<".
+	RANGLE  = grammar.Terminal(">")       // RANGLE  is the token for ">".
 	PREDEF  = grammar.Terminal("PREDEF")  // PREDEF is the token for /\$[A-Z][0-9A-Z_]*/.
 	LASSOC  = grammar.Terminal("@left")   // LASSOC  is the token for "@left".
 	RASSOC  = grammar.Terminal("@right")  // RASSOC  is the token for "@right".
@@ -176,15 +176,15 @@ func (l *Lexer) evalDFA(state int) lexer.Token {
 		pos := l.in.Skip()
 		return lexer.Token{Terminal: RRBRACE, Lexeme: "}}", Pos: pos}
 
-	// LANGEL
+	// LANGLE
 	case 14:
 		pos := l.in.Skip()
-		return lexer.Token{Terminal: LANGEL, Lexeme: "<", Pos: pos}
+		return lexer.Token{Terminal: LANGLE, Lexeme: "<", Pos: pos}
 
-	// RANGEL
+	// RANGLE
 	case 15:
 		pos := l.in.Skip()
-		return lexer.Token{Terminal: RANGEL, Lexeme: ">", Pos: pos}
+		return lexer.Token{Terminal: RANGLE, Lexeme: ">", Pos: pos}
 
 	// PREDEF
 	case 17:
