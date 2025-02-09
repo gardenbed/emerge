@@ -27,7 +27,7 @@ grammar pascal
 
 // Token declarations
 DIGIT  = /[0-9]/
-LETTER = /[A-Z]|[a-z]/
+LETTER = /[A-Za-z]/
 NUM    = /[0-9]+(\.[0-9]+)?/
 ID     = /[A-Za-z][0-9A-Za-z]*/
 
