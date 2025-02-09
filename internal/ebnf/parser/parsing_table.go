@@ -1239,7 +1239,7 @@ func ACTION(s int, a grammar.Terminal) (lr.ActionType, int, error) {
 
 	}
 
-	return lr.ERROR, -1, fmt.Errorf("no action exists in the parsing table for ACTION[%d, %q]", s, a)
+	return lr.ERROR, -1, fmt.Errorf("no action exists in the parsing table for ACTION[%d, %s]", s, a)
 }
 
 // GOTO looks up and returns the next state for state s and non-terminal A.

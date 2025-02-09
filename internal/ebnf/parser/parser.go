@@ -15,15 +15,13 @@ import (
 	ebnflexer "github.com/gardenbed/emerge/internal/ebnf/lexer"
 )
 
-type (
-	// ProductionFunc is similar to parser.ProductionFunc but passes
-	// the index of a production rule instead of the production itself.
-	ProductionFunc func(int) error
+// ProductionFunc is similar to parser.ProductionFunc but passes
+// the index of a production rule instead of the production itself.
+type ProductionFunc func(int) error
 
-	// EvaluateFunc is similar to parser.EvaluateFunc but passes
-	// the index of a production rule instead of the production itself.
-	EvaluateFunc func(int, []*lr.Value) (any, error)
-)
+// EvaluateFunc is similar to parser.EvaluateFunc but passes
+// the index of a production rule instead of the production itself.
+type EvaluateFunc func(int, []*lr.Value) (any, error)
 
 // Parser is a parser (a.k.a. syntax analyzer) for the EBNF language.
 // EBNF (Extended Backus-Naur Form) is used to define context-free grammars and their corresponding languages.

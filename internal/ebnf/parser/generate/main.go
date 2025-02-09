@@ -205,7 +205,7 @@ func generateACTION(T *lr.ParsingTable) []byte {
 
 	b.WriteString("	}\n")
 	b.WriteString("\n")
-	b.WriteString("	return lr.ERROR, -1, fmt.Errorf(\"no action exists in the parsing table for ACTION[%d, %q]\", s, a)\n")
+	b.WriteString("	return lr.ERROR, -1, fmt.Errorf(\"no action exists in the parsing table for ACTION[%d, %s]\", s, a)\n")
 	b.WriteString("}\n")
 
 	return b.Bytes()
