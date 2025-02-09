@@ -89,8 +89,8 @@ a  b  c  d  e  f  g  h  i  j  k  l  m  n  o  p  q  r  s  t  u  v  w  x  y  z
 | `RBRACE`  | `"}"`  | End symbol for *repetition (Kleene Star)* |
 | `LLBRACE` | `"{{"` | Start symbol for *repetition (Kleene Plus)* |
 | `RRBRACE` | `"}}"` | End symbol for *repetition (Kleene Plus)* |
-| `LANGEL`  | `"<"`  | Star symbol for *rule* reference |
-| `RANGEL`  | `">"`  | End symbol for *rule* reference |
+| `LANGLE`  | `"<"`  | Star symbol for *rule* reference |
+| `RANGLE`  | `">"`  | End symbol for *rule* reference |
 | `PREDEF`  | `/\$[A-Z][0-9A-Z_]*/` | predefined *token* definitions |
 | `LASSOC`  | `"@left"`  | keyword for specifying left-associative terminals |
 | `RASSOC`  | `"@right"` | keyword for specifying right-associative terminals |
