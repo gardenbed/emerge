@@ -1308,22 +1308,22 @@ func TestAdvanceDFA(t *testing.T) {
 
 func TestLexer(t *testing.T) {
 	tests := []struct {
-		name string
-		file string
+		name     string
+		filename string
 	}{
 		{
-			name: "Success",
-			file: "../fixture/please.grammar",
+			name:     "Success",
+			filename: "../fixture/please.grammar",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			f, err := os.Open(tc.file)
+			f, err := os.Open(tc.filename)
 			assert.NoError(t, err)
 			defer f.Close()
 
-			lex, err := New(tc.file, f)
+			lex, err := New(tc.filename, f)
 			assert.NoError(t, err)
 
 			for token, err := lex.NextToken(); err != io.EOF; token, err = lex.NextToken() {

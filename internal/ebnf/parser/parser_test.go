@@ -3,6 +3,7 @@ package parser
 import (
 	"errors"
 	"io"
+	"os"
 	"reflect"
 	"strings"
 	"testing"
@@ -656,6 +657,46 @@ func TestParser_ParseAndEvaluate(t *testing.T) {
 				for _, expectedErrorString := range tc.expectedErrorStrings {
 					assert.Contains(t, s, expectedErrorString)
 				}
+			}
+		})
+	}
+}
+
+func TestParser_ParseAndBuildAST2(t *testing.T) {
+	tests := []struct {
+		name          string
+		filename      string
+		expectedError string
+	}{
+		{
+			name:          "Invalid",
+			filename:      "../fixture/invalid.grammar",
+			expectedError: "lexical error at ../fixture/invalid.grammar:1:1:L",
+		},
+		{
+			name:          "Success",
+			filename:      "../fixture/ebnf.grammar",
+			expectedError: "",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			f, err := os.Open(tc.filename)
+			assert.NoError(t, err)
+			defer f.Close()
+
+			p, err := New(tc.filename, f)
+			assert.NoError(t, err)
+
+			root, err := p.ParseAndBuildAST2()
+
+			if len(tc.expectedError) == 0 {
+				assert.NotNil(t, root)
+				assert.NoError(t, err)
+			} else {
+				assert.Nil(t, root)
+				assert.EqualError(t, err, tc.expectedError)
 			}
 		})
 	}
