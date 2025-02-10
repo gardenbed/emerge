@@ -15,7 +15,7 @@ STRING = /"([\x21\x23-\x5B\x5D-\x7E]|\\[\x21-\x7E])+"/
 
 /* ------------------------------------------------------------ RULES ------------------------------------------------------------ */
 
-file_input      = { statement };
+start           = { statement };
 
 statement       = ( "pass" | "continue" | return | assert | for | if | func_def | ident_statement | expression ) EOL;
 return          = "return" [ expression { "," expression } ];

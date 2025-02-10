@@ -40,7 +40,7 @@ ID     = /[A-Za-z][0-9A-Za-z]*/
 @left "OR" "AND"
 
 // Production rules
-program       = "PROGRAM" ID ";" block ".";
+start         = "PROGRAM" ID ";" block ".";
 block         = [decls] compound_stmt;
 decls         = "VAR" var_decls ";";
 var_decls     = var_decls ";" var_del | var_del;
@@ -55,3 +55,4 @@ if_stmt       = "IF" expr "THEN" stmt "ELSE" stmt;
 while_stmt    = "WHILE" expr "DO" stmt;
 expr          = expr "+" expr | expr "-" expr | expr "*" expr | expr "/" expr | expr logop expr |
                 "(" expr ")" | "NOT" expr | NUM | ID;
+logop         = "=" | "<>" | "<" | ">" | "<=" | ">=" | "OR" | "AND";
