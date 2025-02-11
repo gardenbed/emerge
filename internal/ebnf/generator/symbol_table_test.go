@@ -24,6 +24,22 @@ func TestNewSymbolTable(t *testing.T) {
 	})
 }
 
+func TestSymbolTable_Reset(t *testing.T) {
+	t.Run("OK", func(t *testing.T) {
+		st := NewSymbolTable()
+		st.Reset()
+
+		assert.NotNil(t, st.precedences.list)
+		assert.NotNil(t, st.tokenDefs.strings)
+		assert.NotNil(t, st.tokenDefs.regexes)
+		assert.NotNil(t, st.terminals.strings)
+		assert.NotNil(t, st.terminals.tokens)
+		assert.NotNil(t, st.nonTerminals.table)
+		assert.NotNil(t, st.productions.table)
+		assert.NotNil(t, st.strings.table)
+	})
+}
+
 func TestSymbolTable_Verify(t *testing.T) {
 	st0 := NewSymbolTable()
 	st0.AddTokenTerminal("QUOT", &lexer.Position{Filename: "test", Offset: 30, Line: 4, Column: 10})

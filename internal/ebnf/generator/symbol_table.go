@@ -3,6 +3,7 @@ package generator
 import (
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/moorara/algo/errors"
 	"github.com/moorara/algo/generic"
@@ -17,6 +18,8 @@ type (
 	// It keeps track of grammar symbols encountered, their occurrences, and other relevant information.
 	// It helps validate aspects of a grammar definition beyond the syntactic structure, such as identifier definitions.
 	SymbolTable struct {
+		sync.Mutex
+
 		precedences struct {
 			list lr.PrecedenceLevels
 		}
@@ -137,10 +140,29 @@ func NewSymbolTable() *SymbolTable {
 	return st
 }
 
+// Reset clears all entries from the symbol table, making it empty.
+func (t *SymbolTable) Reset() {
+	t.Lock()
+	defer t.Unlock()
+
+	t.precedences.list = make(lr.PrecedenceLevels, 0)
+	t.tokenDefs.strings = make([]*tokenDefEntry, 0)
+	t.tokenDefs.regexes = make([]*tokenDefEntry, 0)
+
+	t.terminals.strings.DeleteAll()
+	t.terminals.tokens.DeleteAll()
+	t.nonTerminals.table.DeleteAll()
+	t.productions.table.DeleteAll()
+	t.strings.table.DeleteAll()
+}
+
 // Verify is called after parsing is complete and the symbol table is populated.
 // It checks for errors beyond the syntactic structure, such as missing or duplicate identifier definitions.
 // If any issues are found, it returns an error with a descriptive message.
 func (t *SymbolTable) Verify() error {
+	t.Lock()
+	defer t.Unlock()
+
 	err := &errors.MultiError{
 		Format: errors.BulletErrorFormat,
 	}
@@ -176,11 +198,17 @@ func (t *SymbolTable) Verify() error {
 
 // Precedences returns the set of precedence levels added to the symbol table.
 func (t *SymbolTable) Precedences() lr.PrecedenceLevels {
+	t.Lock()
+	defer t.Unlock()
+
 	return t.precedences.list
 }
 
 // Terminals returns the set of terminal symbols added to the symbol table.
 func (t *SymbolTable) Terminals() []grammar.Terminal {
+	t.Lock()
+	defer t.Unlock()
+
 	var all []grammar.Terminal
 
 	for a := range t.terminals.strings.All() {
@@ -196,6 +224,9 @@ func (t *SymbolTable) Terminals() []grammar.Terminal {
 
 // NonTerminals returns the set of non-terminal symbols added to the symbol table.
 func (t *SymbolTable) NonTerminals() []grammar.NonTerminal {
+	t.Lock()
+	defer t.Unlock()
+
 	var all []grammar.NonTerminal
 
 	for A := range t.nonTerminals.table.All() {
@@ -207,6 +238,9 @@ func (t *SymbolTable) NonTerminals() []grammar.NonTerminal {
 
 // Productions returns the set of production rules added to the symbol table.
 func (t *SymbolTable) Productions() []*grammar.Production {
+	t.Lock()
+	defer t.Unlock()
+
 	var all []*grammar.Production
 
 	for p := range t.productions.table.All() {
@@ -218,11 +252,17 @@ func (t *SymbolTable) Productions() []*grammar.Production {
 
 // AddPrecedence
 func (t *SymbolTable) AddPrecedence(p *lr.PrecedenceLevel) {
+	t.Lock()
+	defer t.Unlock()
+
 	t.precedences.list = append(t.precedences.list, p)
 }
 
 // AddStringTokenDef adds a new token definition based on a string value to the symbol table.
 func (t *SymbolTable) AddStringTokenDef(token grammar.Terminal, value string, pos *lexer.Position) {
+	t.Lock()
+	defer t.Unlock()
+
 	t.tokenDefs.strings = append(t.tokenDefs.strings, &tokenDefEntry{
 		token:      token,
 		value:      value,
@@ -232,6 +272,9 @@ func (t *SymbolTable) AddStringTokenDef(token grammar.Terminal, value string, po
 
 // AddRegexTokenDef adds a new token definition based on a regex value to the symbol table.
 func (t *SymbolTable) AddRegexTokenDef(token grammar.Terminal, value string, pos *lexer.Position) {
+	t.Lock()
+	defer t.Unlock()
+
 	t.tokenDefs.regexes = append(t.tokenDefs.regexes, &tokenDefEntry{
 		token:      token,
 		value:      value,
@@ -242,6 +285,9 @@ func (t *SymbolTable) AddRegexTokenDef(token grammar.Terminal, value string, pos
 // AddStringTerminal adds a terminal symbol, defined by its string value, to the symbol table.
 // If the terminal symbol already exists, the position is added to its occurrences.
 func (t *SymbolTable) AddStringTerminal(a grammar.Terminal, pos *lexer.Position) {
+	t.Lock()
+	defer t.Unlock()
+
 	if e, ok := t.terminals.strings.Get(a); ok {
 		e.occurrences = append(e.occurrences, pos)
 		return
@@ -257,6 +303,9 @@ func (t *SymbolTable) AddStringTerminal(a grammar.Terminal, pos *lexer.Position)
 // AddTokenTerminal adds a terminal symbol, referenced by its token name, to the symbol table.
 // If the terminal symbol already exists, the position is added to its occurrences.
 func (t *SymbolTable) AddTokenTerminal(a grammar.Terminal, pos *lexer.Position) {
+	t.Lock()
+	defer t.Unlock()
+
 	if e, ok := t.terminals.tokens.Get(a); ok {
 		e.occurrences = append(e.occurrences, pos)
 		return
@@ -272,6 +321,9 @@ func (t *SymbolTable) AddTokenTerminal(a grammar.Terminal, pos *lexer.Position) 
 // AddNonTerminal adds a non-terminal symbol to the symbol table.
 // If the non-terminal symbol already exists, the position is added to its occurrences.
 func (t *SymbolTable) AddNonTerminal(A grammar.NonTerminal, pos *lexer.Position) {
+	t.Lock()
+	defer t.Unlock()
+
 	if e, ok := t.nonTerminals.table.Get(A); ok {
 		e.occurrences = append(e.occurrences, pos)
 		return
@@ -287,6 +339,9 @@ func (t *SymbolTable) AddNonTerminal(A grammar.NonTerminal, pos *lexer.Position)
 // AddProduction adds a production rule to the symbol table.
 // If the production rule already exists, the position is added to its occurrences.
 func (t *SymbolTable) AddProduction(p *grammar.Production, pos *lexer.Position) {
+	t.Lock()
+	defer t.Unlock()
+
 	if e, ok := t.productions.table.Get(p); ok {
 		e.occurrences = append(e.occurrences, pos)
 		return
@@ -302,6 +357,9 @@ func (t *SymbolTable) AddProduction(p *grammar.Production, pos *lexer.Position) 
 // GetOpt generates a new non-terminal symbol for an optional (zero or one) occurrence of a list of grammar strings.
 // If a name was previously generated for the same strings and purpose, it will be reused.
 func (t *SymbolTable) GetOpt(s Strings) grammar.NonTerminal {
+	t.Lock()
+	defer t.Unlock()
+
 	e, ok := t.strings.table.Get(s)
 	if ok {
 		return e.Opt
@@ -318,6 +376,9 @@ func (t *SymbolTable) GetOpt(s Strings) grammar.NonTerminal {
 // GetGroup generates a new non-terminal symbol for grouping a list of grammar strings.
 // If a name was previously generated for the same strings and purpose, it will be reused.
 func (t *SymbolTable) GetGroup(s Strings) grammar.NonTerminal {
+	t.Lock()
+	defer t.Unlock()
+
 	e, ok := t.strings.table.Get(s)
 	if ok {
 		return e.Group
@@ -334,6 +395,9 @@ func (t *SymbolTable) GetGroup(s Strings) grammar.NonTerminal {
 // GetStar generates a new non-terminal symbol for zero or more occurrences of a list of grammar strings.
 // If a name was previously generated for the same strings and purpose, it will be reused.
 func (t *SymbolTable) GetStar(s Strings) grammar.NonTerminal {
+	t.Lock()
+	defer t.Unlock()
+
 	e, ok := t.strings.table.Get(s)
 	if ok {
 		return e.Star
@@ -350,6 +414,9 @@ func (t *SymbolTable) GetStar(s Strings) grammar.NonTerminal {
 // GetPlus generates a new non-terminal symbol for one or more occurrences of a list of grammar strings.
 // If a name was previously generated for the same strings and purpose, it will be reused.
 func (t *SymbolTable) GetPlus(s Strings) grammar.NonTerminal {
+	t.Lock()
+	defer t.Unlock()
+
 	e, ok := t.strings.table.Get(s)
 	if ok {
 		return e.Plus
