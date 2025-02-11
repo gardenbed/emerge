@@ -674,7 +674,7 @@ func TestParser_ParseAndBuildAST2(t *testing.T) {
 			expectedError: "lexical error at ../fixture/invalid.grammar:1:1:L",
 		},
 		{
-			name:          "Success",
+			name:          "EBNF",
 			filename:      "../fixture/ebnf.grammar",
 			expectedError: "",
 		},
