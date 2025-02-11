@@ -1,39 +1,105 @@
 package generator
 
 import (
+	"errors"
+	"io"
+	"os"
+	"strings"
 	"testing"
+	"testing/iotest"
 
+	"github.com/moorara/algo/grammar"
+	"github.com/moorara/algo/parser/lr"
 	"github.com/stretchr/testify/assert"
 
-	auto "github.com/moorara/algo/automata"
+	"github.com/gardenbed/emerge/internal/ebnf/parser"
 )
 
-func TestStringToDFA(t *testing.T) {
-	dfa := auto.NewDFA(0, auto.States{7})
-	dfa.Add(0, 'g', 1)
-	dfa.Add(1, 'r', 2)
-	dfa.Add(2, 'a', 3)
-	dfa.Add(3, 'm', 4)
-	dfa.Add(4, 'm', 5)
-	dfa.Add(5, 'a', 6)
-	dfa.Add(6, 'r', 7)
-
+func TestNew(t *testing.T) {
 	tests := []struct {
-		name        string
-		s           string
-		expectedDFA *auto.DFA
+		name          string
+		filename      string
+		src           io.Reader
+		expectedError string
 	}{
 		{
-			name:        "OK",
-			s:           "grammar",
-			expectedDFA: dfa,
+			name:          "Success",
+			filename:      "lorem_ipsum",
+			src:           strings.NewReader("Lorem ipsum"),
+			expectedError: "",
+		},
+		{
+			name:          "Failure",
+			filename:      "lorem_ipsum",
+			src:           iotest.ErrReader(errors.New("io error")),
+			expectedError: "io error",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			dfa := StringToDFA(tc.s)
-			assert.True(t, dfa.Equal(tc.expectedDFA))
+			gen, err := New(tc.filename, tc.src)
+
+			if tc.expectedError == "" {
+				assert.NotNil(t, gen)
+				assert.NoError(t, err)
+			} else {
+				assert.Nil(t, gen)
+				assert.EqualError(t, err, tc.expectedError)
+			}
+		})
+	}
+}
+
+func TestBuildGrammar(t *testing.T) {
+	tests := []struct {
+		name                string
+		filename            string
+		expectedGrammar     *grammar.CFG
+		expectedPrecedences lr.PrecedenceLevels
+		expectedError       string
+	}{
+		{
+			name:          "Invalid",
+			filename:      "../fixture/invalid.grammar",
+			expectedError: "lexical error at ../fixture/invalid.grammar:1:1:L",
+		},
+		{
+			name:                "Success",
+			filename:            "../fixture/test.grammar",
+			expectedGrammar:     grammars[0],
+			expectedPrecedences: precedences[0],
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			f, err := os.Open(tc.filename)
+			assert.NoError(t, err)
+			defer f.Close()
+
+			p, err := parser.New(tc.filename, f)
+			assert.NoError(t, err)
+
+			eval := buildGrammar()
+			res, err := p.ParseAndEvaluate(eval)
+
+			if tc.expectedError != "" {
+				assert.Nil(t, res)
+				assert.EqualError(t, err, tc.expectedError)
+			} else {
+				assert.NoError(t, err)
+
+				vals := res.Val.([]any)
+				G := vals[0].(*grammar.CFG)
+				P := vals[1].(lr.PrecedenceLevels)
+
+				err = G.Verify()
+				assert.NoError(t, err)
+
+				assert.True(t, G.Equal(tc.expectedGrammar))
+				assert.True(t, P.Equal(tc.expectedPrecedences))
+			}
 		})
 	}
 }

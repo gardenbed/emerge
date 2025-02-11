@@ -6,8 +6,8 @@ ID     = $ID
 NUMBER = /[0-9]+(\.[0-9]+)?/
 
 @left  "*" "/"
-@right "+" "-"
-@left  <expr = expr bitop expr> <expr = expr logop expr>
+@left  "+" "-"
+@right <expr = expr bitop expr> <expr = expr logop expr>
 @none  "="
 
 start     = {decl} {{stmt}};
