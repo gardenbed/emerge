@@ -11,8 +11,6 @@ import (
 	"github.com/moorara/algo/grammar"
 	"github.com/moorara/algo/parser/lr"
 	"github.com/stretchr/testify/assert"
-
-	"github.com/gardenbed/emerge/internal/ebnf/parser"
 )
 
 func TestNew(t *testing.T) {
@@ -78,11 +76,10 @@ func TestBuildGrammar(t *testing.T) {
 			assert.NoError(t, err)
 			defer f.Close()
 
-			p, err := parser.New(tc.filename, f)
+			g, err := New(tc.filename, f)
 			assert.NoError(t, err)
 
-			eval := buildGrammar()
-			res, err := p.ParseAndEvaluate(eval)
+			res, err := g.parser.ParseAndEvaluate(g.buildGrammar)
 
 			if tc.expectedError != "" {
 				assert.Nil(t, res)
