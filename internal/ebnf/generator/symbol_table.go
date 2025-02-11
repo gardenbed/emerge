@@ -271,13 +271,13 @@ func (t *SymbolTable) AddStringTokenDef(token grammar.Terminal, value string, po
 }
 
 // AddRegexTokenDef adds a new token definition based on a regex value to the symbol table.
-func (t *SymbolTable) AddRegexTokenDef(token grammar.Terminal, value string, pos *lexer.Position) {
+func (t *SymbolTable) AddRegexTokenDef(token grammar.Terminal, regex string, pos *lexer.Position) {
 	t.Lock()
 	defer t.Unlock()
 
 	t.tokenDefs.regexes = append(t.tokenDefs.regexes, &tokenDefEntry{
 		token:      token,
-		value:      value,
+		value:      regex,
 		occurrence: pos,
 	})
 }

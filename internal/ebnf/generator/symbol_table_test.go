@@ -299,27 +299,27 @@ func TestSymbolTable_AddRegexTokenDef(t *testing.T) {
 		name  string
 		st    *SymbolTable
 		token grammar.Terminal
-		value string
+		regex string
 		pos   *lexer.Position
 	}{
 		{
 			name:  "OK",
 			st:    NewSymbolTable(),
 			token: "NUM",
-			value: "[0-9]+",
+			regex: "[0-9]+",
 			pos:   &lexer.Position{Filename: "test", Offset: 20, Line: 3, Column: 1},
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			tc.st.AddRegexTokenDef(tc.token, tc.value, tc.pos)
+			tc.st.AddRegexTokenDef(tc.token, tc.regex, tc.pos)
 
 			l := len(tc.st.tokenDefs.regexes) - 1
 			entry := tc.st.tokenDefs.regexes[l]
 
 			assert.True(t, entry.token.Equal(tc.token))
-			assert.Equal(t, tc.value, entry.value)
+			assert.Equal(t, tc.regex, entry.value)
 			assert.True(t, entry.occurrence.Equal(*tc.pos))
 		})
 	}
