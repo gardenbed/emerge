@@ -16,12 +16,12 @@ import (
 )
 
 var predefs = map[string]string{
-	"DIGIT":  `[0-9]+`,
-	"LETTER": `[A-Za-z]`,
-	"ID":     `[A-Za-z_][0-9A-Za-z_]*`,
-	"INT":    `-?[0-9]+`,
-	"UINT":   `[0-9]+`,
-	"FLOAT":  `-?[0-9]+(\.[0-9]+)?`,
+	"$DIGIT":  `[0-9]+`,
+	"$LETTER": `[A-Za-z]`,
+	"$ID":     `[A-Za-z_][0-9A-Za-z_]*`,
+	"$INT":    `-?[0-9]+`,
+	"$UINT":   `[0-9]+`,
+	"$FLOAT":  `-?[0-9]+(\.[0-9]+)?`,
 }
 
 // ProductionFunc is similar to parser.ProductionFunc but passes
