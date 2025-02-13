@@ -3,21 +3,122 @@ package generator
 import (
 	"testing"
 
+	auto "github.com/moorara/algo/automata"
 	"github.com/moorara/algo/grammar"
 	"github.com/moorara/algo/lexer"
 	"github.com/moorara/algo/parser/lr"
 	"github.com/stretchr/testify/assert"
 )
 
+func TestTerminalDef(t *testing.T) {
+	dfaQUOT := auto.NewDFA(0, []auto.State{1})
+	dfaQUOT.Add(0, '"', 1)
+
+	dfaNUM := auto.NewDFA(0, []auto.State{1})
+	dfaNUM.Add(0, '0', 1)
+	dfaNUM.Add(0, '1', 1)
+	dfaNUM.Add(0, '2', 1)
+	dfaNUM.Add(0, '3', 1)
+	dfaNUM.Add(0, '4', 1)
+	dfaNUM.Add(0, '5', 1)
+	dfaNUM.Add(0, '6', 1)
+	dfaNUM.Add(0, '7', 1)
+	dfaNUM.Add(0, '8', 1)
+	dfaNUM.Add(0, '9', 1)
+	dfaNUM.Add(1, '0', 1)
+	dfaNUM.Add(1, '1', 1)
+	dfaNUM.Add(1, '2', 1)
+	dfaNUM.Add(1, '3', 1)
+	dfaNUM.Add(1, '4', 1)
+	dfaNUM.Add(1, '5', 1)
+	dfaNUM.Add(1, '6', 1)
+	dfaNUM.Add(1, '7', 1)
+	dfaNUM.Add(1, '8', 1)
+	dfaNUM.Add(1, '9', 1)
+
+	tests := []struct {
+		name             string
+		d                terminalDef
+		expectedPos      *lexer.Position
+		expectedDFA      *auto.DFA
+		expectedDFAError string
+	}{
+		{
+			name: "String",
+			d: &stringTerminalDef{
+				value: "\"",
+				pos: &lexer.Position{
+					Filename: "test",
+					Offset:   10,
+					Line:     2,
+					Column:   1,
+				},
+			},
+			expectedPos: &lexer.Position{
+				Filename: "test",
+				Offset:   10,
+				Line:     2,
+				Column:   1,
+			},
+			expectedDFA:      dfaQUOT,
+			expectedDFAError: "",
+		},
+		{
+			name: "Regex",
+			d: &regexTerminalDef{
+				regex: "[0-9]+",
+				pos: &lexer.Position{
+					Filename: "test",
+					Offset:   20,
+					Line:     3,
+					Column:   1,
+				},
+			},
+			expectedPos: &lexer.Position{
+				Filename: "test",
+				Offset:   20,
+				Line:     3,
+				Column:   1,
+			},
+			expectedDFA:      dfaNUM,
+			expectedDFAError: "",
+		},
+		{
+			name: "Regex_Error",
+			d: &regexTerminalDef{
+				regex: "[0-9",
+				pos:   &lexer.Position{},
+			},
+			expectedPos:      &lexer.Position{},
+			expectedDFA:      nil,
+			expectedDFAError: "invalid regular expression: [0-9",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			pos := tc.d.Pos()
+			assert.True(t, pos.Equal(*tc.expectedPos))
+
+			dfa, err := tc.d.DFA()
+
+			if tc.expectedDFAError == "" {
+				assert.True(t, dfa.Equal(tc.expectedDFA))
+				assert.NoError(t, err)
+			} else {
+				assert.Nil(t, dfa)
+				assert.EqualError(t, err, tc.expectedDFAError)
+			}
+		})
+	}
+}
+
 func TestNewSymbolTable(t *testing.T) {
 	t.Run("OK", func(t *testing.T) {
 		st := NewSymbolTable()
 
 		assert.NotNil(t, st.precedences.list)
-		assert.NotNil(t, st.tokenDefs.strings)
-		assert.NotNil(t, st.tokenDefs.regexes)
-		assert.NotNil(t, st.terminals.strings)
-		assert.NotNil(t, st.terminals.tokens)
+		assert.NotNil(t, st.terminals.table)
 		assert.NotNil(t, st.nonTerminals.table)
 		assert.NotNil(t, st.productions.table)
 		assert.NotNil(t, st.strings.table)
@@ -30,10 +131,7 @@ func TestSymbolTable_Reset(t *testing.T) {
 		st.Reset()
 
 		assert.NotNil(t, st.precedences.list)
-		assert.NotNil(t, st.tokenDefs.strings)
-		assert.NotNil(t, st.tokenDefs.regexes)
-		assert.NotNil(t, st.terminals.strings)
-		assert.NotNil(t, st.terminals.tokens)
+		assert.NotNil(t, st.terminals.table)
 		assert.NotNil(t, st.nonTerminals.table)
 		assert.NotNil(t, st.productions.table)
 		assert.NotNil(t, st.strings.table)
@@ -276,7 +374,12 @@ func TestSymbolTable_AddStringTokenDef(t *testing.T) {
 			st:    NewSymbolTable(),
 			token: "QUOT",
 			value: "\"",
-			pos:   &lexer.Position{Filename: "test", Offset: 10, Line: 2, Column: 1},
+			pos: &lexer.Position{
+				Filename: "test",
+				Offset:   10,
+				Line:     2,
+				Column:   1,
+			},
 		},
 	}
 
@@ -284,12 +387,14 @@ func TestSymbolTable_AddStringTokenDef(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			tc.st.AddStringTokenDef(tc.token, tc.value, tc.pos)
 
-			l := len(tc.st.tokenDefs.strings) - 1
-			entry := tc.st.tokenDefs.strings[l]
+			e, ok := tc.st.terminals.table.Get(tc.token)
+			assert.True(t, ok)
 
-			assert.True(t, entry.token.Equal(tc.token))
-			assert.Equal(t, tc.value, entry.value)
-			assert.True(t, entry.occurrence.Equal(*tc.pos))
+			l := len(e.definitions) - 1
+			def := e.definitions[l].(*stringTerminalDef)
+
+			assert.Equal(t, tc.value, def.value)
+			assert.True(t, def.pos.Equal(*tc.pos))
 		})
 	}
 }
@@ -307,7 +412,12 @@ func TestSymbolTable_AddRegexTokenDef(t *testing.T) {
 			st:    NewSymbolTable(),
 			token: "NUM",
 			regex: "[0-9]+",
-			pos:   &lexer.Position{Filename: "test", Offset: 20, Line: 3, Column: 1},
+			pos: &lexer.Position{
+				Filename: "test",
+				Offset:   20,
+				Line:     3,
+				Column:   1,
+			},
 		},
 	}
 
@@ -315,12 +425,14 @@ func TestSymbolTable_AddRegexTokenDef(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			tc.st.AddRegexTokenDef(tc.token, tc.regex, tc.pos)
 
-			l := len(tc.st.tokenDefs.regexes) - 1
-			entry := tc.st.tokenDefs.regexes[l]
+			e, ok := tc.st.terminals.table.Get(tc.token)
+			assert.True(t, ok)
 
-			assert.True(t, entry.token.Equal(tc.token))
-			assert.Equal(t, tc.regex, entry.value)
-			assert.True(t, entry.occurrence.Equal(*tc.pos))
+			l := len(e.definitions) - 1
+			def := e.definitions[l].(*regexTerminalDef)
+
+			assert.Equal(t, tc.regex, def.regex)
+			assert.True(t, def.pos.Equal(*tc.pos))
 		})
 	}
 }
@@ -362,9 +474,12 @@ func TestSymbolTable_AddStringTerminal(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			tc.st.AddStringTerminal(tc.a, tc.pos)
 
-			e, ok := tc.st.terminals.strings.Get(tc.a)
+			e, ok := tc.st.terminals.table.Get(tc.a)
 			assert.True(t, ok)
 			assert.NotZero(t, e.index)
+			assert.NotNil(t, e.definitions)
+			assert.Len(t, e.definitions, 1)
+			assert.Equal(t, string(tc.a), e.definitions[0].(*stringTerminalDef).value)
 			assert.Contains(t, e.occurrences, tc.pos)
 		})
 	}
@@ -407,9 +522,11 @@ func TestSymbolTable_AddTokenTerminal(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			tc.st.AddTokenTerminal(tc.a, tc.pos)
 
-			e, ok := tc.st.terminals.tokens.Get(tc.a)
+			e, ok := tc.st.terminals.table.Get(tc.a)
 			assert.True(t, ok)
 			assert.NotZero(t, e.index)
+			assert.NotNil(t, e.definitions)
+			assert.Len(t, e.definitions, 0)
 			assert.Contains(t, e.occurrences, tc.pos)
 		})
 	}

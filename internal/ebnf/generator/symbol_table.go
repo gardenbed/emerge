@@ -5,13 +5,62 @@ import (
 	"strings"
 	"sync"
 
+	auto "github.com/moorara/algo/automata"
 	"github.com/moorara/algo/errors"
-	"github.com/moorara/algo/generic"
 	"github.com/moorara/algo/grammar"
 	"github.com/moorara/algo/lexer"
 	"github.com/moorara/algo/parser/lr"
 	"github.com/moorara/algo/symboltable"
+
+	"github.com/gardenbed/emerge/internal/regex/parser/nfa"
 )
+
+type terminalDef interface {
+	Pos() *lexer.Position
+	DFA() (*auto.DFA, error)
+}
+
+type stringTerminalDef struct {
+	value string
+	pos   *lexer.Position
+}
+
+func (d *stringTerminalDef) Pos() *lexer.Position {
+	return d.pos
+}
+
+func (d *stringTerminalDef) DFA() (*auto.DFA, error) {
+	start := auto.State(0)
+	dfa := auto.NewDFA(start, nil)
+
+	curr, next := start, start+1
+	for _, r := range d.value {
+		dfa.Add(curr, auto.Symbol(r), next)
+		curr, next = next, next+1
+	}
+
+	dfa.Final = auto.NewStates(curr)
+
+	return dfa, nil
+}
+
+type regexTerminalDef struct {
+	regex string
+	pos   *lexer.Position
+}
+
+func (d *regexTerminalDef) Pos() *lexer.Position {
+	return d.pos
+}
+
+func (d *regexTerminalDef) DFA() (*auto.DFA, error) {
+	nfa, err := nfa.Parse(d.regex)
+	if err != nil {
+		return nil, err
+	}
+
+	return nfa.ToDFA().Minimize().EliminateDeadStates(), nil
+}
 
 type (
 	// SymbolTable is used by an EBNF parser during parsing.
@@ -24,15 +73,9 @@ type (
 			list lr.PrecedenceLevels
 		}
 
-		tokenDefs struct {
-			strings []*tokenDefEntry
-			regexes []*tokenDefEntry
-		}
-
 		terminals struct {
 			counter int
-			strings symboltable.SymbolTable[grammar.Terminal, *terminalEntry]
-			tokens  symboltable.SymbolTable[grammar.Terminal, *terminalEntry]
+			table   symboltable.SymbolTable[grammar.Terminal, *terminalEntry]
 		}
 
 		nonTerminals struct {
@@ -51,18 +94,11 @@ type (
 		}
 	}
 
-	// tokenDefEntry is the table entry for a token definition.
-	// token → TOKEN "=" (STRING | REGEX | PREDEF)
-	tokenDefEntry struct {
-		token      grammar.Terminal
-		value      string
-		occurrence *lexer.Position
-	}
-
 	// terminalEntry is the table entry for a terminal.
 	// term → TOKEN | STRING
 	terminalEntry struct {
 		index       int
+		definitions []terminalDef
 		occurrences []*lexer.Position
 	}
 
@@ -99,17 +135,7 @@ func NewSymbolTable() *SymbolTable {
 
 	st.precedences.list = make(lr.PrecedenceLevels, 0)
 
-	st.tokenDefs.strings = make([]*tokenDefEntry, 0)
-	st.tokenDefs.regexes = make([]*tokenDefEntry, 0)
-
-	st.terminals.strings = symboltable.NewQuadraticHashTable[grammar.Terminal, *terminalEntry](
-		grammar.HashTerminal,
-		grammar.EqTerminal,
-		nil,
-		opts,
-	)
-
-	st.terminals.tokens = symboltable.NewQuadraticHashTable[grammar.Terminal, *terminalEntry](
+	st.terminals.table = symboltable.NewQuadraticHashTable[grammar.Terminal, *terminalEntry](
 		grammar.HashTerminal,
 		grammar.EqTerminal,
 		nil,
@@ -146,11 +172,8 @@ func (t *SymbolTable) Reset() {
 	defer t.Unlock()
 
 	t.precedences.list = make(lr.PrecedenceLevels, 0)
-	t.tokenDefs.strings = make([]*tokenDefEntry, 0)
-	t.tokenDefs.regexes = make([]*tokenDefEntry, 0)
 
-	t.terminals.strings.DeleteAll()
-	t.terminals.tokens.DeleteAll()
+	t.terminals.table.DeleteAll()
 	t.nonTerminals.table.DeleteAll()
 	t.productions.table.DeleteAll()
 	t.strings.table.DeleteAll()
@@ -167,28 +190,19 @@ func (t *SymbolTable) Verify() error {
 		Format: errors.BulletErrorFormat,
 	}
 
-	// Check if there is a definition for every terminal referenced by a token name.
-	for token := range t.terminals.tokens.All() {
-		if !generic.AnyMatch(t.tokenDefs.strings, func(e *tokenDefEntry) bool {
-			return e.token.Equal(token)
-		}) && !generic.AnyMatch(t.tokenDefs.regexes, func(e *tokenDefEntry) bool {
-			return e.token.Equal(token)
-		}) {
-			err = errors.Append(err, fmt.Errorf("no definition for terminal %s", token))
-		}
-	}
+	// Ensure every terminal has one and only one definition.
+	for a, e := range t.terminals.table.All() {
+		if count := len(e.definitions); count == 0 {
+			err = errors.Append(err, fmt.Errorf("no definition for terminal %s", a))
+		} else if count > 1 {
+			// Aggregate token definitions by their names.
+			poss := make([]string, count)
+			for i, def := range e.definitions {
+				poss[i] = fmt.Sprintf("  %s", def.Pos())
+			}
 
-	// Aggregate token definitions by their names.
-	agg := map[grammar.Terminal][]string{}
-	for _, e := range append(t.tokenDefs.strings, t.tokenDefs.regexes...) {
-		agg[e.token] = append(agg[e.token], fmt.Sprintf("  %s", e.occurrence))
-	}
-
-	// Check if there is more than one definition for any tokens.
-	for token, occurrs := range agg {
-		if len(occurrs) > 1 {
 			err = errors.Append(err,
-				fmt.Errorf("multiple definitions for terminal %s:\n%s", token, strings.Join(occurrs, "\n")),
+				fmt.Errorf("multiple definitions for terminal %s:\n%s", a, strings.Join(poss, "\n")),
 			)
 		}
 	}
@@ -210,12 +224,7 @@ func (t *SymbolTable) Terminals() []grammar.Terminal {
 	defer t.Unlock()
 
 	var all []grammar.Terminal
-
-	for a := range t.terminals.strings.All() {
-		all = append(all, a)
-	}
-
-	for a := range t.terminals.tokens.All() {
+	for a := range t.terminals.table.All() {
 		all = append(all, a)
 	}
 
@@ -228,7 +237,6 @@ func (t *SymbolTable) NonTerminals() []grammar.NonTerminal {
 	defer t.Unlock()
 
 	var all []grammar.NonTerminal
-
 	for A := range t.nonTerminals.table.All() {
 		all = append(all, A)
 	}
@@ -242,7 +250,6 @@ func (t *SymbolTable) Productions() []*grammar.Production {
 	defer t.Unlock()
 
 	var all []*grammar.Production
-
 	for p := range t.productions.table.All() {
 		all = append(all, p)
 	}
@@ -263,10 +270,22 @@ func (t *SymbolTable) AddStringTokenDef(token grammar.Terminal, value string, po
 	t.Lock()
 	defer t.Unlock()
 
-	t.tokenDefs.strings = append(t.tokenDefs.strings, &tokenDefEntry{
-		token:      token,
-		value:      value,
-		occurrence: pos,
+	e, ok := t.terminals.table.Get(token)
+
+	if !ok {
+		t.terminals.counter++
+		e = &terminalEntry{
+			index:       t.terminals.counter,
+			definitions: []terminalDef{},
+			occurrences: []*lexer.Position{},
+		}
+
+		t.terminals.table.Put(token, e)
+	}
+
+	e.definitions = append(e.definitions, &stringTerminalDef{
+		value: value,
+		pos:   pos,
 	})
 }
 
@@ -275,10 +294,22 @@ func (t *SymbolTable) AddRegexTokenDef(token grammar.Terminal, regex string, pos
 	t.Lock()
 	defer t.Unlock()
 
-	t.tokenDefs.regexes = append(t.tokenDefs.regexes, &tokenDefEntry{
-		token:      token,
-		value:      regex,
-		occurrence: pos,
+	e, ok := t.terminals.table.Get(token)
+
+	if !ok {
+		t.terminals.counter++
+		e = &terminalEntry{
+			index:       t.terminals.counter,
+			definitions: []terminalDef{},
+			occurrences: []*lexer.Position{},
+		}
+
+		t.terminals.table.Put(token, e)
+	}
+
+	e.definitions = append(e.definitions, &regexTerminalDef{
+		regex: regex,
+		pos:   pos,
 	})
 }
 
@@ -288,14 +319,20 @@ func (t *SymbolTable) AddStringTerminal(a grammar.Terminal, pos *lexer.Position)
 	t.Lock()
 	defer t.Unlock()
 
-	if e, ok := t.terminals.strings.Get(a); ok {
+	if e, ok := t.terminals.table.Get(a); ok {
 		e.occurrences = append(e.occurrences, pos)
 		return
 	}
 
 	t.terminals.counter++
-	t.terminals.strings.Put(a, &terminalEntry{
+
+	def := &stringTerminalDef{
+		value: string(a),
+	}
+
+	t.terminals.table.Put(a, &terminalEntry{
 		index:       t.terminals.counter,
+		definitions: []terminalDef{def},
 		occurrences: []*lexer.Position{pos},
 	})
 }
@@ -306,14 +343,16 @@ func (t *SymbolTable) AddTokenTerminal(a grammar.Terminal, pos *lexer.Position) 
 	t.Lock()
 	defer t.Unlock()
 
-	if e, ok := t.terminals.tokens.Get(a); ok {
+	if e, ok := t.terminals.table.Get(a); ok {
 		e.occurrences = append(e.occurrences, pos)
 		return
 	}
 
 	t.terminals.counter++
-	t.terminals.tokens.Put(a, &terminalEntry{
+
+	t.terminals.table.Put(a, &terminalEntry{
 		index:       t.terminals.counter,
+		definitions: []terminalDef{},
 		occurrences: []*lexer.Position{pos},
 	})
 }
