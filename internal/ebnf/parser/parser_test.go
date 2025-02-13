@@ -9,11 +9,12 @@ import (
 	"testing"
 	"testing/iotest"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/moorara/algo/grammar"
 	"github.com/moorara/algo/lexer"
 	"github.com/moorara/algo/parser"
 	"github.com/moorara/algo/parser/lr"
-	"github.com/stretchr/testify/assert"
 )
 
 // MockLexer is an implementation of lexer.Lexer for testing purposes.

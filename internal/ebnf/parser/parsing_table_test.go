@@ -3,10 +3,11 @@ package parser
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/moorara/algo/grammar"
 	"github.com/moorara/algo/parser/lr"
 	"github.com/moorara/algo/parser/lr/lookahead"
-	"github.com/stretchr/testify/assert"
 )
 
 func productionIndex(p *grammar.Production) int {

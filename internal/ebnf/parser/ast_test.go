@@ -3,10 +3,11 @@ package parser
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/moorara/algo/generic"
 	"github.com/moorara/algo/lexer"
 	"github.com/moorara/algo/parser/lr"
-	"github.com/stretchr/testify/assert"
 )
 
 type EqualTest struct {
