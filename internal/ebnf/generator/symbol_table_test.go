@@ -141,16 +141,34 @@ func TestSymbolTable_Reset(t *testing.T) {
 func TestSymbolTable_Verify(t *testing.T) {
 	st0 := NewSymbolTable()
 	st0.AddTokenTerminal("QUOT", &lexer.Position{Filename: "test", Offset: 30, Line: 4, Column: 10})
+	st0.AddProduction(
+		&grammar.Production{Head: "start", Body: grammar.String[grammar.Symbol]{grammar.NonTerminal("QUOT")}},
+		&lexer.Position{Filename: "test", Offset: 60, Line: 6, Column: 1},
+	)
 
 	st1 := NewSymbolTable()
 	st1.AddStringTokenDef("QUOT", "'", &lexer.Position{Filename: "test", Offset: 10, Line: 2, Column: 1})
 	st1.AddStringTokenDef("QUOT", "\"", &lexer.Position{Filename: "test", Offset: 20, Line: 3, Column: 1})
+	st1.AddProduction(
+		&grammar.Production{Head: "start", Body: grammar.String[grammar.Symbol]{grammar.NonTerminal("QUOT")}},
+		&lexer.Position{Filename: "test", Offset: 60, Line: 6, Column: 1},
+	)
 
 	st2 := NewSymbolTable()
 	st2.AddStringTokenDef("QUOT", "\"", &lexer.Position{Filename: "test", Offset: 10, Line: 2, Column: 1})
 	st2.AddRegexTokenDef("NUM", "[0-9]+", &lexer.Position{Filename: "test", Offset: 20, Line: 3, Column: 1})
 	st2.AddTokenTerminal("QUOT", &lexer.Position{Filename: "test", Offset: 30, Line: 4, Column: 10})
 	st2.AddTokenTerminal("NUM", &lexer.Position{Filename: "test", Offset: 40, Line: 5, Column: 12})
+
+	st3 := NewSymbolTable()
+	st3.AddStringTokenDef("QUOT", "\"", &lexer.Position{Filename: "test", Offset: 10, Line: 2, Column: 1})
+	st3.AddRegexTokenDef("NUM", "[0-9]+", &lexer.Position{Filename: "test", Offset: 20, Line: 3, Column: 1})
+	st3.AddTokenTerminal("QUOT", &lexer.Position{Filename: "test", Offset: 30, Line: 4, Column: 10})
+	st3.AddTokenTerminal("NUM", &lexer.Position{Filename: "test", Offset: 40, Line: 5, Column: 12})
+	st3.AddProduction(
+		&grammar.Production{Head: "start", Body: grammar.String[grammar.Symbol]{grammar.NonTerminal("QUOT")}},
+		&lexer.Position{Filename: "test", Offset: 60, Line: 6, Column: 1},
+	)
 
 	tests := []struct {
 		name                 string
@@ -176,8 +194,16 @@ func TestSymbolTable_Verify(t *testing.T) {
 			},
 		},
 		{
+			name: "NoStartSymbol",
+			st:   st2,
+			expectedErrorStrings: []string{
+				`1 error occurred:`,
+				`missing production rule with the start symbol: start`,
+			},
+		},
+		{
 			name:                 "OK",
-			st:                   st2,
+			st:                   st3,
 			expectedErrorStrings: nil,
 		},
 	}

@@ -15,6 +15,8 @@ import (
 	"github.com/gardenbed/emerge/internal/regex/parser/nfa"
 )
 
+const start = grammar.NonTerminal("start")
+
 type terminalDef interface {
 	Pos() *lexer.Position
 	DFA() (*auto.DFA, error)
@@ -205,6 +207,15 @@ func (t *SymbolTable) Verify() error {
 				fmt.Errorf("multiple definitions for terminal %s:\n%s", a, strings.Join(poss, "\n")),
 			)
 		}
+	}
+
+	// Verify that a production rule exists with the start symbol as the head non-terminal.
+	hasStart := t.productions.table.AnyMatch(func(p *grammar.Production, _ *productionEntry) bool {
+		return p.Head.Equal(start)
+	})
+
+	if !hasStart {
+		err = errors.Append(err, fmt.Errorf("missing production rule with the start symbol: %s", start))
 	}
 
 	return err.ErrorOrNil()
