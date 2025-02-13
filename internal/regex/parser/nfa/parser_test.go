@@ -21,7 +21,7 @@ func TestParse(t *testing.T) {
 		{
 			name:          "InvalidRegex",
 			regex:         "[",
-			expectedError: "invalid regular expression",
+			expectedError: "invalid regular expression: [",
 		},
 		{
 			name:          "InvalidCharRange",

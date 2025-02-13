@@ -30,7 +30,7 @@ func Parse(regex string) (*auto.NFA, error) {
 
 	out, ok := p.Parse(regex)
 	if !ok {
-		return nil, errors.New("invalid regular expression")
+		return nil, fmt.Errorf("invalid regular expression: %s", regex)
 	}
 
 	if m.errors != nil {
