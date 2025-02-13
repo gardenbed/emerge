@@ -49,10 +49,11 @@ func TestNew(t *testing.T) {
 	}
 }
 
-func TestBuildGrammar(t *testing.T) {
+func TestGenerator_parse(t *testing.T) {
 	tests := []struct {
 		name                string
 		filename            string
+		expectedName        string
 		expectedGrammar     *grammar.CFG
 		expectedPrecedences lr.PrecedenceLevels
 		expectedError       string
@@ -65,6 +66,7 @@ func TestBuildGrammar(t *testing.T) {
 		{
 			name:                "Success",
 			filename:            "../fixture/test.grammar",
+			expectedName:        "test",
 			expectedGrammar:     grammars[0],
 			expectedPrecedences: precedences[0],
 		},
@@ -79,23 +81,18 @@ func TestBuildGrammar(t *testing.T) {
 			g, err := New(tc.filename, f)
 			assert.NoError(t, err)
 
-			res, err := g.parser.ParseAndEvaluate(g.buildGrammar)
+			artifacts, err := g.parse()
 
 			if tc.expectedError != "" {
-				assert.Nil(t, res)
+				assert.Nil(t, artifacts)
 				assert.EqualError(t, err, tc.expectedError)
 			} else {
+				assert.NotNil(t, artifacts)
 				assert.NoError(t, err)
 
-				vals := res.Val.([]any)
-				G := vals[0].(*grammar.CFG)
-				P := vals[1].(lr.PrecedenceLevels)
-
-				err = G.Verify()
-				assert.NoError(t, err)
-
-				assert.True(t, G.Equal(tc.expectedGrammar))
-				assert.True(t, P.Equal(tc.expectedPrecedences))
+				assert.True(t, artifacts.Name == tc.expectedName)
+				assert.True(t, artifacts.CFG.Equal(tc.expectedGrammar))
+				assert.True(t, artifacts.Precedences.Equal(tc.expectedPrecedences))
 			}
 		})
 	}
