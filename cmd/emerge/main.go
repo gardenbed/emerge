@@ -1,35 +1,55 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"os"
 
+	"github.com/gardenbed/charm/flagit"
 	"github.com/gardenbed/charm/ui"
-	"github.com/mitchellh/cli"
 
 	"github.com/gardenbed/emerge/internal/command"
 	"github.com/gardenbed/emerge/metadata"
 )
 
-func createCLI(ui ui.UI) *cli.CLI {
-	c := cli.NewCLI("emerge", metadata.String())
-	c.Args = os.Args[1:]
-	c.Commands = map[string]cli.CommandFactory{
-		"": command.NewFactory(ui),
-	}
-
-	return c
-}
-
 func main() {
 	u := ui.New(ui.Info)
+	cmd := command.New(u)
 
-	// Create the CLI app
-	app := createCLI(u)
+	fs := flag.NewFlagSet("emerge", flag.ContinueOnError)
 
-	code, err := app.Run()
-	if err != nil {
+	if err := flagit.Register(fs, cmd, false); err != nil {
 		u.Errorf(ui.Red, "%s", err)
+		os.Exit(1)
 	}
 
-	os.Exit(code)
+	if err := fs.Parse(os.Args[1:]); err != nil {
+		panic(err)
+	}
+
+	// Update the verbosity level.
+	if cmd.Verbose {
+		u.SetLevel(ui.Debug)
+	}
+
+	fmt.Println(os.Args)
+
+	switch {
+	case cmd.Help:
+		if err := cmd.PrintHelp(); err != nil {
+			u.Errorf(ui.Red, "%s", err)
+			os.Exit(1)
+		}
+
+	case cmd.Version:
+		fmt.Println(metadata.String())
+
+	default:
+		if err := cmd.Run(fs.Args()); err != nil {
+			u.Errorf(ui.Red, "%s", err)
+			os.Exit(1)
+		}
+	}
+
+	os.Exit(0)
 }
