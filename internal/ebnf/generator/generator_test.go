@@ -8,8 +8,6 @@ import (
 	"testing"
 	"testing/iotest"
 
-	"github.com/moorara/algo/grammar"
-	"github.com/moorara/algo/parser/lr"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -51,24 +49,39 @@ func TestNew(t *testing.T) {
 
 func TestGenerator_parse(t *testing.T) {
 	tests := []struct {
-		name                string
-		filename            string
-		expectedName        string
-		expectedGrammar     *grammar.CFG
-		expectedPrecedences lr.PrecedenceLevels
-		expectedError       string
+		name                 string
+		filename             string
+		expectedResult       *result
+		expectedErrorStrings []string
 	}{
 		{
-			name:          "Invalid",
-			filename:      "../fixture/invalid.grammar",
-			expectedError: "lexical error at ../fixture/invalid.grammar:1:1:L",
+			name:     "Invalid",
+			filename: "../fixture/invalid.grammar",
+			expectedErrorStrings: []string{
+				`lexical error at ../fixture/invalid.grammar:1:1:L`,
+			},
 		},
 		{
-			name:                "Success",
-			filename:            "../fixture/test.grammar",
-			expectedName:        "test",
-			expectedGrammar:     grammars[0],
-			expectedPrecedences: precedences[0],
+			name:     "Error",
+			filename: "../fixture/test.error.grammar",
+			expectedErrorStrings: []string{
+				`5 errors occurred:`,
+				`invalid predefined regex: $IDN`,
+				`"NUMBER": invalid regular expression: [0-9+`,
+				`no definition for terminal "NUMBER"`,
+				`no definition for terminal "ID"`,
+				`missing production rule with the start symbol: start`,
+			},
+		},
+		{
+			name:     "Success",
+			filename: "../fixture/test.success.grammar",
+			expectedResult: &result{
+				Name:        "test",
+				Definitions: []*terminalDef{},
+				Grammar:     grammars[0],
+				Precedences: precedences[0],
+			},
 		},
 	}
 
@@ -81,18 +94,24 @@ func TestGenerator_parse(t *testing.T) {
 			g, err := New(tc.filename, f)
 			assert.NoError(t, err)
 
-			artifacts, err := g.parse()
+			res, err := g.parse()
 
-			if tc.expectedError != "" {
-				assert.Nil(t, artifacts)
-				assert.EqualError(t, err, tc.expectedError)
+			if len(tc.expectedErrorStrings) > 0 {
+				assert.Nil(t, res)
+				assert.Error(t, err)
+
+				s := err.Error()
+				for _, expectedErrorString := range tc.expectedErrorStrings {
+					assert.Contains(t, s, expectedErrorString)
+				}
 			} else {
-				assert.NotNil(t, artifacts)
+				assert.NotNil(t, res)
 				assert.NoError(t, err)
 
-				assert.True(t, artifacts.Name == tc.expectedName)
-				assert.True(t, artifacts.CFG.Equal(tc.expectedGrammar))
-				assert.True(t, artifacts.Precedences.Equal(tc.expectedPrecedences))
+				assert.True(t, res.Name == tc.expectedResult.Name)
+				assert.NotNil(t, res.Definitions)
+				assert.True(t, res.Grammar.Equal(tc.expectedResult.Grammar))
+				assert.True(t, res.Precedences.Equal(tc.expectedResult.Precedences))
 			}
 		})
 	}

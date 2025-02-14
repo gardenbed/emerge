@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/moorara/algo/errors"
 	"github.com/moorara/algo/grammar"
 	"github.com/moorara/algo/parser/lr"
 
@@ -19,17 +20,21 @@ var predefs = map[string]string{
 	"$FLOAT":  `-?[0-9]+(\.[0-9]+)?`,
 }
 
+// Generator parses an EBNF input program and generates lexer, parser, and all auxiliary types needed.
 type Generator struct {
 	parser *parser.Parser
 	table  *SymbolTable
 }
 
-type Artifacts struct {
+// result contains the result of a successful input parsing.
+type result struct {
 	Name        string
-	CFG         *grammar.CFG
+	Definitions []*terminalDef
+	Grammar     *grammar.CFG
 	Precedences lr.PrecedenceLevels
 }
 
+// New creates a generator that parses an EBNF input program and generates lexer, parser, and all auxiliary types needed.
 func New(filename string, src io.Reader) (*Generator, error) {
 	parser, err := parser.New(filename, src)
 	if err != nil {
@@ -44,7 +49,13 @@ func New(filename string, src io.Reader) (*Generator, error) {
 	}, nil
 }
 
-func (g *Generator) parse() (*Artifacts, error) {
+// parse processes an EBNF input, evaluates it, and returns the result of evaluation.
+// It returns the evaluation outcome or an error if parsing fails.
+func (g *Generator) parse() (*result, error) {
+	errs := &errors.MultiError{
+		Format: errors.BulletErrorFormat,
+	}
+
 	g.table.Reset()
 
 	res, err := g.parser.ParseAndEvaluate(func(i int, rhs []*lr.Value) (any, error) {
@@ -316,10 +327,14 @@ func (g *Generator) parse() (*Artifacts, error) {
 
 			regex, ok := predefs[value]
 			if !ok {
-				return nil, fmt.Errorf("invalid predefined regex: %s", value)
+				errs = errors.Append(errs, fmt.Errorf("invalid predefined regex: %s", value))
+				return nil, nil
 			}
 
-			g.table.AddRegexTokenDef(token, regex, rhs[0].Pos)
+			if err := g.table.AddRegexTokenDef(token, regex, rhs[0].Pos); err != nil {
+				errs = errors.Append(errs, err)
+				return nil, nil
+			}
 
 			return nil, nil
 
@@ -328,7 +343,10 @@ func (g *Generator) parse() (*Artifacts, error) {
 			token := grammar.Terminal(rhs[0].Val.(string))
 			regex := rhs[2].Val.(string)
 
-			g.table.AddRegexTokenDef(token, regex, rhs[0].Pos)
+			if err := g.table.AddRegexTokenDef(token, regex, rhs[0].Pos); err != nil {
+				errs = errors.Append(errs, err)
+				return nil, nil
+			}
 
 			return nil, nil
 
@@ -376,33 +394,32 @@ func (g *Generator) parse() (*Artifacts, error) {
 		// grammar → name decls
 		case 0:
 			if err := g.table.Verify(); err != nil {
+				errs = errors.Append(errs, err)
+				return nil, errs
+			}
+
+			defs := g.table.Definitions()
+
+			grammar := grammar.NewCFG(g.table.Terminals(), g.table.NonTerminals(), g.table.Productions(), "start")
+			if err := grammar.Verify(); err != nil {
+				errs = errors.Append(errs, err)
+			}
+
+			precedences := g.table.Precedences()
+			if err := precedences.Verify(); err != nil {
+				errs = errors.Append(errs, err)
+			}
+
+			if err := errs.ErrorOrNil(); err != nil {
 				return nil, err
 			}
 
-			G := grammar.NewCFG(
-				g.table.Terminals(),
-				g.table.NonTerminals(),
-				g.table.Productions(),
-				"start",
-			)
-
-			if err := G.Verify(); err != nil {
-				return nil, err
-			}
-
-			P := g.table.Precedences()
-
-			if err := P.Verify(); err != nil {
-				return nil, err
-			}
-
-			artifacts := &Artifacts{
+			return &result{
 				Name:        rhs[0].Val.(string),
-				CFG:         G,
-				Precedences: P,
-			}
-
-			return artifacts, nil
+				Definitions: defs,
+				Grammar:     grammar,
+				Precedences: precedences,
+			}, nil
 		}
 
 		return nil, fmt.Errorf("invalid production index: %d", i)
@@ -412,5 +429,5 @@ func (g *Generator) parse() (*Artifacts, error) {
 		return nil, err
 	}
 
-	return res.Val.(*Artifacts), nil
+	return res.Val.(*result), nil
 }

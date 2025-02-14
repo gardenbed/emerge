@@ -1,117 +1,15 @@
 package generator
 
 import (
+	"fmt"
 	"testing"
 
-	auto "github.com/moorara/algo/automata"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/moorara/algo/grammar"
 	"github.com/moorara/algo/lexer"
 	"github.com/moorara/algo/parser/lr"
-	"github.com/stretchr/testify/assert"
 )
-
-func TestTerminalDef(t *testing.T) {
-	dfaQUOT := auto.NewDFA(0, []auto.State{1})
-	dfaQUOT.Add(0, '"', 1)
-
-	dfaNUM := auto.NewDFA(0, []auto.State{1})
-	dfaNUM.Add(0, '0', 1)
-	dfaNUM.Add(0, '1', 1)
-	dfaNUM.Add(0, '2', 1)
-	dfaNUM.Add(0, '3', 1)
-	dfaNUM.Add(0, '4', 1)
-	dfaNUM.Add(0, '5', 1)
-	dfaNUM.Add(0, '6', 1)
-	dfaNUM.Add(0, '7', 1)
-	dfaNUM.Add(0, '8', 1)
-	dfaNUM.Add(0, '9', 1)
-	dfaNUM.Add(1, '0', 1)
-	dfaNUM.Add(1, '1', 1)
-	dfaNUM.Add(1, '2', 1)
-	dfaNUM.Add(1, '3', 1)
-	dfaNUM.Add(1, '4', 1)
-	dfaNUM.Add(1, '5', 1)
-	dfaNUM.Add(1, '6', 1)
-	dfaNUM.Add(1, '7', 1)
-	dfaNUM.Add(1, '8', 1)
-	dfaNUM.Add(1, '9', 1)
-
-	tests := []struct {
-		name             string
-		d                terminalDef
-		expectedPos      *lexer.Position
-		expectedDFA      *auto.DFA
-		expectedDFAError string
-	}{
-		{
-			name: "String",
-			d: &stringTerminalDef{
-				value: "\"",
-				pos: &lexer.Position{
-					Filename: "test",
-					Offset:   10,
-					Line:     2,
-					Column:   1,
-				},
-			},
-			expectedPos: &lexer.Position{
-				Filename: "test",
-				Offset:   10,
-				Line:     2,
-				Column:   1,
-			},
-			expectedDFA:      dfaQUOT,
-			expectedDFAError: "",
-		},
-		{
-			name: "Regex",
-			d: &regexTerminalDef{
-				regex: "[0-9]+",
-				pos: &lexer.Position{
-					Filename: "test",
-					Offset:   20,
-					Line:     3,
-					Column:   1,
-				},
-			},
-			expectedPos: &lexer.Position{
-				Filename: "test",
-				Offset:   20,
-				Line:     3,
-				Column:   1,
-			},
-			expectedDFA:      dfaNUM,
-			expectedDFAError: "",
-		},
-		{
-			name: "Regex_Error",
-			d: &regexTerminalDef{
-				regex: "[0-9",
-				pos:   &lexer.Position{},
-			},
-			expectedPos:      &lexer.Position{},
-			expectedDFA:      nil,
-			expectedDFAError: "invalid regular expression: [0-9",
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			pos := tc.d.Pos()
-			assert.True(t, pos.Equal(*tc.expectedPos))
-
-			dfa, err := tc.d.DFA()
-
-			if tc.expectedDFAError == "" {
-				assert.True(t, dfa.Equal(tc.expectedDFA))
-				assert.NoError(t, err)
-			} else {
-				assert.Nil(t, dfa)
-				assert.EqualError(t, err, tc.expectedDFAError)
-			}
-		})
-	}
-}
 
 func TestNewSymbolTable(t *testing.T) {
 	t.Run("OK", func(t *testing.T) {
@@ -267,6 +165,52 @@ func TestSymbolTable_Precedences(t *testing.T) {
 	}
 }
 
+func TestSymbolTable_Definitions(t *testing.T) {
+	dfa := getDFA()
+
+	st0 := NewSymbolTable()
+	st0.AddRegexTokenDef("ID", "[a-z", &lexer.Position{})
+	st0.AddRegexTokenDef("NUM", "[0-9", &lexer.Position{})
+	st0.AddTokenTerminal("ID", &lexer.Position{})
+	st0.AddTokenTerminal("NUM", &lexer.Position{})
+
+	st1 := NewSymbolTable()
+	st1.AddStringTokenDef(";", ";", &lexer.Position{})
+	st1.AddRegexTokenDef("NUM", "[0-9]+", &lexer.Position{})
+	st1.AddTokenTerminal(";", &lexer.Position{})
+	st1.AddTokenTerminal("NUM", &lexer.Position{})
+
+	tests := []struct {
+		name                string
+		st                  *SymbolTable
+		expectedDefinitions []*terminalDef
+	}{
+		{
+			name: "Success",
+			st:   st1,
+			expectedDefinitions: []*terminalDef{
+				{Terminal: ";", DFA: dfa[0]},
+				{Terminal: "NUM", DFA: dfa[1]},
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			defs := tc.st.Definitions()
+
+			assert.Len(t, dfa, len(tc.expectedDefinitions))
+
+			for i, expectedDef := range tc.expectedDefinitions {
+				t.Run(fmt.Sprintf("DFA[%d]", i), func(t *testing.T) {
+					assert.True(t, defs[i].DFA.Equal(expectedDef.DFA))
+					assert.True(t, defs[i].Terminal.Equal(expectedDef.Terminal))
+				})
+			}
+		})
+	}
+}
+
 func TestSymbolTable_Terminals(t *testing.T) {
 	st := NewSymbolTable()
 	st.AddStringTerminal(";", &lexer.Position{})
@@ -417,24 +361,34 @@ func TestSymbolTable_AddStringTokenDef(t *testing.T) {
 			assert.True(t, ok)
 
 			l := len(e.definitions) - 1
-			def := e.definitions[l].(*stringTerminalDef)
+			def := e.definitions[l]
 
-			assert.Equal(t, tc.value, def.value)
-			assert.True(t, def.pos.Equal(*tc.pos))
+			assert.NotNil(t, def.DFA)
+			assert.True(t, def.Terminal.Equal(tc.token))
+			assert.True(t, def.Pos.Equal(*tc.pos))
 		})
 	}
 }
 
 func TestSymbolTable_AddRegexTokenDef(t *testing.T) {
 	tests := []struct {
-		name  string
-		st    *SymbolTable
-		token grammar.Terminal
-		regex string
-		pos   *lexer.Position
+		name          string
+		st            *SymbolTable
+		token         grammar.Terminal
+		regex         string
+		pos           *lexer.Position
+		expectedError string
 	}{
 		{
-			name:  "OK",
+			name:          "Error",
+			st:            NewSymbolTable(),
+			token:         "NUM",
+			regex:         "[0-9",
+			pos:           &lexer.Position{},
+			expectedError: `"NUM": invalid regular expression: [0-9`,
+		},
+		{
+			name:  "Success",
 			st:    NewSymbolTable(),
 			token: "NUM",
 			regex: "[0-9]+",
@@ -444,21 +398,29 @@ func TestSymbolTable_AddRegexTokenDef(t *testing.T) {
 				Line:     3,
 				Column:   1,
 			},
+			expectedError: ``,
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			tc.st.AddRegexTokenDef(tc.token, tc.regex, tc.pos)
+			err := tc.st.AddRegexTokenDef(tc.token, tc.regex, tc.pos)
 
-			e, ok := tc.st.terminals.table.Get(tc.token)
-			assert.True(t, ok)
+			if tc.expectedError != "" {
+				assert.EqualError(t, err, tc.expectedError)
+			} else {
+				assert.NoError(t, err)
 
-			l := len(e.definitions) - 1
-			def := e.definitions[l].(*regexTerminalDef)
+				e, ok := tc.st.terminals.table.Get(tc.token)
+				assert.True(t, ok)
 
-			assert.Equal(t, tc.regex, def.regex)
-			assert.True(t, def.pos.Equal(*tc.pos))
+				l := len(e.definitions) - 1
+				def := e.definitions[l]
+
+				assert.NotNil(t, def.DFA)
+				assert.True(t, def.Terminal.Equal(tc.token))
+				assert.True(t, def.Pos.Equal(*tc.pos))
+			}
 		})
 	}
 }
@@ -505,7 +467,9 @@ func TestSymbolTable_AddStringTerminal(t *testing.T) {
 			assert.NotZero(t, e.index)
 			assert.NotNil(t, e.definitions)
 			assert.Len(t, e.definitions, 1)
-			assert.Equal(t, string(tc.a), e.definitions[0].(*stringTerminalDef).value)
+			assert.NotNil(t, e.definitions[0].DFA)
+			assert.True(t, e.definitions[0].Terminal.Equal(tc.a))
+			assert.Nil(t, e.definitions[0].Pos)
 			assert.Contains(t, e.occurrences, tc.pos)
 		})
 	}

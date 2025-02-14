@@ -10,59 +10,13 @@ import (
 	"github.com/moorara/algo/grammar"
 	"github.com/moorara/algo/lexer"
 	"github.com/moorara/algo/parser/lr"
+	"github.com/moorara/algo/sort"
 	"github.com/moorara/algo/symboltable"
 
 	"github.com/gardenbed/emerge/internal/regex/parser/nfa"
 )
 
 const start = grammar.NonTerminal("start")
-
-type terminalDef interface {
-	Pos() *lexer.Position
-	DFA() (*auto.DFA, error)
-}
-
-type stringTerminalDef struct {
-	value string
-	pos   *lexer.Position
-}
-
-func (d *stringTerminalDef) Pos() *lexer.Position {
-	return d.pos
-}
-
-func (d *stringTerminalDef) DFA() (*auto.DFA, error) {
-	start := auto.State(0)
-	dfa := auto.NewDFA(start, nil)
-
-	curr, next := start, start+1
-	for _, r := range d.value {
-		dfa.Add(curr, auto.Symbol(r), next)
-		curr, next = next, next+1
-	}
-
-	dfa.Final = auto.NewStates(curr)
-
-	return dfa, nil
-}
-
-type regexTerminalDef struct {
-	regex string
-	pos   *lexer.Position
-}
-
-func (d *regexTerminalDef) Pos() *lexer.Position {
-	return d.pos
-}
-
-func (d *regexTerminalDef) DFA() (*auto.DFA, error) {
-	nfa, err := nfa.Parse(d.regex)
-	if err != nil {
-		return nil, err
-	}
-
-	return nfa.ToDFA().Minimize().EliminateDeadStates(), nil
-}
 
 type (
 	// SymbolTable is used by an EBNF parser during parsing.
@@ -100,7 +54,7 @@ type (
 	// term → TOKEN | STRING
 	terminalEntry struct {
 		index       int
-		definitions []terminalDef
+		definitions []*terminalDef
 		occurrences []*lexer.Position
 	}
 
@@ -126,6 +80,47 @@ type (
 		Plus  grammar.NonTerminal
 	}
 )
+
+// terminalDef represents a terminal symbol along with a deterministic finite automaton (DFA) for recognizing it.
+type terminalDef struct {
+	*auto.DFA
+	grammar.Terminal
+	Pos *lexer.Position
+}
+
+func terminalDefFromString(a grammar.Terminal, value string, pos *lexer.Position) *terminalDef {
+	start := auto.State(0)
+	dfa := auto.NewDFA(start, nil)
+
+	curr, next := start, start+1
+	for _, r := range value {
+		dfa.Add(curr, auto.Symbol(r), next)
+		curr, next = next, next+1
+	}
+
+	dfa.Final = auto.NewStates(curr)
+
+	return &terminalDef{
+		DFA:      dfa,
+		Terminal: a,
+		Pos:      pos,
+	}
+}
+
+func terminalDefFromRegex(a grammar.Terminal, regex string, pos *lexer.Position) (*terminalDef, error) {
+	nfa, err := nfa.Parse(regex)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %s", a, err)
+	}
+
+	dfa := nfa.ToDFA().Minimize().EliminateDeadStates().ReindexStates()
+
+	return &terminalDef{
+		DFA:      dfa,
+		Terminal: a,
+		Pos:      pos,
+	}, nil
+}
 
 // NewSymbolTable creates a new SymbolTable for an EBNF parser.
 func NewSymbolTable() *SymbolTable {
@@ -200,7 +195,7 @@ func (t *SymbolTable) Verify() error {
 			// Aggregate token definitions by their names.
 			poss := make([]string, count)
 			for i, def := range e.definitions {
-				poss[i] = fmt.Sprintf("  %s", def.Pos())
+				poss[i] = fmt.Sprintf("  %s", def.Pos)
 			}
 
 			err = errors.Append(err,
@@ -227,6 +222,32 @@ func (t *SymbolTable) Precedences() lr.PrecedenceLevels {
 	defer t.Unlock()
 
 	return t.precedences.list
+}
+
+// Definitions constructs and returns an ordered list of definitions,
+// representing deterministic finite automata (DFAs) for all terminal symbols in the symbol table.
+func (t *SymbolTable) Definitions() []*terminalDef {
+	t.Lock()
+	defer t.Unlock()
+
+	defs := make([]*terminalDef, 0, t.terminals.table.Size())
+	for _, e := range t.terminals.table.All() {
+		if len(e.definitions) == 1 {
+			defs = append(defs, e.definitions[0])
+		}
+	}
+
+	// Sort terminals, placing shorter terminals before longer ones.
+	sort.Quick(defs, func(lhs, rhs *terminalDef) int {
+		if len(lhs.Terminal) < len(rhs.Terminal) {
+			return -1
+		} else if len(lhs.Terminal) > len(rhs.Terminal) {
+			return 1
+		}
+		return grammar.CmpTerminal(lhs.Terminal, rhs.Terminal)
+	})
+
+	return defs
 }
 
 // Terminals returns the set of terminal symbols added to the symbol table.
@@ -287,21 +308,20 @@ func (t *SymbolTable) AddStringTokenDef(token grammar.Terminal, value string, po
 		t.terminals.counter++
 		e = &terminalEntry{
 			index:       t.terminals.counter,
-			definitions: []terminalDef{},
+			definitions: []*terminalDef{},
 			occurrences: []*lexer.Position{},
 		}
 
 		t.terminals.table.Put(token, e)
 	}
 
-	e.definitions = append(e.definitions, &stringTerminalDef{
-		value: value,
-		pos:   pos,
-	})
+	def := terminalDefFromString(token, string(token), pos)
+	e.definitions = append(e.definitions, def)
 }
 
 // AddRegexTokenDef adds a new token definition based on a regex value to the symbol table.
-func (t *SymbolTable) AddRegexTokenDef(token grammar.Terminal, regex string, pos *lexer.Position) {
+// It returns an error if any DFA construction fails.
+func (t *SymbolTable) AddRegexTokenDef(token grammar.Terminal, regex string, pos *lexer.Position) error {
 	t.Lock()
 	defer t.Unlock()
 
@@ -311,17 +331,21 @@ func (t *SymbolTable) AddRegexTokenDef(token grammar.Terminal, regex string, pos
 		t.terminals.counter++
 		e = &terminalEntry{
 			index:       t.terminals.counter,
-			definitions: []terminalDef{},
+			definitions: []*terminalDef{},
 			occurrences: []*lexer.Position{},
 		}
 
 		t.terminals.table.Put(token, e)
 	}
 
-	e.definitions = append(e.definitions, &regexTerminalDef{
-		regex: regex,
-		pos:   pos,
-	})
+	def, err := terminalDefFromRegex(token, regex, pos)
+	if err != nil {
+		return err
+	}
+
+	e.definitions = append(e.definitions, def)
+
+	return nil
 }
 
 // AddStringTerminal adds a terminal symbol, defined by its string value, to the symbol table.
@@ -336,14 +360,11 @@ func (t *SymbolTable) AddStringTerminal(a grammar.Terminal, pos *lexer.Position)
 	}
 
 	t.terminals.counter++
-
-	def := &stringTerminalDef{
-		value: string(a),
-	}
+	def := terminalDefFromString(a, string(a), nil)
 
 	t.terminals.table.Put(a, &terminalEntry{
 		index:       t.terminals.counter,
-		definitions: []terminalDef{def},
+		definitions: []*terminalDef{def},
 		occurrences: []*lexer.Position{pos},
 	})
 }
@@ -363,7 +384,7 @@ func (t *SymbolTable) AddTokenTerminal(a grammar.Terminal, pos *lexer.Position) 
 
 	t.terminals.table.Put(a, &terminalEntry{
 		index:       t.terminals.counter,
-		definitions: []terminalDef{},
+		definitions: []*terminalDef{},
 		occurrences: []*lexer.Position{pos},
 	})
 }

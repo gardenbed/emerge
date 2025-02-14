@@ -676,7 +676,7 @@ func TestParser_ParseAndBuildAST2(t *testing.T) {
 		},
 		{
 			name:          "Success",
-			filename:      "../fixture/test.grammar",
+			filename:      "../fixture/test.success.grammar",
 			expectedError: "",
 		},
 	}

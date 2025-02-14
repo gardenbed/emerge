@@ -1,6 +1,7 @@
 package generator
 
 import (
+	auto "github.com/moorara/algo/automata"
 	"github.com/moorara/algo/grammar"
 	"github.com/moorara/algo/parser/lr"
 )
@@ -98,4 +99,33 @@ var precedences = []lr.PrecedenceLevels{
 			),
 		},
 	},
+}
+
+func getDFA() []*auto.DFA {
+	d0 := auto.NewDFA(0, []auto.State{1})
+	d0.Add(0, ';', 1)
+
+	d1 := auto.NewDFA(0, []auto.State{1})
+	d1.Add(0, '0', 1)
+	d1.Add(0, '1', 1)
+	d1.Add(0, '2', 1)
+	d1.Add(0, '3', 1)
+	d1.Add(0, '4', 1)
+	d1.Add(0, '5', 1)
+	d1.Add(0, '6', 1)
+	d1.Add(0, '7', 1)
+	d1.Add(0, '8', 1)
+	d1.Add(0, '9', 1)
+	d1.Add(1, '0', 1)
+	d1.Add(1, '1', 1)
+	d1.Add(1, '2', 1)
+	d1.Add(1, '3', 1)
+	d1.Add(1, '4', 1)
+	d1.Add(1, '5', 1)
+	d1.Add(1, '6', 1)
+	d1.Add(1, '7', 1)
+	d1.Add(1, '8', 1)
+	d1.Add(1, '9', 1)
+
+	return []*auto.DFA{d0, d1}
 }

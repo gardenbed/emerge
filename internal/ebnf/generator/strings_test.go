@@ -3,8 +3,9 @@ package generator
 import (
 	"testing"
 
-	"github.com/moorara/algo/grammar"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/moorara/algo/grammar"
 )
 
 func TestStrings_Contains(t *testing.T) {
