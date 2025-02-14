@@ -1,7 +1,6 @@
 package ast
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -22,7 +21,7 @@ func TestParse(t *testing.T) {
 		{
 			name:          "InvalidRegex",
 			regex:         "[",
-			expectedError: "invalid regular expression",
+			expectedError: "invalid regular expression: [",
 		},
 		{
 			name:          "InvalidCharRange",
@@ -268,7 +267,7 @@ func TestParse(t *testing.T) {
 }
 
 func TestAST_ToDFA(t *testing.T) {
-	dfa := auto.NewDFA(0, auto.States{3})
+	dfa := auto.NewDFA(0, []auto.State{3})
 	dfa.Add(0, 'a', 1)
 	dfa.Add(0, 'b', 0)
 	dfa.Add(1, 'a', 1)
@@ -363,7 +362,6 @@ func TestAST_ToDFA(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			dfa := tc.a.ToDFA()
-			fmt.Println(dfa.DOT())
 			assert.True(t, dfa.Equal(tc.expectedDFA))
 		})
 	}

@@ -30,7 +30,7 @@ func Parse(regex string) (*auto.NFA, error) {
 
 	out, ok := p.Parse(regex)
 	if !ok {
-		return nil, errors.New("invalid regular expression")
+		return nil, fmt.Errorf("invalid regular expression: %s", regex)
 	}
 
 	if m.errors != nil {
@@ -50,9 +50,9 @@ type mappers struct {
 }
 
 func (m *mappers) ToAnyChar(r comb.Result) (comb.Result, bool) {
-	nfa := auto.NewNFA(0, auto.States{1})
+	nfa := auto.NewNFA(0, []auto.State{1})
 	for _, r := range parser.Alphabet {
-		nfa.Add(0, auto.Symbol(r), auto.States{1})
+		nfa.Add(0, auto.Symbol(r), []auto.State{1})
 	}
 
 	return comb.Result{
@@ -267,10 +267,10 @@ func (m *mappers) ToCharGroup(r comb.Result) (comb.Result, bool) {
 		}
 	}
 
-	nfa := auto.NewNFA(0, auto.States{1})
+	nfa := auto.NewNFA(0, []auto.State{1})
 	for i, marked := range charMap {
 		if (!neg && marked) || (neg && !marked) {
-			nfa.Add(0, auto.Symbol(rune(i)), auto.States{1})
+			nfa.Add(0, auto.Symbol(rune(i)), []auto.State{1})
 		}
 	}
 
@@ -421,26 +421,26 @@ type tuple[P, Q any] struct {
 }
 
 func runeToNFA(r rune) *auto.NFA {
-	nfa := auto.NewNFA(0, auto.States{1})
-	nfa.Add(0, auto.Symbol(r), auto.States{1})
+	nfa := auto.NewNFA(0, []auto.State{1})
+	nfa.Add(0, auto.Symbol(r), []auto.State{1})
 
 	return nfa
 }
 
 func runesToNFA(neg bool, runes ...rune) (*auto.NFA, []rune) {
-	nfa := auto.NewNFA(0, auto.States{1})
+	nfa := auto.NewNFA(0, []auto.State{1})
 	chars := []rune{}
 
 	if neg {
 		for _, r := range parser.Alphabet {
 			if !containsRune(r, runes) {
-				nfa.Add(0, auto.Symbol(r), auto.States{1})
+				nfa.Add(0, auto.Symbol(r), []auto.State{1})
 				chars = append(chars, r)
 			}
 		}
 	} else {
 		for _, r := range runes {
-			nfa.Add(0, auto.Symbol(r), auto.States{1})
+			nfa.Add(0, auto.Symbol(r), []auto.State{1})
 			chars = append(chars, r)
 		}
 	}
@@ -458,20 +458,20 @@ func containsRune(r rune, runes []rune) bool {
 }
 
 func runeRangesToNFA(neg bool, ranges ...[2]rune) (*auto.NFA, []rune) {
-	nfa := auto.NewNFA(0, auto.States{1})
+	nfa := auto.NewNFA(0, []auto.State{1})
 	chars := []rune{}
 
 	if neg {
 		for _, r := range parser.Alphabet {
 			if !includesRune(r, ranges...) {
-				nfa.Add(0, auto.Symbol(r), auto.States{1})
+				nfa.Add(0, auto.Symbol(r), []auto.State{1})
 				chars = append(chars, r)
 			}
 		}
 	} else {
 		for _, g := range ranges {
 			for r := g[0]; r <= g[1]; r++ {
-				nfa.Add(0, auto.Symbol(r), auto.States{1})
+				nfa.Add(0, auto.Symbol(r), []auto.State{1})
 				chars = append(chars, r)
 			}
 		}

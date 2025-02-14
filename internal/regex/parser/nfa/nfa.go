@@ -8,8 +8,8 @@ import auto "github.com/moorara/algo/automata"
 
 // Empty returns an NFA accepting the empty string ε.
 func empty() *auto.NFA {
-	nfa := auto.NewNFA(0, auto.States{1})
-	nfa.Add(0, auto.E, auto.States{1})
+	nfa := auto.NewNFA(0, []auto.State{1})
+	nfa.Add(0, auto.E, []auto.State{1})
 
 	return nfa
 }

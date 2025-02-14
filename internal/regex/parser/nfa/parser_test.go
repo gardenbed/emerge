@@ -21,7 +21,7 @@ func TestParse(t *testing.T) {
 		{
 			name:          "InvalidRegex",
 			regex:         "[",
-			expectedError: "invalid regular expression",
+			expectedError: "invalid regular expression: [",
 		},
 		{
 			name:          "InvalidCharRange",
@@ -92,8 +92,8 @@ func TestMappers_ToAnyChar(t *testing.T) {
 }
 
 func TestMappers_ToSingleChar(t *testing.T) {
-	xNFA := auto.NewNFA(0, auto.States{1})
-	xNFA.Add(0, 'x', auto.States{1})
+	xNFA := auto.NewNFA(0, []auto.State{1})
+	xNFA.Add(0, 'x', []auto.State{1})
 
 	tests := []MapperTest{
 		{
@@ -717,13 +717,13 @@ func TestMappers_ToCharInRange(t *testing.T) {
 }
 
 func TestMappers_ToCharRange(t *testing.T) {
-	aTofNFA := auto.NewNFA(0, auto.States{1})
-	aTofNFA.Add(0, 'a', auto.States{1})
-	aTofNFA.Add(0, 'b', auto.States{1})
-	aTofNFA.Add(0, 'c', auto.States{1})
-	aTofNFA.Add(0, 'd', auto.States{1})
-	aTofNFA.Add(0, 'e', auto.States{1})
-	aTofNFA.Add(0, 'f', auto.States{1})
+	aTofNFA := auto.NewNFA(0, []auto.State{1})
+	aTofNFA.Add(0, 'a', []auto.State{1})
+	aTofNFA.Add(0, 'b', []auto.State{1})
+	aTofNFA.Add(0, 'c', []auto.State{1})
+	aTofNFA.Add(0, 'd', []auto.State{1})
+	aTofNFA.Add(0, 'e', []auto.State{1})
+	aTofNFA.Add(0, 'f', []auto.State{1})
 
 	tests := []MapperTest{
 		{
@@ -756,7 +756,7 @@ func TestMappers_ToCharRange(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: comb.Result{
-				Val: auto.NewNFA(0, auto.States{1}),
+				Val: auto.NewNFA(0, []auto.State{1}),
 				Pos: 2,
 				Bag: comb.Bag{
 					bagKeyChars: []rune{},
@@ -824,33 +824,33 @@ func TestMappers_ToCharGroupItem(t *testing.T) {
 func TestMappers_ToCharGroup(t *testing.T) {
 	nfas := createTestNFAs()
 
-	hyphenNFA := auto.NewNFA(0, auto.States{1})
-	hyphenNFA.Add(0, '-', auto.States{1})
+	hyphenNFA := auto.NewNFA(0, []auto.State{1})
+	hyphenNFA.Add(0, '-', []auto.State{1})
 
-	uuidNFA := auto.NewNFA(0, auto.States{1})
-	uuidNFA.Add(0, '-', auto.States{1})
+	uuidNFA := auto.NewNFA(0, []auto.State{1})
+	uuidNFA.Add(0, '-', []auto.State{1})
 	for r := '0'; r <= '9'; r++ {
-		uuidNFA.Add(0, auto.Symbol(r), auto.States{1})
+		uuidNFA.Add(0, auto.Symbol(r), []auto.State{1})
 	}
 	for r := 'A'; r <= 'F'; r++ {
-		uuidNFA.Add(0, auto.Symbol(r), auto.States{1})
+		uuidNFA.Add(0, auto.Symbol(r), []auto.State{1})
 	}
 	for r := 'a'; r <= 'f'; r++ {
-		uuidNFA.Add(0, auto.Symbol(r), auto.States{1})
+		uuidNFA.Add(0, auto.Symbol(r), []auto.State{1})
 	}
 
-	notAlnumNFA := auto.NewNFA(0, auto.States{1})
+	notAlnumNFA := auto.NewNFA(0, []auto.State{1})
 	for r := 0; r <= 47; r++ {
-		notAlnumNFA.Add(0, auto.Symbol(r), auto.States{1})
+		notAlnumNFA.Add(0, auto.Symbol(r), []auto.State{1})
 	}
 	for r := 58; r <= 64; r++ {
-		notAlnumNFA.Add(0, auto.Symbol(r), auto.States{1})
+		notAlnumNFA.Add(0, auto.Symbol(r), []auto.State{1})
 	}
 	for r := 91; r <= 96; r++ {
-		notAlnumNFA.Add(0, auto.Symbol(r), auto.States{1})
+		notAlnumNFA.Add(0, auto.Symbol(r), []auto.State{1})
 	}
 	for r := 123; r <= 127; r++ {
-		notAlnumNFA.Add(0, auto.Symbol(r), auto.States{1})
+		notAlnumNFA.Add(0, auto.Symbol(r), []auto.State{1})
 	}
 
 	tests := []MapperTest{
@@ -974,8 +974,8 @@ func TestMappers_ToMatchItem(t *testing.T) {
 }
 
 func TestMappers_ToMatch(t *testing.T) {
-	xNFA := auto.NewNFA(0, auto.States{1})
-	xNFA.Add(0, 'x', auto.States{1})
+	xNFA := auto.NewNFA(0, []auto.State{1})
+	xNFA.Add(0, 'x', []auto.State{1})
 
 	tests := []MapperTest{
 		{
@@ -1222,8 +1222,8 @@ func TestMappers_ToMatch(t *testing.T) {
 }
 
 func TestMappers_ToGroup(t *testing.T) {
-	xNFA := auto.NewNFA(0, auto.States{1})
-	xNFA.Add(0, 'x', auto.States{1})
+	xNFA := auto.NewNFA(0, []auto.State{1})
+	xNFA.Add(0, 'x', []auto.State{1})
 
 	tests := []MapperTest{
 		{
@@ -1811,74 +1811,74 @@ var (
 )
 
 func createTestNFAs() map[string]*auto.NFA {
-	digit := auto.NewNFA(0, auto.States{1})
+	digit := auto.NewNFA(0, []auto.State{1})
 	for _, r := range digitChars {
-		digit.Add(0, auto.Symbol(r), auto.States{1})
+		digit.Add(0, auto.Symbol(r), []auto.State{1})
 	}
 
-	notDigit := auto.NewNFA(0, auto.States{1})
+	notDigit := auto.NewNFA(0, []auto.State{1})
 	for _, r := range notDigitChars {
-		notDigit.Add(0, auto.Symbol(r), auto.States{1})
+		notDigit.Add(0, auto.Symbol(r), []auto.State{1})
 	}
 
-	whitespace := auto.NewNFA(0, auto.States{1})
+	whitespace := auto.NewNFA(0, []auto.State{1})
 	for _, r := range whitespaceChars {
-		whitespace.Add(0, auto.Symbol(r), auto.States{1})
+		whitespace.Add(0, auto.Symbol(r), []auto.State{1})
 	}
 
-	notWhitespace := auto.NewNFA(0, auto.States{1})
+	notWhitespace := auto.NewNFA(0, []auto.State{1})
 	for _, r := range notWhitespaceChars {
-		notWhitespace.Add(0, auto.Symbol(r), auto.States{1})
+		notWhitespace.Add(0, auto.Symbol(r), []auto.State{1})
 	}
 
-	word := auto.NewNFA(0, auto.States{1})
+	word := auto.NewNFA(0, []auto.State{1})
 	for _, r := range wordChars {
-		word.Add(0, auto.Symbol(r), auto.States{1})
+		word.Add(0, auto.Symbol(r), []auto.State{1})
 	}
 
-	notWord := auto.NewNFA(0, auto.States{1})
+	notWord := auto.NewNFA(0, []auto.State{1})
 	for _, r := range notWordChars {
-		notWord.Add(0, auto.Symbol(r), auto.States{1})
+		notWord.Add(0, auto.Symbol(r), []auto.State{1})
 	}
 
-	blank := auto.NewNFA(0, auto.States{1})
+	blank := auto.NewNFA(0, []auto.State{1})
 	for _, r := range blankChars {
-		blank.Add(0, auto.Symbol(r), auto.States{1})
+		blank.Add(0, auto.Symbol(r), []auto.State{1})
 	}
 
-	space := auto.NewNFA(0, auto.States{1})
+	space := auto.NewNFA(0, []auto.State{1})
 	for _, r := range spaceChars {
-		space.Add(0, auto.Symbol(r), auto.States{1})
+		space.Add(0, auto.Symbol(r), []auto.State{1})
 	}
 
-	xdigit := auto.NewNFA(0, auto.States{1})
+	xdigit := auto.NewNFA(0, []auto.State{1})
 	for _, r := range xdigitChars {
-		xdigit.Add(0, auto.Symbol(r), auto.States{1})
+		xdigit.Add(0, auto.Symbol(r), []auto.State{1})
 	}
 
-	upper := auto.NewNFA(0, auto.States{1})
+	upper := auto.NewNFA(0, []auto.State{1})
 	for _, r := range upperChars {
-		upper.Add(0, auto.Symbol(r), auto.States{1})
+		upper.Add(0, auto.Symbol(r), []auto.State{1})
 	}
 
-	lower := auto.NewNFA(0, auto.States{1})
+	lower := auto.NewNFA(0, []auto.State{1})
 	for _, r := range lowerChars {
-		lower.Add(0, auto.Symbol(r), auto.States{1})
+		lower.Add(0, auto.Symbol(r), []auto.State{1})
 	}
 
-	alpha := auto.NewNFA(0, auto.States{1})
+	alpha := auto.NewNFA(0, []auto.State{1})
 	for _, r := range alphaChars {
-		alpha.Add(0, auto.Symbol(r), auto.States{1})
+		alpha.Add(0, auto.Symbol(r), []auto.State{1})
 	}
 
-	alnum := auto.NewNFA(0, auto.States{1})
+	alnum := auto.NewNFA(0, []auto.State{1})
 	for _, r := range alnumChars {
-		alnum.Add(0, auto.Symbol(r), auto.States{1})
+		alnum.Add(0, auto.Symbol(r), []auto.State{1})
 	}
 
-	ascii := auto.NewNFA(0, auto.States{1})
+	ascii := auto.NewNFA(0, []auto.State{1})
 	for _, r := range asciiChars {
-		ascii.Add(0, auto.Symbol(r), auto.States{1})
+		ascii.Add(0, auto.Symbol(r), []auto.State{1})
 	}
 
 	return map[string]*auto.NFA{

@@ -1,0 +1,58 @@
+/*
+ * This is the EBNF description for a subset of the Pascal programming language.
+ * This subset includes basic variable declarations, assignments, conditionals, loops, and simple expressions.
+ *
+ * PROGRAM SimpleMath;
+ * 
+ * VAR
+ *   x, y, sum : INTEGER;
+ * 
+ * BEGIN
+ *   x := 10;
+ *   y := 20;
+ *   sum := x + y;
+ *
+ *   IF sum > 25 THEN
+ *     sum := sum - 5
+ *   ELSE
+ *     sum := sum + 5;
+ *
+ *   WHILE sum < 50 DO
+ *     sum := sum + 1;
+ * END.
+ *
+ */
+
+grammar pascal
+
+// Token declarations
+DIGIT  = /[0-9]/
+LETTER = /[A-Za-z]/
+NUM    = /[0-9]+(\.[0-9]+)?/
+ID     = /[A-Za-z][0-9A-Za-z]*/
+
+// Associativity and Precedence
+@left "*" "/"
+@left "+" "-"
+@left "NOT"
+@left <expr = expr logop expr>
+@none "=" "<>" "<" ">" "<=" ">="
+@left "OR" "AND"
+
+// Production rules
+start         = "PROGRAM" ID ";" block ".";
+block         = [decls] compound_stmt;
+decls         = "VAR" var_decls ";";
+var_decls     = var_decls ";" var_del | var_del;
+var_del       = ids ":" type;
+ids           = ids "," ID | ID;
+type          = "BOOLEAN" | "INTEGER" | "REAL";
+compound_stmt = "BEGIN" stmts "END";
+stmts         = stmts ";" stmt | stmt;
+stmt          = assignment | if_stmt | while_stmt | compound_stmt | ;
+assignment    = ID ":=" expr;
+if_stmt       = "IF" expr "THEN" stmt "ELSE" stmt;
+while_stmt    = "WHILE" expr "DO" stmt;
+expr          = expr "+" expr | expr "-" expr | expr "*" expr | expr "/" expr | expr logop expr |
+                "(" expr ")" | "NOT" expr | NUM | ID;
+logop         = "=" | "<>" | "<" | ">" | "<=" | ">=" | "OR" | "AND";

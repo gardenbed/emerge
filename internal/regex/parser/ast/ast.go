@@ -5,7 +5,7 @@
 package ast
 
 import (
-	"errors"
+	"fmt"
 	"sort"
 
 	auto "github.com/moorara/algo/automata"
@@ -40,7 +40,7 @@ func Parse(regex string) (*AST, error) {
 
 	out, ok := p.Parse(regex)
 	if !ok {
-		return nil, errors.New("invalid regular expression")
+		return nil, fmt.Errorf("invalid regular expression: %s", regex)
 	}
 
 	if m.errors != nil {
@@ -151,7 +151,7 @@ func (a *AST) followPos(p Pos) Poses {
 // For more details, see Compilers: Principles, Techniques, and Tools (2nd Edition).
 func (a *AST) ToDFA() *auto.DFA {
 	dfa := auto.NewDFA(0, nil)
-	Dstates := list.NewSoftQueue[Poses](func(p, q Poses) bool {
+	Dstates := list.NewSoftQueue(func(p, q Poses) bool {
 		return p.Equal(q)
 	})
 
@@ -181,12 +181,12 @@ func (a *AST) ToDFA() *auto.DFA {
 	}
 
 	dfa.Start = auto.State(0)
-	dfa.Final = auto.States{}
+	dfa.Final = auto.NewStates()
 
 	for i, S := range Dstates.Values() {
 		for _, f := range a.charToPos[endMarker] {
 			if S.Contains(f) {
-				dfa.Final = append(dfa.Final, auto.State(i))
+				dfa.Final.Add(auto.State(i))
 				break // The accepting states of D are all those sets of positions that include the position of the end-marker
 			}
 		}

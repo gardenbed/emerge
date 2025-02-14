@@ -722,7 +722,7 @@ func TestLexer_evalDFA(t *testing.T) {
 			},
 		},
 		{
-			name: "LANGEL",
+			name: "LANGLE",
 			l: &Lexer{
 				in: &mockInputBuffer{
 					SkipMocks: []SkipMock{
@@ -739,7 +739,7 @@ func TestLexer_evalDFA(t *testing.T) {
 			},
 			state: 14,
 			expectedToken: lexer.Token{
-				Terminal: LANGEL,
+				Terminal: LANGLE,
 				Lexeme:   "<",
 				Pos: lexer.Position{
 					Filename: "test",
@@ -750,7 +750,7 @@ func TestLexer_evalDFA(t *testing.T) {
 			},
 		},
 		{
-			name: "RANGEL",
+			name: "RANGLE",
 			l: &Lexer{
 				in: &mockInputBuffer{
 					SkipMocks: []SkipMock{
@@ -767,7 +767,7 @@ func TestLexer_evalDFA(t *testing.T) {
 			},
 			state: 15,
 			expectedToken: lexer.Token{
-				Terminal: RANGEL,
+				Terminal: RANGLE,
 				Lexeme:   ">",
 				Pos: lexer.Position{
 					Filename: "test",
@@ -1159,8 +1159,8 @@ func TestAdvanceDFA(t *testing.T) {
 		{"0_RBRACE", 0, '}', 11},
 		{"10_LBRACE", 10, '{', 12},
 		{"11_RBRACE", 11, '}', 13},
-		{"0_LANGEL", 0, '<', 14},
-		{"0_RANGEL", 0, '>', 15},
+		{"0_LANGLE", 0, '<', 14},
+		{"0_RANGLE", 0, '>', 15},
 
 		// $
 		{"0_$", 0, '$', 16},
@@ -1308,22 +1308,22 @@ func TestAdvanceDFA(t *testing.T) {
 
 func TestLexer(t *testing.T) {
 	tests := []struct {
-		name string
-		file string
+		name     string
+		filename string
 	}{
 		{
-			name: "Success",
-			file: "../fixture/please.grammar",
+			name:     "Success",
+			filename: "../fixture/please.grammar",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			f, err := os.Open(tc.file)
+			f, err := os.Open(tc.filename)
 			assert.NoError(t, err)
 			defer f.Close()
 
-			lex, err := New(tc.file, f)
+			lex, err := New(tc.filename, f)
 			assert.NoError(t, err)
 
 			for token, err := lex.NextToken(); err != io.EOF; token, err = lex.NextToken() {

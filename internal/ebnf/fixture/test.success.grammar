@@ -1,0 +1,23 @@
+// This is a test grammar to cover all features of EBNF
+grammar test;
+
+SEMI   = ";"
+ID     = $ID
+NUMBER = /[0-9]+(\.[0-9]+)?/
+
+@left  "*" "/"
+@left  "+" "-"
+@right <expr = expr bitop expr> <expr = expr logop expr>
+@none  "="
+
+start     = {decl} {{stmt}};
+decl      = type ID ["=" expr] SEMI;
+type      = "int" | "float" | "void";
+stmt      = assign | if_stmt;
+assign    = ID "=" expr;
+if_stmt   = "if" "(" expr ")" else_stmt;
+else_stmt = "else" stmt | ;
+expr      = expr ("+" | "-" | "*" | "/") expr | expr bitop expr  | expr logop expr | "!" expr | NUMBER | ID;
+bitop     = "|" | "&" | "^";
+logop     = "==" | "!=" | "<" | ">" | "<=" | ">=" | "OR" | "AND" | "XOR";
+empty     = ;

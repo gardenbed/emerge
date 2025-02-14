@@ -89,8 +89,8 @@ a  b  c  d  e  f  g  h  i  j  k  l  m  n  o  p  q  r  s  t  u  v  w  x  y  z
 | `RBRACE`  | `"}"`  | End symbol for *repetition (Kleene Star)* |
 | `LLBRACE` | `"{{"` | Start symbol for *repetition (Kleene Plus)* |
 | `RRBRACE` | `"}}"` | End symbol for *repetition (Kleene Plus)* |
-| `LANGEL`  | `"<"`  | Star symbol for *rule* reference |
-| `RANGEL`  | `">"`  | End symbol for *rule* reference |
+| `LANGLE`  | `"<"`  | Star symbol for *rule* reference |
+| `RANGLE`  | `">"`  | End symbol for *rule* reference |
 | `PREDEF`  | `/\$[A-Z][0-9A-Z_]*/` | predefined *token* definitions |
 | `LASSOC`  | `"@left"`  | keyword for specifying left-associative terminals |
 | `RASSOC`  | `"@right"` | keyword for specifying right-associative terminals |
@@ -106,23 +106,23 @@ a  b  c  d  e  f  g  h  i  j  k  l  m  n  o  p  q  r  s  t  u  v  w  x  y  z
 
 {% raw %}
 ```
-grammar   = name {decl}
-name      = "grammar" IDENT [";"]
-decl      = token [";"] | directive [";"] | rule ";"
-token     = TOKEN "=" (STRING | REGEX | PREDEF)
-directive = ("@left" | "@right" | "@none") {{term | "<" rule ">"}}
-rule      = lhs "=" rhs | lhs "="
-lhs       = nonterm
-rhs       = rhs rhs | "(" rhs ")" | "[" rhs "]" | "{" rhs "}" | "{{" rhs "}}" | rhs "|" rhs | rhs "|" | nonterm | term
-nonterm   = IDENT
-term      = TOKEN | STRING
+grammar   = name {decl};
+name      = "grammar" IDENT [";"];
+decl      = token [";"] | directive [";"] | rule ";";
+token     = TOKEN "=" (STRING | REGEX | PREDEF);
+directive = ("@left" | "@right" | "@none") {{term | "<" rule ">"}};
+rule      = lhs "=" [rhs];
+lhs       = nonterm;
+rhs       = rhs rhs | "(" rhs ")" | "[" rhs "]" | "{" rhs "}" | "{{" rhs "}}" | rhs "|" rhs | rhs "|" | nonterm | term;
+nonterm   = IDENT;
+term      = TOKEN | STRING;
 ```
 {% endraw %}
 
   - Tokens can be defined **explicitly** using *token declarations*
     or **implicitly** by using *string literals* in rule definitions.
   - A semicolon at the end of *grammar name*, *token definitions*, or *directives* is optional.
-  - The rule `rule = lhs "="` allows the definition of *empty productions*, such as `A → ε`.
+  - The rule `rule = lhs "=" [rhs]` allows the definition of *empty productions*, such as `A → ε`.
   - The rule `rhs = rhs "|"` permits trailing empty alternatives in production rules,
     enabling definitions like `A → B | C | ε`.
   - The addition of the `";"` token helps distinguish between successive rule definitions,
