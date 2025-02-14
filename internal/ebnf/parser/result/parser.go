@@ -1,4 +1,4 @@
-package generator
+package result
 
 import (
 	"fmt"
@@ -20,62 +20,46 @@ var predefs = map[string]string{
 	"$FLOAT":  `-?[0-9]+(\.[0-9]+)?`,
 }
 
-// Generator parses an EBNF input program and generates lexer, parser, and all auxiliary types needed.
-type Generator struct {
-	parser *parser.Parser
-	table  *SymbolTable
-}
-
-// result contains the result of a successful input parsing.
-type result struct {
+// Result contains the result of a successful input parsing.
+type Result struct {
 	Name        string
-	Definitions []*terminalDef
+	Definitions []*TerminalDef
 	Grammar     *grammar.CFG
 	Precedences lr.PrecedenceLevels
 }
 
-// New creates a generator that parses an EBNF input program and generates lexer, parser, and all auxiliary types needed.
-func New(filename string, src io.Reader) (*Generator, error) {
-	parser, err := parser.New(filename, src)
+// parse processes an EBNF input, evaluates it, and returns the result of evaluation.
+// It returns the evaluation outcome or an error if parsing fails.
+func Parse(filename string, src io.Reader) (*Result, error) {
+	table := NewSymbolTable()
+
+	p, err := parser.New(filename, src)
 	if err != nil {
 		return nil, err
 	}
 
-	table := NewSymbolTable()
-
-	return &Generator{
-		parser: parser,
-		table:  table,
-	}, nil
-}
-
-// parse processes an EBNF input, evaluates it, and returns the result of evaluation.
-// It returns the evaluation outcome or an error if parsing fails.
-func (g *Generator) parse() (*result, error) {
 	errs := &errors.MultiError{
 		Format: errors.BulletErrorFormat,
 	}
 
-	g.table.Reset()
-
-	res, err := g.parser.ParseAndEvaluate(func(i int, rhs []*lr.Value) (any, error) {
+	res, err := p.ParseAndEvaluate(func(i int, rhs []*lr.Value) (any, error) {
 		switch i {
 		// term → STRING
 		case 34:
 			a := grammar.Terminal(rhs[0].Val.(string))
-			g.table.AddStringTerminal(a, rhs[0].Pos)
+			table.AddStringTerminal(a, rhs[0].Pos)
 			return a, nil
 
 		// term → TOKEN
 		case 33:
 			a := grammar.Terminal(rhs[0].Val.(string))
-			g.table.AddTokenTerminal(a, rhs[0].Pos)
+			table.AddTokenTerminal(a, rhs[0].Pos)
 			return a, nil
 
 		// nonterm → IDENT
 		case 32:
 			A := grammar.NonTerminal(rhs[0].Val.(string))
-			g.table.AddNonTerminal(A, rhs[0].Pos)
+			table.AddNonTerminal(A, rhs[0].Pos)
 			return A, nil
 
 		// rhs → term
@@ -114,16 +98,16 @@ func (g *Generator) parse() (*result, error) {
 		// rhs → "{{" rhs "}}"
 		case 27:
 			s := rhs[1].Val.(Strings)
-			plus := g.table.GetPlus(s)
-			g.table.AddNonTerminal(plus, rhs[1].Pos)
+			plus := table.GetPlus(s)
+			table.AddNonTerminal(plus, rhs[1].Pos)
 
 			for _, α := range s {
-				g.table.AddProduction(
+				table.AddProduction(
 					&grammar.Production{Head: plus, Body: α.Prepend(plus)},
 					rhs[0].Pos,
 				)
 
-				g.table.AddProduction(
+				table.AddProduction(
 					&grammar.Production{Head: plus, Body: α},
 					rhs[0].Pos,
 				)
@@ -134,17 +118,17 @@ func (g *Generator) parse() (*result, error) {
 		// rhs → "{" rhs "}"
 		case 26:
 			s := rhs[1].Val.(Strings)
-			star := g.table.GetStar(s)
-			g.table.AddNonTerminal(star, rhs[1].Pos)
+			star := table.GetStar(s)
+			table.AddNonTerminal(star, rhs[1].Pos)
 
 			for _, α := range s {
-				g.table.AddProduction(
+				table.AddProduction(
 					&grammar.Production{Head: star, Body: α.Prepend(star)},
 					rhs[0].Pos,
 				)
 			}
 
-			g.table.AddProduction(
+			table.AddProduction(
 				&grammar.Production{Head: star, Body: grammar.E},
 				rhs[0].Pos,
 			)
@@ -154,17 +138,17 @@ func (g *Generator) parse() (*result, error) {
 		// rhs → "[" rhs "]"
 		case 25:
 			s := rhs[1].Val.(Strings)
-			opt := g.table.GetOpt(s)
-			g.table.AddNonTerminal(opt, rhs[1].Pos)
+			opt := table.GetOpt(s)
+			table.AddNonTerminal(opt, rhs[1].Pos)
 
 			for _, α := range s {
-				g.table.AddProduction(
+				table.AddProduction(
 					&grammar.Production{Head: opt, Body: α},
 					rhs[0].Pos,
 				)
 			}
 
-			g.table.AddProduction(
+			table.AddProduction(
 				&grammar.Production{Head: opt, Body: grammar.E},
 				rhs[0].Pos,
 			)
@@ -174,11 +158,11 @@ func (g *Generator) parse() (*result, error) {
 		// rhs → "(" rhs ")"
 		case 24:
 			s := rhs[1].Val.(Strings)
-			group := g.table.GetGroup(s)
-			g.table.AddNonTerminal(group, rhs[1].Pos)
+			group := table.GetGroup(s)
+			table.AddNonTerminal(group, rhs[1].Pos)
 
 			for _, α := range s {
-				g.table.AddProduction(
+				table.AddProduction(
 					&grammar.Production{Head: group, Body: α},
 					rhs[0].Pos,
 				)
@@ -211,7 +195,7 @@ func (g *Generator) parse() (*result, error) {
 				Body: grammar.E,
 			}
 
-			g.table.AddProduction(p, rhs[0].Pos)
+			table.AddProduction(p, rhs[0].Pos)
 			prods := []*grammar.Production{p}
 
 			return prods, nil
@@ -224,7 +208,7 @@ func (g *Generator) parse() (*result, error) {
 			prods := []*grammar.Production{}
 			for _, α := range s {
 				p := &grammar.Production{Head: head, Body: α}
-				g.table.AddProduction(p, rhs[0].Pos)
+				table.AddProduction(p, rhs[0].Pos)
 				prods = append(prods, p)
 			}
 
@@ -290,7 +274,7 @@ func (g *Generator) parse() (*result, error) {
 				Handles:       lr.NewPrecedenceHandles(handles...),
 			}
 
-			g.table.AddPrecedence(p)
+			table.AddPrecedence(p)
 
 			return p, nil
 
@@ -303,7 +287,7 @@ func (g *Generator) parse() (*result, error) {
 				Handles:       lr.NewPrecedenceHandles(handles...),
 			}
 
-			g.table.AddPrecedence(p)
+			table.AddPrecedence(p)
 
 			return p, nil
 
@@ -316,7 +300,7 @@ func (g *Generator) parse() (*result, error) {
 				Handles:       lr.NewPrecedenceHandles(handles...),
 			}
 
-			g.table.AddPrecedence(p)
+			table.AddPrecedence(p)
 
 			return p, nil
 
@@ -331,7 +315,7 @@ func (g *Generator) parse() (*result, error) {
 				return nil, nil
 			}
 
-			if err := g.table.AddRegexTokenDef(token, regex, rhs[0].Pos); err != nil {
+			if err := table.AddRegexTokenDef(token, regex, rhs[0].Pos); err != nil {
 				errs = errors.Append(errs, err)
 				return nil, nil
 			}
@@ -343,7 +327,7 @@ func (g *Generator) parse() (*result, error) {
 			token := grammar.Terminal(rhs[0].Val.(string))
 			regex := rhs[2].Val.(string)
 
-			if err := g.table.AddRegexTokenDef(token, regex, rhs[0].Pos); err != nil {
+			if err := table.AddRegexTokenDef(token, regex, rhs[0].Pos); err != nil {
 				errs = errors.Append(errs, err)
 				return nil, nil
 			}
@@ -355,7 +339,7 @@ func (g *Generator) parse() (*result, error) {
 			token := grammar.Terminal(rhs[0].Val.(string))
 			value := rhs[2].Val.(string)
 
-			g.table.AddStringTokenDef(token, value, rhs[0].Pos)
+			table.AddStringTokenDef(token, value, rhs[0].Pos)
 
 			return nil, nil
 
@@ -393,19 +377,19 @@ func (g *Generator) parse() (*result, error) {
 
 		// grammar → name decls
 		case 0:
-			if err := g.table.Verify(); err != nil {
+			if err := table.Verify(); err != nil {
 				errs = errors.Append(errs, err)
 				return nil, errs
 			}
 
-			defs := g.table.Definitions()
+			defs := table.Definitions()
 
-			grammar := grammar.NewCFG(g.table.Terminals(), g.table.NonTerminals(), g.table.Productions(), "start")
+			grammar := grammar.NewCFG(table.Terminals(), table.NonTerminals(), table.Productions(), "start")
 			if err := grammar.Verify(); err != nil {
 				errs = errors.Append(errs, err)
 			}
 
-			precedences := g.table.Precedences()
+			precedences := table.Precedences()
 			if err := precedences.Verify(); err != nil {
 				errs = errors.Append(errs, err)
 			}
@@ -414,7 +398,7 @@ func (g *Generator) parse() (*result, error) {
 				return nil, err
 			}
 
-			return &result{
+			return &Result{
 				Name:        rhs[0].Val.(string),
 				Definitions: defs,
 				Grammar:     grammar,
@@ -429,5 +413,5 @@ func (g *Generator) parse() (*result, error) {
 		return nil, err
 	}
 
-	return res.Val.(*result), nil
+	return res.Val.(*Result), nil
 }

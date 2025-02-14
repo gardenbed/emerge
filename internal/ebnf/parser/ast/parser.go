@@ -18,7 +18,7 @@ var predefs = map[string]string{
 	"$FLOAT":  `-?[0-9]+(\.[0-9]+)?`,
 }
 
-// ParseAndBuildAST implements the LR parsing algorithm.
+// Parse implements the LR parsing algorithm.
 // It analyzes a sequence of input tokens (terminal symbols) provided by a lexical analyzer.
 // It attempts to parse the input according to the production rules of the EBNF grammar.
 //
@@ -26,7 +26,7 @@ var predefs = map[string]string{
 // representing the syntactic structure of the input string.
 //
 // An error is returned if the input fails to conform to the grammar rules, indicating a syntax issue.
-func ParseAndBuildAST(filename string, src io.Reader) (*Grammar, error) {
+func Parse(filename string, src io.Reader) (*Grammar, error) {
 	p, err := parser.New(filename, src)
 	if err != nil {
 		return nil, err

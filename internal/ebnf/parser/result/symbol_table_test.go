@@ -1,4 +1,4 @@
-package generator
+package result
 
 import (
 	"fmt"
@@ -177,12 +177,12 @@ func TestSymbolTable_Definitions(t *testing.T) {
 	tests := []struct {
 		name                string
 		st                  *SymbolTable
-		expectedDefinitions []*terminalDef
+		expectedDefinitions []*TerminalDef
 	}{
 		{
 			name: "Success",
 			st:   st,
-			expectedDefinitions: []*terminalDef{
+			expectedDefinitions: []*TerminalDef{
 				{Terminal: ";", DFA: dfa[0]},
 				{Terminal: "NUM", DFA: dfa[1]},
 			},

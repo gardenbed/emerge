@@ -1,4 +1,4 @@
-package generator
+package result
 
 import (
 	"hash/fnv"

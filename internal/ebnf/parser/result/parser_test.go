@@ -1,69 +1,29 @@
-package generator
+package result
 
 import (
-	"errors"
-	"io"
 	"os"
-	"strings"
 	"testing"
-	"testing/iotest"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNew(t *testing.T) {
-	tests := []struct {
-		name          string
-		filename      string
-		src           io.Reader
-		expectedError string
-	}{
-		{
-			name:          "Success",
-			filename:      "lorem_ipsum",
-			src:           strings.NewReader("Lorem ipsum"),
-			expectedError: "",
-		},
-		{
-			name:          "Failure",
-			filename:      "lorem_ipsum",
-			src:           iotest.ErrReader(errors.New("io error")),
-			expectedError: "io error",
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			gen, err := New(tc.filename, tc.src)
-
-			if tc.expectedError == "" {
-				assert.NotNil(t, gen)
-				assert.NoError(t, err)
-			} else {
-				assert.Nil(t, gen)
-				assert.EqualError(t, err, tc.expectedError)
-			}
-		})
-	}
-}
-
-func TestGenerator_parse(t *testing.T) {
+func TestParse(t *testing.T) {
 	tests := []struct {
 		name                 string
 		filename             string
-		expectedResult       *result
+		expectedResult       *Result
 		expectedErrorStrings []string
 	}{
 		{
 			name:     "Invalid",
-			filename: "../fixture/invalid.grammar",
+			filename: "../../fixture/invalid.grammar",
 			expectedErrorStrings: []string{
-				`lexical error at ../fixture/invalid.grammar:1:1:L`,
+				`lexical error at ../../fixture/invalid.grammar:1:1:L`,
 			},
 		},
 		{
 			name:     "Error",
-			filename: "../fixture/test.error.grammar",
+			filename: "../../fixture/test.error.grammar",
 			expectedErrorStrings: []string{
 				`5 errors occurred:`,
 				`invalid predefined regex: $IDN`,
@@ -75,10 +35,10 @@ func TestGenerator_parse(t *testing.T) {
 		},
 		{
 			name:     "Success",
-			filename: "../fixture/test.success.grammar",
-			expectedResult: &result{
+			filename: "../../fixture/test.success.grammar",
+			expectedResult: &Result{
 				Name:        "test",
-				Definitions: []*terminalDef{},
+				Definitions: []*TerminalDef{},
 				Grammar:     grammars[0],
 				Precedences: precedences[0],
 			},
@@ -91,10 +51,7 @@ func TestGenerator_parse(t *testing.T) {
 			assert.NoError(t, err)
 			defer f.Close()
 
-			g, err := New(tc.filename, f)
-			assert.NoError(t, err)
-
-			res, err := g.parse()
+			res, err := Parse(tc.filename, f)
 
 			if len(tc.expectedErrorStrings) > 0 {
 				assert.Nil(t, res)

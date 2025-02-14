@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestParser_ParseAndBuildAST(t *testing.T) {
+func TestParse(t *testing.T) {
 	tests := []struct {
 		name          string
 		filename      string
@@ -31,7 +31,7 @@ func TestParser_ParseAndBuildAST(t *testing.T) {
 			assert.NoError(t, err)
 			defer f.Close()
 
-			root, err := ParseAndBuildAST(tc.filename, f)
+			root, err := Parse(tc.filename, f)
 
 			if len(tc.expectedError) == 0 {
 				assert.NotNil(t, root)

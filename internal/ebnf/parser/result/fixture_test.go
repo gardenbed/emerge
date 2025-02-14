@@ -1,4 +1,4 @@
-package generator
+package result
 
 import (
 	auto "github.com/moorara/algo/automata"
