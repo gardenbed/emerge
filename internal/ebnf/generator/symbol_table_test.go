@@ -170,7 +170,7 @@ func TestSymbolTable_Definitions(t *testing.T) {
 
 	st := NewSymbolTable()
 	st.AddStringTokenDef(";", ";", &lexer.Position{})
-	st.AddRegexTokenDef("NUM", "[0-9]+", &lexer.Position{})
+	_ = st.AddRegexTokenDef("NUM", "[0-9]+", &lexer.Position{})
 	st.AddTokenTerminal(";", &lexer.Position{})
 	st.AddTokenTerminal("NUM", &lexer.Position{})
 
