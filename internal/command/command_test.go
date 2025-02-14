@@ -8,98 +8,70 @@ import (
 )
 
 func TestNew(t *testing.T) {
-	ui := ui.NewNop()
-	c := New(ui)
-
-	assert.NotNil(t, c)
-}
-
-func TestNewFactory(t *testing.T) {
-	ui := ui.NewNop()
-	c, err := NewFactory(ui)()
-
-	assert.NoError(t, err)
-	assert.NotNil(t, c)
-}
-
-func TestCommand_Synopsis(t *testing.T) {
-	c := new(Command)
-	synopsis := c.Synopsis()
-
-	assert.NotEmpty(t, synopsis)
-}
-
-func TestCommand_Help(t *testing.T) {
-	c := new(Command)
-	help := c.Help()
-
-	assert.NotEmpty(t, help)
-}
-
-func TestCommand_Run(t *testing.T) {
-	t.Run("InvalidFlag", func(t *testing.T) {
-		c := &Command{ui: ui.NewNop()}
-		exitCode := c.Run([]string{"-undefined"})
-
-		assert.Equal(t, FlagError, exitCode)
-	})
-
 	t.Run("OK", func(t *testing.T) {
-		c := &Command{ui: ui.NewNop()}
-		exitCode := c.Run([]string{})
+		u := ui.NewNop()
+		cmd := New(u)
 
-		assert.Equal(t, Success, exitCode)
+		assert.NotNil(t, cmd)
 	})
 }
 
-func TestCommand_parseFlags(t *testing.T) {
+func TestCommand_PrintHelp(t *testing.T) {
 	tests := []struct {
-		name             string
-		args             []string
-		expectedExitCode int
+		name          string
+		c             *Command
+		expectedError string
 	}{
 		{
-			name:             "InvalidFlag",
-			args:             []string{"-undefined"},
-			expectedExitCode: FlagError,
-		},
-		{
-			name:             "NoFlag",
-			args:             []string{},
-			expectedExitCode: Success,
+			name: "OK",
+			c: &Command{
+				UI:      ui.NewNop(),
+				Verbose: true,
+			},
+			expectedError: "",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			c := &Command{ui: ui.NewNop()}
-			exitCode := c.parseFlags(tc.args)
+			err := tc.c.PrintHelp()
 
-			assert.Equal(t, tc.expectedExitCode, exitCode)
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.EqualError(t, err, tc.expectedError)
+			}
 		})
 	}
 }
 
-func TestCommand_exec(t *testing.T) {
+func TestCommand_Run(t *testing.T) {
 	tests := []struct {
-		name             string
-		expectedExitCode int
+		name          string
+		c             *Command
+		args          []string
+		expectedError string
 	}{
 		{
-			name:             "Success",
-			expectedExitCode: Success,
+			name: "OK",
+			c: &Command{
+				UI:      ui.NewNop(),
+				Verbose: true,
+			},
+			args:          []string{},
+			expectedError: "",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			c := &Command{
-				ui: ui.NewNop(),
+			err := tc.c.Run(tc.args)
+
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.EqualError(t, err, tc.expectedError)
 			}
-
-			exitCode := c.exec()
-
-			assert.Equal(t, tc.expectedExitCode, exitCode)
 		})
 	}
 }
