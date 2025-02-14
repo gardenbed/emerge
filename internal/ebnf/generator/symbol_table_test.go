@@ -54,13 +54,13 @@ func TestSymbolTable_Verify(t *testing.T) {
 
 	st2 := NewSymbolTable()
 	st2.AddStringTokenDef("QUOT", "\"", &lexer.Position{Filename: "test", Offset: 10, Line: 2, Column: 1})
-	st2.AddRegexTokenDef("NUM", "[0-9]+", &lexer.Position{Filename: "test", Offset: 20, Line: 3, Column: 1})
+	_ = st2.AddRegexTokenDef("NUM", "[0-9]+", &lexer.Position{Filename: "test", Offset: 20, Line: 3, Column: 1})
 	st2.AddTokenTerminal("QUOT", &lexer.Position{Filename: "test", Offset: 30, Line: 4, Column: 10})
 	st2.AddTokenTerminal("NUM", &lexer.Position{Filename: "test", Offset: 40, Line: 5, Column: 12})
 
 	st3 := NewSymbolTable()
 	st3.AddStringTokenDef("QUOT", "\"", &lexer.Position{Filename: "test", Offset: 10, Line: 2, Column: 1})
-	st3.AddRegexTokenDef("NUM", "[0-9]+", &lexer.Position{Filename: "test", Offset: 20, Line: 3, Column: 1})
+	_ = st3.AddRegexTokenDef("NUM", "[0-9]+", &lexer.Position{Filename: "test", Offset: 20, Line: 3, Column: 1})
 	st3.AddTokenTerminal("QUOT", &lexer.Position{Filename: "test", Offset: 30, Line: 4, Column: 10})
 	st3.AddTokenTerminal("NUM", &lexer.Position{Filename: "test", Offset: 40, Line: 5, Column: 12})
 	st3.AddProduction(
@@ -168,17 +168,11 @@ func TestSymbolTable_Precedences(t *testing.T) {
 func TestSymbolTable_Definitions(t *testing.T) {
 	dfa := getDFA()
 
-	st0 := NewSymbolTable()
-	st0.AddRegexTokenDef("ID", "[a-z", &lexer.Position{})
-	st0.AddRegexTokenDef("NUM", "[0-9", &lexer.Position{})
-	st0.AddTokenTerminal("ID", &lexer.Position{})
-	st0.AddTokenTerminal("NUM", &lexer.Position{})
-
-	st1 := NewSymbolTable()
-	st1.AddStringTokenDef(";", ";", &lexer.Position{})
-	st1.AddRegexTokenDef("NUM", "[0-9]+", &lexer.Position{})
-	st1.AddTokenTerminal(";", &lexer.Position{})
-	st1.AddTokenTerminal("NUM", &lexer.Position{})
+	st := NewSymbolTable()
+	st.AddStringTokenDef(";", ";", &lexer.Position{})
+	st.AddRegexTokenDef("NUM", "[0-9]+", &lexer.Position{})
+	st.AddTokenTerminal(";", &lexer.Position{})
+	st.AddTokenTerminal("NUM", &lexer.Position{})
 
 	tests := []struct {
 		name                string
@@ -187,7 +181,7 @@ func TestSymbolTable_Definitions(t *testing.T) {
 	}{
 		{
 			name: "Success",
-			st:   st1,
+			st:   st,
 			expectedDefinitions: []*terminalDef{
 				{Terminal: ";", DFA: dfa[0]},
 				{Terminal: "NUM", DFA: dfa[1]},

@@ -157,8 +157,7 @@ func (n *Grammar) DOT() string {
 			graph.AddNode(dot.NewNode(name, "", label, dot.ColorGold, dot.StyleFilled, dot.ShapeSquare, "", ""))
 
 			for _, m := range n.Children() {
-				from := fmt.Sprintf("%s", name)
-				to := fmt.Sprintf("%d", nodeID[m])
+				from, to := name, fmt.Sprintf("%d", nodeID[m])
 				graph.AddEdge(dot.NewEdge(from, to, dot.EdgeTypeDirected, "", "", "", "", "", ""))
 			}
 
@@ -175,8 +174,7 @@ func (n *Grammar) DOT() string {
 			graph.AddNode(dot.NewNode(name, "", label, dot.ColorBurlyWood, dot.StyleFilled, dot.ShapeBox, "", ""))
 
 			for _, m := range n.Children() {
-				from := fmt.Sprintf("%s", name)
-				to := fmt.Sprintf("%d", nodeID[m])
+				from, to := name, fmt.Sprintf("%d", nodeID[m])
 				graph.AddEdge(dot.NewEdge(from, to, dot.EdgeTypeDirected, "", "", "", "", "", ""))
 			}
 
@@ -189,8 +187,7 @@ func (n *Grammar) DOT() string {
 			graph.AddNode(dot.NewNode(name, "", label, dot.ColorBurlyWood, dot.StyleFilled, dot.ShapeBox, "", ""))
 
 			for _, m := range n.Children() {
-				from := fmt.Sprintf("%s", name)
-				to := fmt.Sprintf("%d", nodeID[m])
+				from, to := name, fmt.Sprintf("%d", nodeID[m])
 				graph.AddEdge(dot.NewEdge(from, to, dot.EdgeTypeDirected, "", "", "", "", "", ""))
 			}
 
@@ -199,8 +196,7 @@ func (n *Grammar) DOT() string {
 			graph.AddNode(dot.NewNode(name, "", label, dot.ColorLightPink, dot.StyleFilled, dot.ShapeBox, "", ""))
 
 			for _, m := range n.Children() {
-				from := fmt.Sprintf("%s", name)
-				to := fmt.Sprintf("%d", nodeID[m])
+				from, to := name, fmt.Sprintf("%d", nodeID[m])
 				graph.AddEdge(dot.NewEdge(from, to, dot.EdgeTypeDirected, "", "", "", "", "", ""))
 			}
 
@@ -208,8 +204,7 @@ func (n *Grammar) DOT() string {
 			graph.AddNode(dot.NewNode(name, "", "CONCAT", dot.ColorLavender, dot.StyleFilled, dot.ShapeBox, "", ""))
 
 			for _, m := range n.Children() {
-				from := fmt.Sprintf("%s", name)
-				to := fmt.Sprintf("%d", nodeID[m])
+				from, to := name, fmt.Sprintf("%d", nodeID[m])
 				graph.AddEdge(dot.NewEdge(from, to, dot.EdgeTypeDirected, "", "", "", "", "", ""))
 			}
 
@@ -217,8 +212,7 @@ func (n *Grammar) DOT() string {
 			graph.AddNode(dot.NewNode(name, "", "ALT", dot.ColorLavender, dot.StyleFilled, dot.ShapeBox, "", ""))
 
 			for _, m := range n.Children() {
-				from := fmt.Sprintf("%s", name)
-				to := fmt.Sprintf("%d", nodeID[m])
+				from, to := name, fmt.Sprintf("%d", nodeID[m])
 				graph.AddEdge(dot.NewEdge(from, to, dot.EdgeTypeDirected, "", "", "", "", "", ""))
 			}
 
@@ -226,8 +220,7 @@ func (n *Grammar) DOT() string {
 			graph.AddNode(dot.NewNode(name, "", "ZERO OR ONE", dot.ColorLavender, dot.StyleFilled, dot.ShapeBox, "", ""))
 
 			for _, m := range n.Children() {
-				from := fmt.Sprintf("%s", name)
-				to := fmt.Sprintf("%d", nodeID[m])
+				from, to := name, fmt.Sprintf("%d", nodeID[m])
 				graph.AddEdge(dot.NewEdge(from, to, dot.EdgeTypeDirected, "", "", "", "", "", ""))
 			}
 
@@ -235,8 +228,7 @@ func (n *Grammar) DOT() string {
 			graph.AddNode(dot.NewNode(name, "", "ZERO OR MORE", dot.ColorLavender, dot.StyleFilled, dot.ShapeBox, "", ""))
 
 			for _, m := range n.Children() {
-				from := fmt.Sprintf("%s", name)
-				to := fmt.Sprintf("%d", nodeID[m])
+				from, to := name, fmt.Sprintf("%d", nodeID[m])
 				graph.AddEdge(dot.NewEdge(from, to, dot.EdgeTypeDirected, "", "", "", "", "", ""))
 			}
 
@@ -244,8 +236,7 @@ func (n *Grammar) DOT() string {
 			graph.AddNode(dot.NewNode(name, "", "ONE OR MORE", dot.ColorLavender, dot.StyleFilled, dot.ShapeBox, "", ""))
 
 			for _, m := range n.Children() {
-				from := fmt.Sprintf("%s", name)
-				to := fmt.Sprintf("%d", nodeID[m])
+				from, to := name, fmt.Sprintf("%d", nodeID[m])
 				graph.AddEdge(dot.NewEdge(from, to, dot.EdgeTypeDirected, "", "", "", "", "", ""))
 			}
 
