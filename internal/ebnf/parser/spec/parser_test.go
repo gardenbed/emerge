@@ -39,8 +39,8 @@ func TestParse(t *testing.T) {
 			expectedSpec: &Spec{
 				Name:        "test",
 				Definitions: []*TerminalDef{},
-				Grammar:     grammars[0],
-				Precedences: precedences[0],
+				Grammar:     grammars[1],
+				Precedences: precedences[1],
 			},
 		},
 	}

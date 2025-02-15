@@ -20,14 +20,6 @@ var predefs = map[string]string{
 	"$FLOAT":  `-?[0-9]+(\.[0-9]+)?`,
 }
 
-// Spec contains the result of a successful input parsing.
-type Spec struct {
-	Name        string
-	Definitions []*TerminalDef
-	Grammar     *grammar.CFG
-	Precedences lr.PrecedenceLevels
-}
-
 // parse processes an EBNF input, evaluates it, and returns the result of evaluation.
 // It returns the evaluation outcome or an error if parsing fails.
 func Parse(filename string, src io.Reader) (*Spec, error) {

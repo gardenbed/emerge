@@ -170,9 +170,13 @@ func TestSymbolTable_Definitions(t *testing.T) {
 
 	st := NewSymbolTable()
 	st.AddStringTokenDef(";", ";", &lexer.Position{})
+	st.AddStringTokenDef("if", "if", &lexer.Position{})
 	_ = st.AddRegexTokenDef("NUM", "[0-9]+", &lexer.Position{})
-	st.AddTokenTerminal(";", &lexer.Position{})
+	_ = st.AddRegexTokenDef("ID", "[A-Za-z_][0-9A-Za-z_]*", &lexer.Position{})
+	st.AddStringTerminal(";", &lexer.Position{})
+	st.AddStringTerminal("if", &lexer.Position{})
 	st.AddTokenTerminal("NUM", &lexer.Position{})
+	st.AddTokenTerminal("ID", &lexer.Position{})
 
 	tests := []struct {
 		name                string
@@ -184,7 +188,9 @@ func TestSymbolTable_Definitions(t *testing.T) {
 			st:   st,
 			expectedDefinitions: []*TerminalDef{
 				{Terminal: ";", DFA: dfa[0]},
-				{Terminal: "NUM", DFA: dfa[1]},
+				{Terminal: "ID", DFA: dfa[3]},
+				{Terminal: "if", DFA: dfa[1]},
+				{Terminal: "NUM", DFA: dfa[2]},
 			},
 		},
 	}
@@ -193,7 +199,7 @@ func TestSymbolTable_Definitions(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			defs := tc.st.Definitions()
 
-			assert.Len(t, dfa, len(tc.expectedDefinitions))
+			assert.Len(t, defs, len(tc.expectedDefinitions))
 
 			for i, expectedDef := range tc.expectedDefinitions {
 				t.Run(fmt.Sprintf("DFA[%d]", i), func(t *testing.T) {
