@@ -48,7 +48,7 @@ func main() {
 
 	default:
 		if err := cmd.Run(fs.Args()); err != nil {
-			u.Errorf(ui.Red, "%s", err)
+			u.Errorf(ui.Red, "\n%s", err)
 			os.Exit(1)
 		}
 	}
