@@ -186,13 +186,22 @@ func (c *Command) Run(args []string) error {
 		return err
 	}
 
+	var name string
+	if c.Name != "" {
+		name = c.Name
+	} else {
+		name = spec.Name
+	}
+
 	c.Infof(ui.Magenta, "%c Generating parser ...", getAnimal())
 
 	err = c.funcs.Generate(c.UI, &generate.Params{
-		Path:    c.Out,
-		Package: c.Name,
-		Debug:   c.Debug,
-		Spec:    spec,
+		Debug:       c.Debug,
+		Path:        c.Out,
+		Package:     name,
+		Definitions: spec.Definitions,
+		Grammar:     spec.Grammar,
+		Precedences: spec.Precedences,
 	})
 
 	if err != nil {

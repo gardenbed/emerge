@@ -3,6 +3,7 @@ package command
 import (
 	"errors"
 	"io"
+	"os"
 	"testing"
 
 	"github.com/gardenbed/charm/ui"
@@ -40,12 +41,27 @@ func TestCommand_PrintHelp(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			err := tc.c.PrintHelp()
+			r, w, err := os.Pipe()
+			assert.NoError(t, err)
 
-			if tc.expectedError == "" {
-				assert.NoError(t, err)
-			} else {
+			orig := os.Stdout
+			os.Stdout = w
+			defer func() {
+				os.Stdout = orig
+			}()
+
+			err = tc.c.PrintHelp()
+
+			if tc.expectedError != "" {
 				assert.EqualError(t, err, tc.expectedError)
+			} else {
+				assert.NoError(t, err)
+
+				w.Close()
+
+				out, err := io.ReadAll(r)
+				assert.NotNil(t, out)
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -54,19 +70,25 @@ func TestCommand_PrintHelp(t *testing.T) {
 func TestCommand_Run(t *testing.T) {
 	tests := []struct {
 		name          string
-		funcs         funcs
+		c             *Command
 		args          []string
 		expectedError string
 	}{
 		{
-			name:          "Error_NoFile",
-			funcs:         funcs{},
+			name: "Error_NoFile",
+			c: &Command{
+				UI:    ui.NewNop(),
+				funcs: funcs{},
+			},
 			args:          []string{},
 			expectedError: "no input file specified, please provide a file path",
 		},
 		{
-			name:  "Error_FileNotExist",
-			funcs: funcs{},
+			name: "Error_FileNotExist",
+			c: &Command{
+				UI:    ui.NewNop(),
+				funcs: funcs{},
+			},
 			args: []string{
 				"missing.grammar",
 			},
@@ -74,9 +96,12 @@ func TestCommand_Run(t *testing.T) {
 		},
 		{
 			name: "Error_ParseFails",
-			funcs: funcs{
-				Parse: func(string, io.Reader) (*spec.Spec, error) {
-					return nil, errors.New("error on parsing the input")
+			c: &Command{
+				UI: ui.NewNop(),
+				funcs: funcs{
+					Parse: func(string, io.Reader) (*spec.Spec, error) {
+						return nil, errors.New("error on parsing the input")
+					},
 				},
 			},
 			args: []string{
@@ -86,12 +111,15 @@ func TestCommand_Run(t *testing.T) {
 		},
 		{
 			name: "Error_GenerateFails",
-			funcs: funcs{
-				Parse: func(string, io.Reader) (*spec.Spec, error) {
-					return &spec.Spec{}, nil
-				},
-				Generate: func(ui.UI, *generate.Params) error {
-					return errors.New("error on generating the parser")
+			c: &Command{
+				UI: ui.NewNop(),
+				funcs: funcs{
+					Parse: func(string, io.Reader) (*spec.Spec, error) {
+						return &spec.Spec{}, nil
+					},
+					Generate: func(ui.UI, *generate.Params) error {
+						return errors.New("error on generating the parser")
+					},
 				},
 			},
 			args: []string{
@@ -101,13 +129,19 @@ func TestCommand_Run(t *testing.T) {
 		},
 		{
 			name: "Success",
-			funcs: funcs{
-				Parse: func(string, io.Reader) (*spec.Spec, error) {
-					return &spec.Spec{}, nil
+			c: &Command{
+				UI: ui.NewNop(),
+				funcs: funcs{
+					Parse: func(string, io.Reader) (*spec.Spec, error) {
+						return &spec.Spec{}, nil
+					},
+					Generate: func(ui.UI, *generate.Params) error {
+						return nil
+					},
 				},
-				Generate: func(ui.UI, *generate.Params) error {
-					return nil
-				},
+
+				Out:  "/path/to/destination",
+				Name: "override",
 			},
 			args: []string{
 				"../ebnf/fixture/test.success.grammar",
@@ -118,12 +152,7 @@ func TestCommand_Run(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			c := &Command{
-				UI:    ui.NewNop(),
-				funcs: tc.funcs,
-			}
-
-			err := c.Run(tc.args)
+			err := tc.c.Run(tc.args)
 
 			if tc.expectedError == "" {
 				assert.NoError(t, err)
