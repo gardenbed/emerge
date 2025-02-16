@@ -131,7 +131,7 @@ func main() {
 
 	dfa.Add(0, '$', 16)
 
-	for _, r := range []rune("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_") {
+	for _, r := range "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_" {
 		if 'A' <= r && r <= 'Z' {
 			dfa.Add(16, Symbol(r), 17)
 		}
@@ -169,7 +169,7 @@ func main() {
 	dfa.Add(36, 'a', 37)
 	dfa.Add(37, 'r', 38)
 
-	for _, r := range []rune("0123456789_abcdefghijklmnopqrstuvwxyz") {
+	for _, r := range "0123456789_abcdefghijklmnopqrstuvwxyz" {
 		if 'a' <= r && r != 'g' {
 			dfa.Add(0, Symbol(r), 39)
 		}
@@ -196,7 +196,7 @@ func main() {
 
 	//====================< TOKEN >====================
 
-	for _, r := range []rune("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_") {
+	for _, r := range "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_" {
 		if 'A' <= r && r <= 'Z' {
 			dfa.Add(0, Symbol(r), 41)
 		}
@@ -255,7 +255,7 @@ func main() {
 
 	dfa.Add(47, '*', 52)
 
-	for _, r := range []rune("\t\n\r") {
+	for _, r := range "\t\n\r" {
 		dfa.Add(52, Symbol(r), 52)
 		dfa.Add(53, Symbol(r), 52)
 	}
