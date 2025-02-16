@@ -170,7 +170,7 @@ func (c *Command) Run(args []string) error {
 
 	filename := filepath.Base(path)
 
-	c.Infof(nil, "%c Opening %q ...", getPlant(), filename)
+	c.Infof(nil, "%c Parsing %q ...", getPlant(), filename)
 
 	f, err := os.Open(path)
 	if err != nil {
@@ -178,8 +178,6 @@ func (c *Command) Run(args []string) error {
 	}
 
 	defer f.Close()
-
-	c.Infof(nil, "%c Reading %q ...", getFruit(), filename)
 
 	spec, err := c.funcs.Parse(filename, f)
 	if err != nil {
@@ -192,6 +190,8 @@ func (c *Command) Run(args []string) error {
 	} else {
 		name = spec.Name
 	}
+
+	c.Infof(ui.Blue, "%c Building LALR(1) Parsing Table ...", getFruit())
 
 	T, err := spec.LALRParsingTable()
 	if err != nil {
