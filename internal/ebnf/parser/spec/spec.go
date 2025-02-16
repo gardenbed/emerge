@@ -24,12 +24,14 @@ type Spec struct {
 // DFA constructs a deterministic finite automaton (DFA)
 // for recognizing all terminal symbols (tokens) in the grammar of the spec.
 func (s *Spec) DFA() *auto.DFA {
+	n0 := auto.NewNFA(0, nil)
+
 	nfa := make([]*auto.NFA, len(s.Definitions))
 	for i, def := range s.Definitions {
 		nfa[i] = def.ToNFA()
 	}
 
-	return nfa[0].Union(nfa[1:]...).ToDFA().EliminateDeadStates().ReindexStates()
+	return n0.Union(nfa...).ToDFA().EliminateDeadStates().ReindexStates()
 }
 
 // Productions returns an ordered list of all production rules in the grammar of the spec.
