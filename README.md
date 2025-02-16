@@ -13,6 +13,39 @@ description of any arbitrary grammar (language).
 
 For an in-depth description of the project, please see the full documentation [here](./docs/index.md).
 
+## Quick Start
+
+### Install
+
+```
+brew install gardenbed/brew/emerge
+```
+
+For other platforms, you can download the binary from the [latest release](https://github.com/gardenbed/emerge/releases/latest).
+
+### Examples
+
+Below is the context-free grammar for the JSON language in EBNF format. Save this as `json.grammar`:
+
+```
+grammar json
+
+NUMBER = /-?[0-9]+(\.[0-9]+)?/
+STRING = /"([\x21\x23-\x5B\x5D-\x7E]\|\\[\x21-\x7E])+"/
+
+start    = value;
+value    = object | array | STRING | NUMBER | "true" | "false" | "null";
+object   = "{" members "}" | "{" "}";
+members  = members "," member | member;
+member   = STRING ":" value;
+array    = "[" elements "]" | "[" "]";
+elements = elements "," value | value;
+```
+
+```bash
+emerge json.grammar
+```
+
 
 [godoc-url]: https://pkg.go.dev/github.com/gardenbed/emerge
 [godoc-image]: https://pkg.go.dev/badge/github.com/gardenbed/emerge
