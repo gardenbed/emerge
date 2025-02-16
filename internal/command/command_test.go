@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/gardenbed/charm/ui"
+	"github.com/moorara/algo/parser/lr"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/gardenbed/emerge/internal/ebnf/parser/spec"
@@ -68,11 +69,13 @@ func TestCommand_PrintHelp(t *testing.T) {
 }
 
 func TestCommand_Run(t *testing.T) {
+	dfa := getDFA()
+
 	tests := []struct {
-		name          string
-		c             *Command
-		args          []string
-		expectedError string
+		name                 string
+		c                    *Command
+		args                 []string
+		expectedErrorStrings []string
 	}{
 		{
 			name: "Error_NoFile",
@@ -80,8 +83,10 @@ func TestCommand_Run(t *testing.T) {
 				UI:    ui.NewNop(),
 				funcs: funcs{},
 			},
-			args:          []string{},
-			expectedError: "no input file specified, please provide a file path",
+			args: []string{},
+			expectedErrorStrings: []string{
+				`no input file specified, please provide a file path`,
+			},
 		},
 		{
 			name: "Error_FileNotExist",
@@ -92,7 +97,9 @@ func TestCommand_Run(t *testing.T) {
 			args: []string{
 				"missing.grammar",
 			},
-			expectedError: "open missing.grammar: no such file or directory",
+			expectedErrorStrings: []string{
+				`open missing.grammar: no such file or directory`,
+			},
 		},
 		{
 			name: "Error_ParseFails",
@@ -107,7 +114,46 @@ func TestCommand_Run(t *testing.T) {
 			args: []string{
 				"../ebnf/fixture/test.success.grammar",
 			},
-			expectedError: "error on parsing the input",
+			expectedErrorStrings: []string{
+				`error on parsing the input`,
+			},
+		},
+		{
+			name: "Error_ParsingTableFails",
+			c: &Command{
+				UI: ui.NewNop(),
+				funcs: funcs{
+					Parse: func(string, io.Reader) (*spec.Spec, error) {
+						return &spec.Spec{
+							Definitions: []*spec.TerminalDef{
+								{Terminal: ";", DFA: dfa[0]},
+								{Terminal: "ID", DFA: dfa[3]},
+								{Terminal: "if", DFA: dfa[1]},
+								{Terminal: "NUM", DFA: dfa[2]},
+							},
+							Grammar:     grammars[0],
+							Precedences: lr.PrecedenceLevels{},
+						}, nil
+					},
+				},
+			},
+			args: []string{
+				"../ebnf/fixture/test.success.grammar",
+			},
+			expectedErrorStrings: []string{
+				`error on building LALR(1) parsing table:`,
+				`Error:      Ambiguous Grammar`,
+				`Cause:      Multiple conflicts in the parsing table:`,
+				`              1. Shift/Reduce conflict in ACTION[2, "*"]`,
+				`              2. Shift/Reduce conflict in ACTION[2, "+"]`,
+				`              3. Shift/Reduce conflict in ACTION[3, "*"]`,
+				`              4. Shift/Reduce conflict in ACTION[3, "+"]`,
+				`Resolution: Specify associativity and precedence for these Terminals/Productions:`,
+				`              • "*" vs. "*", "+"`,
+				`              • "+" vs. "*", "+"`,
+				`            Terminals/Productions listed earlier will have higher precedence.`,
+				`            Terminals/Productions in the same line will have the same precedence.`,
+			},
 		},
 		{
 			name: "Error_GenerateFails",
@@ -115,7 +161,16 @@ func TestCommand_Run(t *testing.T) {
 				UI: ui.NewNop(),
 				funcs: funcs{
 					Parse: func(string, io.Reader) (*spec.Spec, error) {
-						return &spec.Spec{}, nil
+						return &spec.Spec{
+							Definitions: []*spec.TerminalDef{
+								{Terminal: ";", DFA: dfa[0]},
+								{Terminal: "ID", DFA: dfa[3]},
+								{Terminal: "if", DFA: dfa[1]},
+								{Terminal: "NUM", DFA: dfa[2]},
+							},
+							Grammar:     grammars[0],
+							Precedences: precedences[0],
+						}, nil
 					},
 					Generate: func(ui.UI, *generate.Params) error {
 						return errors.New("error on generating the parser")
@@ -125,7 +180,9 @@ func TestCommand_Run(t *testing.T) {
 			args: []string{
 				"../ebnf/fixture/test.success.grammar",
 			},
-			expectedError: "error on generating the parser",
+			expectedErrorStrings: []string{
+				`error on generating the parser`,
+			},
 		},
 		{
 			name: "Success",
@@ -133,20 +190,30 @@ func TestCommand_Run(t *testing.T) {
 				UI: ui.NewNop(),
 				funcs: funcs{
 					Parse: func(string, io.Reader) (*spec.Spec, error) {
-						return &spec.Spec{}, nil
+						return &spec.Spec{
+							Definitions: []*spec.TerminalDef{
+								{Terminal: ";", DFA: dfa[0]},
+								{Terminal: "ID", DFA: dfa[3]},
+								{Terminal: "if", DFA: dfa[1]},
+								{Terminal: "NUM", DFA: dfa[2]},
+							},
+							Grammar:     grammars[0],
+							Precedences: precedences[0],
+						}, nil
 					},
 					Generate: func(ui.UI, *generate.Params) error {
 						return nil
 					},
 				},
 
-				Out:  "/path/to/destination",
-				Name: "override",
+				Out:   "/path/to/destination",
+				Name:  "override",
+				Debug: false,
 			},
 			args: []string{
 				"../ebnf/fixture/test.success.grammar",
 			},
-			expectedError: "",
+			expectedErrorStrings: nil,
 		},
 	}
 
@@ -154,10 +221,14 @@ func TestCommand_Run(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			err := tc.c.Run(tc.args)
 
-			if tc.expectedError == "" {
+			if len(tc.expectedErrorStrings) == 0 {
 				assert.NoError(t, err)
 			} else {
-				assert.EqualError(t, err, tc.expectedError)
+				assert.Error(t, err)
+				s := err.Error()
+				for _, expectedErrorString := range tc.expectedErrorStrings {
+					assert.Contains(t, s, expectedErrorString)
+				}
 			}
 		})
 	}

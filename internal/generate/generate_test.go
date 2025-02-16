@@ -7,10 +7,10 @@ import (
 	"testing"
 
 	"github.com/gardenbed/charm/ui"
+	auto "github.com/moorara/algo/automata"
+	"github.com/moorara/algo/grammar"
 	"github.com/moorara/algo/parser/lr"
 	"github.com/stretchr/testify/assert"
-
-	"github.com/gardenbed/emerge/internal/ebnf/parser/spec"
 )
 
 func TestGenerate(t *testing.T) {
@@ -35,12 +35,12 @@ func TestGenerate(t *testing.T) {
 		{
 			name: "Success",
 			params: &Params{
-				Debug:       false,
-				Path:        tempDir,
-				Package:     "pascal",
-				Definitions: []*spec.TerminalDef{},
-				Grammar:     nil,
-				Precedences: lr.PrecedenceLevels{},
+				Debug:        false,
+				Path:         tempDir,
+				Package:      "pascal",
+				DFA:          &auto.DFA{},
+				Productions:  []*grammar.Production{},
+				ParsingTable: &lr.ParsingTable{},
 			},
 			expectedFiles: []string{
 				"errors.go",

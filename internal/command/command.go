@@ -193,15 +193,20 @@ func (c *Command) Run(args []string) error {
 		name = spec.Name
 	}
 
+	T, err := spec.LALRParsingTable()
+	if err != nil {
+		return err
+	}
+
 	c.Infof(ui.Magenta, "%c Generating parser ...", getAnimal())
 
 	err = c.funcs.Generate(c.UI, &generate.Params{
-		Debug:       c.Debug,
-		Path:        c.Out,
-		Package:     name,
-		Definitions: spec.Definitions,
-		Grammar:     spec.Grammar,
-		Precedences: spec.Precedences,
+		Debug:        c.Debug,
+		Path:         c.Out,
+		Package:      name,
+		DFA:          spec.DFA(),
+		Productions:  spec.Productions(),
+		ParsingTable: T,
 	})
 
 	if err != nil {

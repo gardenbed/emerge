@@ -8,11 +8,10 @@ import (
 	"text/template"
 
 	"github.com/gardenbed/charm/ui"
+	auto "github.com/moorara/algo/automata"
 	"github.com/moorara/algo/errors"
 	"github.com/moorara/algo/grammar"
 	"github.com/moorara/algo/parser/lr"
-
-	"github.com/gardenbed/emerge/internal/ebnf/parser/spec"
 )
 
 //go:embed templates/*.tmpl
@@ -20,12 +19,12 @@ var templates embed.FS
 
 // Params contains the configuration and data required for generating the parser code.
 type Params struct {
-	Debug       bool
-	Path        string
-	Package     string
-	Definitions []*spec.TerminalDef
-	Grammar     *grammar.CFG
-	Precedences lr.PrecedenceLevels
+	Debug        bool
+	Path         string
+	Package      string
+	DFA          *auto.DFA
+	Productions  []*grammar.Production
+	ParsingTable *lr.ParsingTable
 }
 
 // Generate creates a self-contained, complete package that implements a full LALR parser for the input language,
