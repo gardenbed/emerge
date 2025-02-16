@@ -1,4 +1,4 @@
-package result
+package spec
 
 import (
 	"fmt"
@@ -20,17 +20,9 @@ var predefs = map[string]string{
 	"$FLOAT":  `-?[0-9]+(\.[0-9]+)?`,
 }
 
-// Result contains the result of a successful input parsing.
-type Result struct {
-	Name        string
-	Definitions []*TerminalDef
-	Grammar     *grammar.CFG
-	Precedences lr.PrecedenceLevels
-}
-
 // parse processes an EBNF input, evaluates it, and returns the result of evaluation.
 // It returns the evaluation outcome or an error if parsing fails.
-func Parse(filename string, src io.Reader) (*Result, error) {
+func Parse(filename string, src io.Reader) (*Spec, error) {
 	table := NewSymbolTable()
 
 	p, err := parser.New(filename, src)
@@ -398,7 +390,7 @@ func Parse(filename string, src io.Reader) (*Result, error) {
 				return nil, err
 			}
 
-			return &Result{
+			return &Spec{
 				Name:        rhs[0].Val.(string),
 				Definitions: defs,
 				Grammar:     grammar,
@@ -413,5 +405,5 @@ func Parse(filename string, src io.Reader) (*Result, error) {
 		return nil, err
 	}
 
-	return res.Val.(*Result), nil
+	return res.Val.(*Spec), nil
 }

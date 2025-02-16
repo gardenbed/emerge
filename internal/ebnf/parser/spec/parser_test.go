@@ -1,4 +1,4 @@
-package result
+package spec
 
 import (
 	"os"
@@ -11,7 +11,7 @@ func TestParse(t *testing.T) {
 	tests := []struct {
 		name                 string
 		filename             string
-		expectedResult       *Result
+		expectedSpec         *Spec
 		expectedErrorStrings []string
 	}{
 		{
@@ -36,11 +36,11 @@ func TestParse(t *testing.T) {
 		{
 			name:     "Success",
 			filename: "../../fixture/test.success.grammar",
-			expectedResult: &Result{
+			expectedSpec: &Spec{
 				Name:        "test",
 				Definitions: []*TerminalDef{},
-				Grammar:     grammars[0],
-				Precedences: precedences[0],
+				Grammar:     grammars[1],
+				Precedences: precedences[1],
 			},
 		},
 	}
@@ -51,10 +51,10 @@ func TestParse(t *testing.T) {
 			assert.NoError(t, err)
 			defer f.Close()
 
-			res, err := Parse(tc.filename, f)
+			spec, err := Parse(tc.filename, f)
 
 			if len(tc.expectedErrorStrings) > 0 {
-				assert.Nil(t, res)
+				assert.Nil(t, spec)
 				assert.Error(t, err)
 
 				s := err.Error()
@@ -62,13 +62,13 @@ func TestParse(t *testing.T) {
 					assert.Contains(t, s, expectedErrorString)
 				}
 			} else {
-				assert.NotNil(t, res)
+				assert.NotNil(t, spec)
 				assert.NoError(t, err)
 
-				assert.True(t, res.Name == tc.expectedResult.Name)
-				assert.NotNil(t, res.Definitions)
-				assert.True(t, res.Grammar.Equal(tc.expectedResult.Grammar))
-				assert.True(t, res.Precedences.Equal(tc.expectedResult.Precedences))
+				assert.True(t, spec.Name == tc.expectedSpec.Name)
+				assert.NotNil(t, spec.Definitions)
+				assert.True(t, spec.Grammar.Equal(tc.expectedSpec.Grammar))
+				assert.True(t, spec.Precedences.Equal(tc.expectedSpec.Precedences))
 			}
 		})
 	}

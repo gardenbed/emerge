@@ -14,9 +14,13 @@ import (
 
 func main() {
 	u := ui.New(ui.Info)
-	cmd := command.New(u)
-
 	fs := flag.NewFlagSet("emerge", flag.ContinueOnError)
+
+	cmd, err := command.New(u)
+	if err != nil {
+		u.Errorf(ui.Red, "%s", err)
+		os.Exit(1)
+	}
 
 	if err := flagit.Register(fs, cmd, false); err != nil {
 		u.Errorf(ui.Red, "%s", err)
@@ -32,8 +36,6 @@ func main() {
 		u.SetLevel(ui.Debug)
 	}
 
-	fmt.Println(os.Args)
-
 	switch {
 	case cmd.Help:
 		if err := cmd.PrintHelp(); err != nil {
@@ -46,7 +48,7 @@ func main() {
 
 	default:
 		if err := cmd.Run(fs.Args()); err != nil {
-			u.Errorf(ui.Red, "%s", err)
+			u.Errorf(ui.Red, "\n%s\n", err)
 			os.Exit(1)
 		}
 	}
