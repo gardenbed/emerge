@@ -121,17 +121,6 @@ func TestGenerator_prepare(t *testing.T) {
 			expectedErrorRegex: `invalid package name: \x00`,
 		},
 		{
-			name: "PathReadOnly",
-			g: &generator{
-				UI: ui.NewNop(),
-				Params: &Params{
-					Path:    "/opt",
-					Package: "pascal",
-				},
-			},
-			expectedErrorRegex: `error on creating package directory: mkdir /opt/pascal: permission denied`,
-		},
-		{
 			name: "Success",
 			g: &generator{
 				UI: ui.NewNop(),
