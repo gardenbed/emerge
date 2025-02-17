@@ -8,10 +8,8 @@ import (
 	"text/template"
 
 	"github.com/gardenbed/charm/ui"
-	auto "github.com/moorara/algo/automata"
+	"github.com/gardenbed/emerge/internal/ebnf/parser/spec"
 	"github.com/moorara/algo/errors"
-	"github.com/moorara/algo/grammar"
-	"github.com/moorara/algo/parser/lr"
 )
 
 //go:embed templates/*.tmpl
@@ -19,12 +17,9 @@ var templates embed.FS
 
 // Params contains the configuration and data required for generating the parser code.
 type Params struct {
-	Debug        bool
-	Path         string
-	Package      string
-	DFA          *auto.DFA
-	Productions  []*grammar.Production
-	ParsingTable *lr.ParsingTable
+	Debug bool
+	Path  string
+	Spec  *spec.Spec
 }
 
 // Generate creates a self-contained, complete package that implements a full LALR parser for the input language,
@@ -82,13 +77,13 @@ func (g *generator) prepare() error {
 		return fmt.Errorf("output path is not a directory: %q", g.Path)
 	}
 
-	g.Debugf(ui.Cyan, "     Checking package directory %q ...", g.Package)
+	g.Debugf(ui.Cyan, "     Checking package directory %q ...", g.Spec.Name)
 
-	if !isIDValid(g.Package) {
-		return fmt.Errorf("invalid package name: %s", g.Package)
+	if !isIDValid(g.Spec.Name) {
+		return fmt.Errorf("invalid package name: %s", g.Spec.Name)
 	}
 
-	packageDir := filepath.Join(g.Path, g.Package)
+	packageDir := filepath.Join(g.Path, g.Spec.Name)
 
 	// Create the package directory.
 	if err := os.Mkdir(packageDir, os.ModePerm); err != nil {
@@ -101,13 +96,13 @@ func (g *generator) prepare() error {
 // generateCore generates essential data types and structures for the lexer and parser,
 // ensuring no dependencies on third-party, non-built-in packages.
 func (g *generator) generateCore() error {
-	var errs error
-
-	g.Infof(ui.Yellow, "     Generating core types ...")
+	g.Infof(ui.Cyan, "     Generating core types ...")
 
 	data := map[string]any{
-		"Package": g.Package,
+		"Package": g.Spec.Name,
 	}
+
+	var errs error
 
 	for _, name := range []string{"errors.go", "types.go", "stack.go"} {
 		g.Debugf(ui.Cyan, "       Generating %q ...", name)
@@ -122,16 +117,22 @@ func (g *generator) generateCore() error {
 
 // generateLexer generates the lexer code based on the provided terminal (token) definitions for the input language.
 func (g *generator) generateLexer() error {
-	var errs error
-
 	g.Infof(ui.Yellow, "     Generating the lexer ...")
+	g.Debugf(ui.Yellow, "       Constructing DFA ...")
 
-	data := map[string]any{
-		"Package": g.Package,
+	_, _, err := g.Spec.DFA()
+	if err != nil {
+		return err
 	}
 
+	data := map[string]any{
+		"Package": g.Spec.Name,
+	}
+
+	var errs error
+
 	for _, name := range []string{"input.go", "lexer.go"} {
-		g.Debugf(ui.Cyan, "       Generating %q ...", name)
+		g.Debugf(ui.Yellow, "       Generating %q ...", name)
 
 		if err := g.renderTemplate(name, data); err != nil {
 			errs = errors.Append(errs, err)
@@ -143,16 +144,22 @@ func (g *generator) generateLexer() error {
 
 // generateParser generates the parser code based on the provided grammar and precedence levels for the input language.
 func (g *generator) generateParser() error {
-	var errs error
+	g.Infof(ui.Magenta, "     Generating the parser ...")
+	g.Infof(ui.Magenta, "       Constructing LALR(1) Parsing Table ...")
 
-	g.Infof(ui.Yellow, "     Generating the parser ...")
-
-	data := map[string]any{
-		"Package": g.Package,
+	_, err := g.Spec.LALRParsingTable()
+	if err != nil {
+		return err
 	}
 
+	data := map[string]any{
+		"Package": g.Spec.Name,
+	}
+
+	var errs error
+
 	for _, name := range []string{"parser.go"} {
-		g.Debugf(ui.Cyan, "       Generating %q ...", name)
+		g.Debugf(ui.Magenta, "       Generating %q ...", name)
 
 		if err := g.renderTemplate(name, data); err != nil {
 			errs = errors.Append(errs, err)
@@ -175,7 +182,7 @@ func (g *generator) renderTemplate(filename string, data any) error {
 		return err
 	}
 
-	f, err := os.OpenFile(filepath.Join(g.Path, g.Package, filename), os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0666)
+	f, err := os.OpenFile(filepath.Join(g.Path, g.Spec.Name, filename), os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0666)
 	if err != nil {
 		return err
 	}

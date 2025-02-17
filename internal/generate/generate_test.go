@@ -7,10 +7,10 @@ import (
 	"testing"
 
 	"github.com/gardenbed/charm/ui"
-	auto "github.com/moorara/algo/automata"
-	"github.com/moorara/algo/grammar"
 	"github.com/moorara/algo/parser/lr"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/gardenbed/emerge/internal/ebnf/parser/spec"
 )
 
 func TestGenerate(t *testing.T) {
@@ -35,12 +35,14 @@ func TestGenerate(t *testing.T) {
 		{
 			name: "Success",
 			params: &Params{
-				Debug:        false,
-				Path:         tempDir,
-				Package:      "pascal",
-				DFA:          &auto.DFA{},
-				Productions:  []*grammar.Production{},
-				ParsingTable: &lr.ParsingTable{},
+				Debug: false,
+				Path:  tempDir,
+				Spec: &spec.Spec{
+					Name:        "expr",
+					Definitions: definitions,
+					Grammar:     grammars[0],
+					Precedences: precedences[0],
+				},
 			},
 			expectedFiles: []string{
 				"errors.go",
@@ -67,7 +69,7 @@ func TestGenerate(t *testing.T) {
 				assert.NoError(t, err)
 
 				for _, expectedFile := range tc.expectedFiles {
-					filename := filepath.Join(tc.params.Path, tc.params.Package, expectedFile)
+					filename := filepath.Join(tc.params.Path, tc.params.Spec.Name, expectedFile)
 					assert.FileExists(t, filename)
 				}
 			}
@@ -114,8 +116,10 @@ func TestGenerator_prepare(t *testing.T) {
 			g: &generator{
 				UI: ui.NewNop(),
 				Params: &Params{
-					Path:    tempDir,
-					Package: "\x00",
+					Path: tempDir,
+					Spec: &spec.Spec{
+						Name: "\x00",
+					},
 				},
 			},
 			expectedErrorRegex: `invalid package name: \x00`,
@@ -125,8 +129,10 @@ func TestGenerator_prepare(t *testing.T) {
 			g: &generator{
 				UI: ui.NewNop(),
 				Params: &Params{
-					Path:    tempDir,
-					Package: "pascal",
+					Path: tempDir,
+					Spec: &spec.Spec{
+						Name: "expr",
+					},
 				},
 			},
 			expectedErrorRegex: ``,
@@ -164,14 +170,16 @@ func TestGenerator_generateCore(t *testing.T) {
 			g: &generator{
 				UI: ui.NewNop(),
 				Params: &Params{
-					Path:    tempDir,
-					Package: "pascal",
+					Path: tempDir,
+					Spec: &spec.Spec{
+						Name: "expr",
+					},
 				},
 			},
 			expectedErrorRegexes: []string{
-				`open .+/pascal/errors.go: no such file or directory`,
-				`open .+/pascal/types.go: no such file or directory`,
-				`open .+/pascal/stack.go: no such file or directory`,
+				`open .+/expr/errors.go: no such file or directory`,
+				`open .+/expr/types.go: no such file or directory`,
+				`open .+/expr/stack.go: no such file or directory`,
 			},
 		},
 	}
@@ -209,13 +217,37 @@ func TestGenerator_generateLexer(t *testing.T) {
 			g: &generator{
 				UI: ui.NewNop(),
 				Params: &Params{
-					Path:    tempDir,
-					Package: "pascal",
+					Path: tempDir,
+					Spec: &spec.Spec{
+						Name: "expr",
+						Definitions: []*spec.TerminalDef{
+							{Terminal: "ID", Value: "[A-Z", IsRegex: true},
+							{Terminal: "NUM", Value: "[0-9", IsRegex: true},
+						},
+					},
 				},
 			},
 			expectedErrorRegexes: []string{
-				`open .+/pascal/input.go: no such file or directory`,
-				`open .+/pascal/lexer.go: no such file or directory`,
+				`2 errors occurred:`,
+				`"ID": invalid regular expression: \[A-Z`,
+				`"NUM": invalid regular expression: \[0-9`,
+			},
+		},
+		{
+			name: "PackageDirNotExist",
+			g: &generator{
+				UI: ui.NewNop(),
+				Params: &Params{
+					Path: tempDir,
+					Spec: &spec.Spec{
+						Name:        "expr",
+						Definitions: definitions,
+					},
+				},
+			},
+			expectedErrorRegexes: []string{
+				`open .+/expr/input.go: no such file or directory`,
+				`open .+/expr/lexer.go: no such file or directory`,
 			},
 		},
 	}
@@ -249,16 +281,39 @@ func TestGenerator_generateParser(t *testing.T) {
 		expectedErrorRegexes []string
 	}{
 		{
+			name: "ParsingTableFails",
+			g: &generator{
+				UI: ui.NewNop(),
+				Params: &Params{
+					Spec: &spec.Spec{
+						Name:        "expr",
+						Grammar:     grammars[0],
+						Precedences: lr.PrecedenceLevels{},
+					},
+				},
+			},
+			expectedErrorRegexes: []string{
+				`error on building LALR\(1\) parsing table:`,
+				`Error:      Ambiguous Grammar`,
+				`Cause:      Multiple conflicts in the parsing table:`,
+				`Resolution: Specify associativity and precedence for these Terminals/Productions:`,
+			},
+		},
+		{
 			name: "PackageDirNotExist",
 			g: &generator{
 				UI: ui.NewNop(),
 				Params: &Params{
-					Path:    tempDir,
-					Package: "pascal",
+					Path: tempDir,
+					Spec: &spec.Spec{
+						Name:        "expr",
+						Grammar:     grammars[0],
+						Precedences: precedences[0],
+					},
 				},
 			},
 			expectedErrorRegexes: []string{
-				`open .+/pascal/parser.go: no such file or directory`,
+				`open .+/expr/parser.go: no such file or directory`,
 			},
 		},
 	}
@@ -307,13 +362,15 @@ func TestGenerator_renderTemplate(t *testing.T) {
 			g: &generator{
 				UI: ui.NewNop(),
 				Params: &Params{
-					Path:    tempDir,
-					Package: "pascal",
+					Path: tempDir,
+					Spec: &spec.Spec{
+						Name: "expr",
+					},
 				},
 			},
 			filename:           "types.go",
 			data:               nil,
-			expectedErrorRegex: `open .+/pascal/types.go: no such file or directory`,
+			expectedErrorRegex: `open .+/expr/types.go: no such file or directory`,
 		},
 	}
 
