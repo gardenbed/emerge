@@ -307,10 +307,7 @@ func Parse(filename string, src io.Reader) (*Spec, error) {
 				return nil, nil
 			}
 
-			if err := table.AddRegexTokenDef(token, regex, rhs[0].Pos); err != nil {
-				errs = errors.Append(errs, err)
-				return nil, nil
-			}
+			table.AddRegexTokenDef(token, regex, rhs[0].Pos)
 
 			return nil, nil
 
@@ -319,10 +316,7 @@ func Parse(filename string, src io.Reader) (*Spec, error) {
 			token := grammar.Terminal(rhs[0].Val.(string))
 			regex := rhs[2].Val.(string)
 
-			if err := table.AddRegexTokenDef(token, regex, rhs[0].Pos); err != nil {
-				errs = errors.Append(errs, err)
-				return nil, nil
-			}
+			table.AddRegexTokenDef(token, regex, rhs[0].Pos)
 
 			return nil, nil
 

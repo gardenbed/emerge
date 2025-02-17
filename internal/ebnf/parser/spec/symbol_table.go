@@ -5,15 +5,13 @@ import (
 	"strings"
 	"sync"
 
-	auto "github.com/moorara/algo/automata"
 	"github.com/moorara/algo/errors"
+	"github.com/moorara/algo/generic"
 	"github.com/moorara/algo/grammar"
 	"github.com/moorara/algo/lexer"
 	"github.com/moorara/algo/parser/lr"
 	"github.com/moorara/algo/sort"
 	"github.com/moorara/algo/symboltable"
-
-	"github.com/gardenbed/emerge/internal/regex/parser/nfa"
 )
 
 const start = grammar.NonTerminal("start")
@@ -83,43 +81,10 @@ type (
 
 // TerminalDef represents a terminal symbol along with a deterministic finite automaton (DFA) for recognizing it.
 type TerminalDef struct {
-	*auto.DFA
 	grammar.Terminal
-	Pos *lexer.Position
-}
-
-func terminalDefFromString(a grammar.Terminal, value string, pos *lexer.Position) *TerminalDef {
-	start := auto.State(0)
-	dfa := auto.NewDFA(start, nil)
-
-	curr, next := start, start+1
-	for _, r := range value {
-		dfa.Add(curr, auto.Symbol(r), next)
-		curr, next = next, next+1
-	}
-
-	dfa.Final = auto.NewStates(curr)
-
-	return &TerminalDef{
-		DFA:      dfa,
-		Terminal: a,
-		Pos:      pos,
-	}
-}
-
-func terminalDefFromRegex(a grammar.Terminal, regex string, pos *lexer.Position) (*TerminalDef, error) {
-	nfa, err := nfa.Parse(regex)
-	if err != nil {
-		return nil, fmt.Errorf("%s: %s", a, err)
-	}
-
-	dfa := nfa.ToDFA().Minimize().EliminateDeadStates().ReindexStates()
-
-	return &TerminalDef{
-		DFA:      dfa,
-		Terminal: a,
-		Pos:      pos,
-	}, nil
+	Value   string
+	IsRegex bool
+	Pos     *lexer.Position
 }
 
 // NewSymbolTable creates a new SymbolTable for an EBNF parser.
@@ -183,37 +148,84 @@ func (t *SymbolTable) Verify() error {
 	t.Lock()
 	defer t.Unlock()
 
-	err := &errors.MultiError{
+	errs := &errors.MultiError{
 		Format: errors.BulletErrorFormat,
 	}
 
-	// Ensure every terminal has one and only one definition.
+	if err := t.ensureSingleDefs(); err != nil {
+		errs = errors.Append(errs, err)
+	}
+
+	if err := t.ensureDistinctDefs(); err != nil {
+		errs = errors.Append(errs, err)
+	}
+
+	if err := t.ensureStartSymbol(); err != nil {
+		errs = errors.Append(errs, err)
+	}
+
+	return errs.ErrorOrNil()
+}
+
+// ensureSingleDefs ensures every terminal has one and only one definition.
+func (t *SymbolTable) ensureSingleDefs() error {
+	var errs error
+
 	for a, e := range t.terminals.table.All() {
 		if count := len(e.definitions); count == 0 {
-			err = errors.Append(err, fmt.Errorf("no definition for terminal %s", a))
+			errs = errors.Append(errs, fmt.Errorf("no definition for terminal %s", a))
 		} else if count > 1 {
-			// Aggregate token definitions by their names.
-			poss := make([]string, count)
-			for i, def := range e.definitions {
-				poss[i] = fmt.Sprintf("  %s", def.Pos)
-			}
+			poses := generic.Transform(e.definitions, func(def *TerminalDef) string {
+				return fmt.Sprintf("  %s", def.Pos)
+			})
 
-			err = errors.Append(err,
-				fmt.Errorf("multiple definitions for terminal %s:\n%s", a, strings.Join(poss, "\n")),
+			errs = errors.Append(errs,
+				fmt.Errorf("multiple definitions for terminal %s:\n%s", a, strings.Join(poses, "\n")),
 			)
 		}
 	}
 
-	// Verify that a production rule exists with the start symbol as the head non-terminal.
+	return errs
+}
+
+// ensureDistinctDefs ensures every terminal definition has a distinct value.
+func (t *SymbolTable) ensureDistinctDefs() error {
+	var errs error
+
+	reverse := make(map[string][]*TerminalDef)
+	for _, e := range t.terminals.table.All() {
+		if len(e.definitions) == 1 {
+			def := e.definitions[0]
+			reverse[def.Value] = append(reverse[def.Value], def)
+		}
+	}
+
+	for val, defs := range reverse {
+		if len(defs) > 1 {
+			poses := generic.Transform(defs, func(def *TerminalDef) string {
+				return fmt.Sprintf("  %s: %s", def.Pos, def.Terminal)
+			})
+
+			errs = errors.Append(errs,
+				fmt.Errorf("multiple definitions with the same value: %q\n%s", val, strings.Join(poses, "\n")),
+			)
+		}
+	}
+
+	return errs
+}
+
+// ensureStartSymbol ensures a production rule exists with the start symbol as the head non-terminal.
+func (t *SymbolTable) ensureStartSymbol() error {
 	hasStart := t.productions.table.AnyMatch(func(p *grammar.Production, _ *productionEntry) bool {
 		return p.Head.Equal(start)
 	})
 
 	if !hasStart {
-		err = errors.Append(err, fmt.Errorf("missing production rule with the start symbol: %s", start))
+		return fmt.Errorf("missing production rule with the start symbol: %s", start)
 	}
 
-	return err.ErrorOrNil()
+	return nil
 }
 
 // Precedences returns the set of precedence levels added to the symbol table.
@@ -237,13 +249,21 @@ func (t *SymbolTable) Definitions() []*TerminalDef {
 		}
 	}
 
-	// Sort terminals, placing shorter terminals before longer ones.
+	// Sort terminals, placing string-based terminals before regex-based ones
+	// and shorter terminals before longer ones.
 	sort.Quick(defs, func(lhs, rhs *TerminalDef) int {
+		if !lhs.IsRegex && rhs.IsRegex {
+			return -1
+		} else if lhs.IsRegex && !rhs.IsRegex {
+			return 1
+		}
+
 		if len(lhs.Terminal) < len(rhs.Terminal) {
 			return -1
 		} else if len(lhs.Terminal) > len(rhs.Terminal) {
 			return 1
 		}
+
 		return grammar.CmpTerminal(lhs.Terminal, rhs.Terminal)
 	})
 
@@ -315,13 +335,17 @@ func (t *SymbolTable) AddStringTokenDef(token grammar.Terminal, value string, po
 		t.terminals.table.Put(token, e)
 	}
 
-	def := terminalDefFromString(token, string(token), pos)
-	e.definitions = append(e.definitions, def)
+	e.definitions = append(e.definitions, &TerminalDef{
+		Terminal: token,
+		Value:    value,
+		IsRegex:  false,
+		Pos:      pos,
+	})
 }
 
 // AddRegexTokenDef adds a new token definition based on a regex value to the symbol table.
 // It returns an error if any DFA construction fails.
-func (t *SymbolTable) AddRegexTokenDef(token grammar.Terminal, regex string, pos *lexer.Position) error {
+func (t *SymbolTable) AddRegexTokenDef(token grammar.Terminal, regex string, pos *lexer.Position) {
 	t.Lock()
 	defer t.Unlock()
 
@@ -338,14 +362,12 @@ func (t *SymbolTable) AddRegexTokenDef(token grammar.Terminal, regex string, pos
 		t.terminals.table.Put(token, e)
 	}
 
-	def, err := terminalDefFromRegex(token, regex, pos)
-	if err != nil {
-		return err
-	}
-
-	e.definitions = append(e.definitions, def)
-
-	return nil
+	e.definitions = append(e.definitions, &TerminalDef{
+		Terminal: token,
+		Value:    regex,
+		IsRegex:  true,
+		Pos:      pos,
+	})
 }
 
 // AddStringTerminal adds a terminal symbol, defined by its string value, to the symbol table.
@@ -360,7 +382,11 @@ func (t *SymbolTable) AddStringTerminal(a grammar.Terminal, pos *lexer.Position)
 	}
 
 	t.terminals.counter++
-	def := terminalDefFromString(a, string(a), nil)
+	def := &TerminalDef{
+		Terminal: a,
+		Value:    string(a),
+		IsRegex:  false,
+	}
 
 	t.terminals.table.Put(a, &terminalEntry{
 		index:       t.terminals.counter,

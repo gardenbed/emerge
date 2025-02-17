@@ -5,6 +5,7 @@ import (
 
 	auto "github.com/moorara/algo/automata"
 	"github.com/moorara/algo/grammar"
+	"github.com/moorara/algo/lexer"
 	"github.com/moorara/algo/parser/lr"
 	"github.com/stretchr/testify/assert"
 )
@@ -13,29 +14,85 @@ func TestSpec_DFA(t *testing.T) {
 	dfa := getDFA()
 
 	tests := []struct {
-		name        string
-		s           *Spec
-		expectedDFA *auto.DFA
+		name                    string
+		s                       *Spec
+		expectedDFA             *auto.DFA
+		expectedTerminalMapping map[auto.State]grammar.Terminal
+		expectedErrorStrings    []string
 	}{
 		{
-			name: "OK",
+			name: "InvalidRegex",
 			s: &Spec{
 				Definitions: []*TerminalDef{
-					{Terminal: ";", DFA: dfa[0]},
-					{Terminal: "ID", DFA: dfa[3]},
-					{Terminal: "if", DFA: dfa[1]},
-					{Terminal: "NUM", DFA: dfa[2]},
+					{Terminal: "ID", Value: "[A-Z", IsRegex: true},
+					{Terminal: "NUM", Value: "[0-9", IsRegex: true},
+				},
+			},
+			expectedDFA:             nil,
+			expectedTerminalMapping: nil,
+			expectedErrorStrings: []string{
+				`2 errors occurred:`,
+				`"ID": invalid regular expression: [A-Z`,
+				`"NUM": invalid regular expression: [0-9`,
+			},
+		},
+		{
+			name: "OverlappingDefinitions",
+			s: &Spec{
+				Definitions: []*TerminalDef{
+					{Terminal: "NUM", Value: "[0-9]+", IsRegex: true, Pos: &lexer.Position{Filename: "test", Offset: 20, Line: 2, Column: 1}},
+					{Terminal: "INT", Value: "[0-9]+", IsRegex: true, Pos: &lexer.Position{Filename: "test", Offset: 30, Line: 3, Column: 1}},
+				},
+			},
+			expectedDFA:             nil,
+			expectedTerminalMapping: nil,
+			expectedErrorStrings: []string{
+				`1 error occurred:`,
+				`conflicting definitions capture the same string:`,
+				`  test:2:1: "NUM"`,
+				`  test:3:1: "INT"`,
+			},
+		},
+		{
+			name: "Success",
+			s: &Spec{
+				Definitions: []*TerminalDef{
+					{Terminal: ";", Value: ";", IsRegex: false},
+					{Terminal: "if", Value: "if", IsRegex: false},
+					{Terminal: "ID", Value: "[A-Za-z_][0-9A-Za-z_]*", IsRegex: true},
+					{Terminal: "NUM", Value: "[0-9]+", IsRegex: true},
 				},
 			},
 			expectedDFA: dfa[4],
+			expectedTerminalMapping: map[auto.State]grammar.Terminal{
+				1: "NUM",
+				2: ";",
+				3: "ID",
+				4: "ID",
+				5: "if",
+			},
+			expectedErrorStrings: nil,
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			dfa := tc.s.DFA()
+			dfa, termMap, err := tc.s.DFA()
 
-			assert.True(t, dfa.Equal(tc.expectedDFA))
+			if len(tc.expectedErrorStrings) == 0 {
+				assert.True(t, dfa.Equal(tc.expectedDFA))
+				assert.Equal(t, tc.expectedTerminalMapping, termMap)
+				assert.NoError(t, err)
+			} else {
+				assert.Nil(t, dfa)
+				assert.Nil(t, termMap)
+				assert.Error(t, err)
+
+				s := err.Error()
+				for _, expectedErrorString := range tc.expectedErrorStrings {
+					assert.Contains(t, s, expectedErrorString)
+				}
+			}
 		})
 	}
 }
