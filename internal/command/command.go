@@ -184,36 +184,24 @@ func (c *Command) Run(args []string) error {
 		return err
 	}
 
-	var name string
+	// Override the grammar name if needed.
 	if c.Name != "" {
-		name = c.Name
-	} else {
-		name = spec.Name
+		spec.Name = c.Name
 	}
 
-	c.Infof(ui.Blue, "%c Building LALR(1) Parsing Table ...", getFruit())
-
-	T, err := spec.LALRParsingTable()
-	if err != nil {
-		return err
-	}
-
-	c.Infof(ui.Magenta, "%c Generating parser ...", getAnimal())
+	c.Infof(ui.Blue, "%c Generating parser ...", getAnimal())
 
 	err = c.funcs.Generate(c.UI, &generate.Params{
-		Debug:        c.Debug,
-		Path:         c.Out,
-		Package:      name,
-		DFA:          spec.DFA(),
-		Productions:  spec.Productions(),
-		ParsingTable: T,
+		Debug: c.Debug,
+		Path:  c.Out,
+		Spec:  spec,
 	})
 
 	if err != nil {
 		return err
 	}
 
-	c.Infof(ui.Green, "%c Successful!", getFood())
+	c.Infof(ui.Green, "%c Successful!", getFruit())
 
 	return nil
 }
