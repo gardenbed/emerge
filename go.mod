@@ -4,7 +4,7 @@ go 1.23.5
 
 require (
 	github.com/fatih/color v1.18.0
-	github.com/gardenbed/charm v0.1.4
+	github.com/gardenbed/charm v0.2.0
 	github.com/moorara/algo v0.10.11-0.20250213070157-15cc05709586
 	github.com/stretchr/testify v1.10.0
 )
