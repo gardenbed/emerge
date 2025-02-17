@@ -8,12 +8,20 @@ import (
 	"text/template"
 
 	"github.com/gardenbed/charm/ui"
-	"github.com/gardenbed/emerge/internal/ebnf/parser/spec"
 	"github.com/moorara/algo/errors"
+
+	"github.com/gardenbed/emerge/internal/ebnf/parser/spec"
 )
 
 //go:embed templates/*.tmpl
 var templates embed.FS
+
+var (
+	darkOrange  = ui.Fg256Color(166)
+	hotPink     = ui.Fg256Color(168)
+	orchid      = ui.Fg256Color(170)
+	navajoWhite = ui.Fg256Color(223)
+)
 
 // Params contains the configuration and data required for generating the parser code.
 type Params struct {
@@ -61,7 +69,7 @@ type generator struct {
 func (g *generator) prepare() error {
 	g.Path = filepath.Clean(g.Path)
 
-	g.Debugf(ui.Cyan, "     Checking output path %q ...", g.Path)
+	g.Debugf(navajoWhite, "     Checking output path %q ...", g.Path)
 
 	// Ensure the output path exists.
 	info, err := os.Stat(g.Path)
@@ -77,7 +85,7 @@ func (g *generator) prepare() error {
 		return fmt.Errorf("output path is not a directory: %q", g.Path)
 	}
 
-	g.Debugf(ui.Cyan, "     Checking package directory %q ...", g.Spec.Name)
+	g.Debugf(navajoWhite, "     Checking package directory %q ...", g.Spec.Name)
 
 	if !isIDValid(g.Spec.Name) {
 		return fmt.Errorf("invalid package name: %s", g.Spec.Name)
@@ -96,7 +104,7 @@ func (g *generator) prepare() error {
 // generateCore generates essential data types and structures for the lexer and parser,
 // ensuring no dependencies on third-party, non-built-in packages.
 func (g *generator) generateCore() error {
-	g.Infof(ui.Cyan, "     Generating core types ...")
+	g.Infof(darkOrange, "     Generating core types ...")
 
 	data := map[string]any{
 		"Package": g.Spec.Name,
@@ -105,8 +113,6 @@ func (g *generator) generateCore() error {
 	var errs error
 
 	for _, name := range []string{"errors.go", "types.go", "stack.go"} {
-		g.Debugf(ui.Cyan, "       Generating %q ...", name)
-
 		if err := g.renderTemplate(name, data); err != nil {
 			errs = errors.Append(errs, err)
 		}
@@ -117,8 +123,8 @@ func (g *generator) generateCore() error {
 
 // generateLexer generates the lexer code based on the provided terminal (token) definitions for the input language.
 func (g *generator) generateLexer() error {
-	g.Infof(ui.Yellow, "     Generating the lexer ...")
-	g.Debugf(ui.Yellow, "       Constructing DFA ...")
+	g.Infof(hotPink, "     Generating the lexer ...")
+	g.Infof(hotPink, "       Constructing DFA ...")
 
 	_, _, err := g.Spec.DFA()
 	if err != nil {
@@ -132,8 +138,6 @@ func (g *generator) generateLexer() error {
 	var errs error
 
 	for _, name := range []string{"input.go", "lexer.go"} {
-		g.Debugf(ui.Yellow, "       Generating %q ...", name)
-
 		if err := g.renderTemplate(name, data); err != nil {
 			errs = errors.Append(errs, err)
 		}
@@ -144,8 +148,8 @@ func (g *generator) generateLexer() error {
 
 // generateParser generates the parser code based on the provided grammar and precedence levels for the input language.
 func (g *generator) generateParser() error {
-	g.Infof(ui.Magenta, "     Generating the parser ...")
-	g.Infof(ui.Magenta, "       Constructing LALR(1) Parsing Table ...")
+	g.Infof(orchid, "     Generating the parser ...")
+	g.Infof(orchid, "       Constructing LALR(1) Parsing Table ...")
 
 	_, err := g.Spec.LALRParsingTable()
 	if err != nil {
@@ -159,8 +163,6 @@ func (g *generator) generateParser() error {
 	var errs error
 
 	for _, name := range []string{"parser.go"} {
-		g.Debugf(ui.Magenta, "       Generating %q ...", name)
-
 		if err := g.renderTemplate(name, data); err != nil {
 			errs = errors.Append(errs, err)
 		}
@@ -172,6 +174,8 @@ func (g *generator) generateParser() error {
 // renderTemplate renders an embedded template by name and
 // writes the output to a file in the directory specified by Path and Package.
 func (g *generator) renderTemplate(filename string, data any) error {
+	g.Debugf(navajoWhite, "       Rendering %q ...", filename)
+
 	content, err := templates.ReadFile(filepath.Join("templates", filename+".tmpl"))
 	if err != nil {
 		return err

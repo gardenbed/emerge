@@ -94,6 +94,12 @@ const helpTemplate = `
 
 `
 
+var (
+	plum       = ui.Fg256Color(219)
+	gold       = ui.Fg256Color(220)
+	chartreuse = ui.Fg256Color(82)
+)
+
 type (
 	// Command represents the "emerge" command and its associated flags.
 	Command struct {
@@ -170,7 +176,7 @@ func (c *Command) Run(args []string) error {
 
 	filename := filepath.Base(path)
 
-	c.Infof(nil, "%c Parsing %q ...", getPlant(), filename)
+	c.Infof(plum, "%c Parsing %q ...", getPlant(), filename)
 
 	f, err := os.Open(path)
 	if err != nil {
@@ -189,7 +195,7 @@ func (c *Command) Run(args []string) error {
 		spec.Name = c.Name
 	}
 
-	c.Infof(ui.Blue, "%c Generating parser ...", getAnimal())
+	c.Infof(gold, "%c Generating parser ...", getAnimal())
 
 	err = c.funcs.Generate(c.UI, &generate.Params{
 		Debug: c.Debug,
@@ -201,7 +207,7 @@ func (c *Command) Run(args []string) error {
 		return err
 	}
 
-	c.Infof(ui.Green, "%c Successful!", getFruit())
+	c.Infof(chartreuse, "%c Successful!", getFruit())
 
 	return nil
 }
