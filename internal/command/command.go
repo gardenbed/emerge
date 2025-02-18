@@ -237,6 +237,7 @@ func getFruit() rune {
 	return fruits[i]
 }
 
+// nolint: unused
 func getFood() rune {
 	food := []rune(emojis["food"])
 	i := rand.Intn(len(food))
