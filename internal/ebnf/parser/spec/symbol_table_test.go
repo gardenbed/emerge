@@ -53,17 +53,26 @@ func TestSymbolTable_Verify(t *testing.T) {
 	)
 
 	st2 := NewSymbolTable()
-	st2.AddStringTokenDef("QUOT", "\"", &lexer.Position{Filename: "test", Offset: 10, Line: 2, Column: 1})
-	_ = st2.AddRegexTokenDef("NUM", "[0-9]+", &lexer.Position{Filename: "test", Offset: 20, Line: 3, Column: 1})
-	st2.AddTokenTerminal("QUOT", &lexer.Position{Filename: "test", Offset: 30, Line: 4, Column: 10})
+	st2.AddStringTokenDef("INT", "[0-9]+", &lexer.Position{Filename: "test", Offset: 10, Line: 2, Column: 1})
+	st2.AddRegexTokenDef("NUM", "[0-9]+", &lexer.Position{Filename: "test", Offset: 20, Line: 3, Column: 1})
 	st2.AddTokenTerminal("NUM", &lexer.Position{Filename: "test", Offset: 40, Line: 5, Column: 12})
+	st2.AddProduction(
+		&grammar.Production{Head: "start", Body: grammar.String[grammar.Symbol]{grammar.NonTerminal("QUOT")}},
+		&lexer.Position{Filename: "test", Offset: 60, Line: 6, Column: 1},
+	)
 
 	st3 := NewSymbolTable()
 	st3.AddStringTokenDef("QUOT", "\"", &lexer.Position{Filename: "test", Offset: 10, Line: 2, Column: 1})
-	_ = st3.AddRegexTokenDef("NUM", "[0-9]+", &lexer.Position{Filename: "test", Offset: 20, Line: 3, Column: 1})
+	st3.AddRegexTokenDef("NUM", "[0-9]+", &lexer.Position{Filename: "test", Offset: 20, Line: 3, Column: 1})
 	st3.AddTokenTerminal("QUOT", &lexer.Position{Filename: "test", Offset: 30, Line: 4, Column: 10})
 	st3.AddTokenTerminal("NUM", &lexer.Position{Filename: "test", Offset: 40, Line: 5, Column: 12})
-	st3.AddProduction(
+
+	st4 := NewSymbolTable()
+	st4.AddStringTokenDef("QUOT", "\"", &lexer.Position{Filename: "test", Offset: 10, Line: 2, Column: 1})
+	st4.AddRegexTokenDef("NUM", "[0-9]+", &lexer.Position{Filename: "test", Offset: 20, Line: 3, Column: 1})
+	st4.AddTokenTerminal("QUOT", &lexer.Position{Filename: "test", Offset: 30, Line: 4, Column: 10})
+	st4.AddTokenTerminal("NUM", &lexer.Position{Filename: "test", Offset: 40, Line: 5, Column: 12})
+	st4.AddProduction(
 		&grammar.Production{Head: "start", Body: grammar.String[grammar.Symbol]{grammar.NonTerminal("QUOT")}},
 		&lexer.Position{Filename: "test", Offset: 60, Line: 6, Column: 1},
 	)
@@ -92,8 +101,18 @@ func TestSymbolTable_Verify(t *testing.T) {
 			},
 		},
 		{
-			name: "NoStartSymbol",
+			name: "DuplicateDefinitions",
 			st:   st2,
+			expectedErrorStrings: []string{
+				`1 error occurred:`,
+				`multiple definitions with the same value: "[0-9]+"`,
+				`  test:3:1: "NUM"`,
+				`  test:2:1: "INT"`,
+			},
+		},
+		{
+			name: "NoStartSymbol",
+			st:   st3,
 			expectedErrorStrings: []string{
 				`1 error occurred:`,
 				`missing production rule with the start symbol: start`,
@@ -101,7 +120,7 @@ func TestSymbolTable_Verify(t *testing.T) {
 		},
 		{
 			name:                 "OK",
-			st:                   st3,
+			st:                   st4,
 			expectedErrorStrings: nil,
 		},
 	}
@@ -166,13 +185,11 @@ func TestSymbolTable_Precedences(t *testing.T) {
 }
 
 func TestSymbolTable_Definitions(t *testing.T) {
-	dfa := getDFA()
-
 	st := NewSymbolTable()
 	st.AddStringTokenDef(";", ";", &lexer.Position{})
 	st.AddStringTokenDef("if", "if", &lexer.Position{})
-	_ = st.AddRegexTokenDef("NUM", "[0-9]+", &lexer.Position{})
-	_ = st.AddRegexTokenDef("ID", "[A-Za-z_][0-9A-Za-z_]*", &lexer.Position{})
+	st.AddRegexTokenDef("NUM", "[0-9]+", &lexer.Position{})
+	st.AddRegexTokenDef("ID", "[A-Za-z_][0-9A-Za-z_]*", &lexer.Position{})
 	st.AddStringTerminal(";", &lexer.Position{})
 	st.AddStringTerminal("if", &lexer.Position{})
 	st.AddTokenTerminal("NUM", &lexer.Position{})
@@ -184,13 +201,13 @@ func TestSymbolTable_Definitions(t *testing.T) {
 		expectedDefinitions []*TerminalDef
 	}{
 		{
-			name: "Success",
+			name: "OK",
 			st:   st,
 			expectedDefinitions: []*TerminalDef{
-				{Terminal: ";", DFA: dfa[0]},
-				{Terminal: "ID", DFA: dfa[3]},
-				{Terminal: "if", DFA: dfa[1]},
-				{Terminal: "NUM", DFA: dfa[2]},
+				{Terminal: ";", Value: ";", IsRegex: false},
+				{Terminal: "if", Value: "if", IsRegex: false},
+				{Terminal: "ID", Value: "[A-Za-z_][0-9A-Za-z_]*", IsRegex: true},
+				{Terminal: "NUM", Value: "[0-9]+", IsRegex: true},
 			},
 		},
 	}
@@ -203,8 +220,9 @@ func TestSymbolTable_Definitions(t *testing.T) {
 
 			for i, expectedDef := range tc.expectedDefinitions {
 				t.Run(fmt.Sprintf("DFA[%d]", i), func(t *testing.T) {
-					assert.True(t, defs[i].DFA.Equal(expectedDef.DFA))
 					assert.True(t, defs[i].Terminal.Equal(expectedDef.Terminal))
+					assert.Equal(t, expectedDef.Value, defs[i].Value)
+					assert.Equal(t, expectedDef.IsRegex, defs[i].IsRegex)
 				})
 			}
 		})
@@ -363,8 +381,9 @@ func TestSymbolTable_AddStringTokenDef(t *testing.T) {
 			l := len(e.definitions) - 1
 			def := e.definitions[l]
 
-			assert.NotNil(t, def.DFA)
 			assert.True(t, def.Terminal.Equal(tc.token))
+			assert.Equal(t, tc.value, e.definitions[0].Value)
+			assert.False(t, e.definitions[0].IsRegex)
 			assert.True(t, def.Pos.Equal(*tc.pos))
 		})
 	}
@@ -372,23 +391,14 @@ func TestSymbolTable_AddStringTokenDef(t *testing.T) {
 
 func TestSymbolTable_AddRegexTokenDef(t *testing.T) {
 	tests := []struct {
-		name          string
-		st            *SymbolTable
-		token         grammar.Terminal
-		regex         string
-		pos           *lexer.Position
-		expectedError string
+		name  string
+		st    *SymbolTable
+		token grammar.Terminal
+		regex string
+		pos   *lexer.Position
 	}{
 		{
-			name:          "Error",
-			st:            NewSymbolTable(),
-			token:         "NUM",
-			regex:         "[0-9",
-			pos:           &lexer.Position{},
-			expectedError: `"NUM": invalid regular expression: [0-9`,
-		},
-		{
-			name:  "Success",
+			name:  "OK",
 			st:    NewSymbolTable(),
 			token: "NUM",
 			regex: "[0-9]+",
@@ -398,29 +408,23 @@ func TestSymbolTable_AddRegexTokenDef(t *testing.T) {
 				Line:     3,
 				Column:   1,
 			},
-			expectedError: ``,
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			err := tc.st.AddRegexTokenDef(tc.token, tc.regex, tc.pos)
+			tc.st.AddRegexTokenDef(tc.token, tc.regex, tc.pos)
 
-			if tc.expectedError != "" {
-				assert.EqualError(t, err, tc.expectedError)
-			} else {
-				assert.NoError(t, err)
+			e, ok := tc.st.terminals.table.Get(tc.token)
+			assert.True(t, ok)
 
-				e, ok := tc.st.terminals.table.Get(tc.token)
-				assert.True(t, ok)
+			l := len(e.definitions) - 1
+			def := e.definitions[l]
 
-				l := len(e.definitions) - 1
-				def := e.definitions[l]
-
-				assert.NotNil(t, def.DFA)
-				assert.True(t, def.Terminal.Equal(tc.token))
-				assert.True(t, def.Pos.Equal(*tc.pos))
-			}
+			assert.True(t, def.Terminal.Equal(tc.token))
+			assert.Equal(t, tc.regex, e.definitions[0].Value)
+			assert.True(t, e.definitions[0].IsRegex)
+			assert.True(t, def.Pos.Equal(*tc.pos))
 		})
 	}
 }
@@ -467,8 +471,9 @@ func TestSymbolTable_AddStringTerminal(t *testing.T) {
 			assert.NotZero(t, e.index)
 			assert.NotNil(t, e.definitions)
 			assert.Len(t, e.definitions, 1)
-			assert.NotNil(t, e.definitions[0].DFA)
 			assert.True(t, e.definitions[0].Terminal.Equal(tc.a))
+			assert.Equal(t, string(tc.a), e.definitions[0].Value)
+			assert.False(t, e.definitions[0].IsRegex)
 			assert.Nil(t, e.definitions[0].Pos)
 			assert.Contains(t, e.occurrences, tc.pos)
 		})

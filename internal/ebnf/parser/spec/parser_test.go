@@ -16,19 +16,17 @@ func TestParse(t *testing.T) {
 	}{
 		{
 			name:     "Invalid",
-			filename: "../../fixture/invalid.grammar",
+			filename: "../../fixture/test.invalid.grammar",
 			expectedErrorStrings: []string{
-				`lexical error at ../../fixture/invalid.grammar:1:1:L`,
+				`lexical error at ../../fixture/test.invalid.grammar:1:1:L`,
 			},
 		},
 		{
 			name:     "Error",
 			filename: "../../fixture/test.error.grammar",
 			expectedErrorStrings: []string{
-				`5 errors occurred:`,
+				`3 errors occurred:`,
 				`invalid predefined regex: $IDN`,
-				`"NUMBER": invalid regular expression: [0-9+`,
-				`no definition for terminal "NUMBER"`,
 				`no definition for terminal "ID"`,
 				`missing production rule with the start symbol: start`,
 			},

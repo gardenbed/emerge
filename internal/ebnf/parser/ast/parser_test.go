@@ -15,8 +15,8 @@ func TestParse(t *testing.T) {
 	}{
 		{
 			name:          "Invalid",
-			filename:      "../../fixture/invalid.grammar",
-			expectedError: "lexical error at ../../fixture/invalid.grammar:1:1:L",
+			filename:      "../../fixture/test.invalid.grammar",
+			expectedError: "lexical error at ../../fixture/test.invalid.grammar:1:1:L",
 		},
 		{
 			name:          "Success",

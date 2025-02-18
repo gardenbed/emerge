@@ -26,10 +26,8 @@
 grammar pascal
 
 // Token declarations
-DIGIT  = /[0-9]/
-LETTER = /[A-Za-z]/
-NUM    = /[0-9]+(\.[0-9]+)?/
-ID     = /[A-Za-z][0-9A-Za-z]*/
+NUM = /[0-9]+(\.[0-9]+)?/
+ID  = /[A-Za-z][0-9A-Za-z]*/
 
 // Associativity and Precedence
 @left "*" "/"

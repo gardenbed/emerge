@@ -94,6 +94,12 @@ const helpTemplate = `
 
 `
 
+var (
+	plum       = ui.Fg256Color(219)
+	gold       = ui.Fg256Color(220)
+	chartreuse = ui.Fg256Color(82)
+)
+
 type (
 	// Command represents the "emerge" command and its associated flags.
 	Command struct {
@@ -170,7 +176,7 @@ func (c *Command) Run(args []string) error {
 
 	filename := filepath.Base(path)
 
-	c.Infof(nil, "%c Parsing %q ...", getPlant(), filename)
+	c.Infof(plum, "%c Parsing %q ...", getPlant(), filename)
 
 	f, err := os.Open(path)
 	if err != nil {
@@ -184,36 +190,24 @@ func (c *Command) Run(args []string) error {
 		return err
 	}
 
-	var name string
+	// Override the grammar name if needed.
 	if c.Name != "" {
-		name = c.Name
-	} else {
-		name = spec.Name
+		spec.Name = c.Name
 	}
 
-	c.Infof(ui.Blue, "%c Building LALR(1) Parsing Table ...", getFruit())
-
-	T, err := spec.LALRParsingTable()
-	if err != nil {
-		return err
-	}
-
-	c.Infof(ui.Magenta, "%c Generating parser ...", getAnimal())
+	c.Infof(gold, "%c Generating parser ...", getAnimal())
 
 	err = c.funcs.Generate(c.UI, &generate.Params{
-		Debug:        c.Debug,
-		Path:         c.Out,
-		Package:      name,
-		DFA:          spec.DFA(),
-		Productions:  spec.Productions(),
-		ParsingTable: T,
+		Debug: c.Debug,
+		Path:  c.Out,
+		Spec:  spec,
 	})
 
 	if err != nil {
 		return err
 	}
 
-	c.Infof(ui.Green, "%c Successful!", getFood())
+	c.Infof(chartreuse, "%c Successful!", getFruit())
 
 	return nil
 }
@@ -243,6 +237,7 @@ func getFruit() rune {
 	return fruits[i]
 }
 
+// nolint: unused
 func getFood() rune {
 	food := []rune(emojis["food"])
 	i := rand.Intn(len(food))
