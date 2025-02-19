@@ -108,7 +108,7 @@ func (l *Lexer) NextToken() (lexer.Token, error) {
 
 // evalDFA examines the final state of a deterministic finite automaton (DFA) after it has stopped processing input.
 // Based on the last encountered state, it returns the corresponding token and advances the input buffer reader.
-// If the final state is invalid, it returns an ERR token with the Lexeme set to an error message.
+// If the final state is invalid, it returns an ERR token with the Lexeme set to the error message.
 func (l *Lexer) evalDFA(state int) lexer.Token {
 	switch state {
 	// Whitespace
