@@ -1,8 +1,108 @@
 package {{.Package}}
 
-// Lexer defines the interface for a lexical analyzer.
-type Lexer interface {
-	// NextToken reads characters from the input source and returns the next token.
-	// It may also return an error if there is an issue during tokenization.
-	NextToken() (Token, error)
+import (
+	"errors"
+	"fmt"
+	"io"
+)
+
+const (
+	errorState = -1
+	bufferSize = 4096
+)
+
+const (
+	ERR     = Terminal("ERR")     // ERR is the error token.
+	WS      = Terminal("WS")      // WS is the token for whitespace characters.
+	EOL     = Terminal("EOL")     // WS is the token for newline characters.
+	COMMENT = Terminal("COMMENT") // COMMENT is the token for single-line and multi-line comments.
+)
+
+// Lexer is the lexical analyzer, a.k.a. scanner.
+type Lexer struct {
+	in *input
+}
+
+// New creates a new lexical analyzer.
+func New(filename string, src io.Reader) (*Lexer, error) {
+	in, err := newInput(filename, src, bufferSize)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Lexer{
+		in: in,
+	}, nil
+}
+
+// NextToken scans the input stream until it recognizes a valid token, which it then returns.
+// If the end of the input is reached, it returns an io.EOF error.
+func (l *Lexer) NextToken() (Token, error) {
+	for curr, next := 0, 0; ; curr = next {
+		// Read the next character from the input stream.
+		r, err := l.in.Next()
+		if err != nil {
+			return Token{}, err
+		}
+
+		// Keep running the DFA through the input symbols.
+		next = advanceDFA(curr, r)
+
+		if next == errorState {
+			// Retract one character, as the last read character did not belong to the current token.
+			l.in.Retract()
+
+			// Evaluate the final state of the DFA.
+			token := l.evalDFA(curr)
+
+			switch token.Terminal {
+			case ERR:
+				return Token{}, errors.New(token.Lexeme)
+			case WS, EOL, COMMENT:
+				// Skip whitespaces, newlines, and comments.
+				return l.NextToken()
+			default:
+				return token, nil
+			}
+		}
+	}
+}
+
+// evalDFA examines the final state of a deterministic finite automaton (DFA) after it has stopped processing input.
+// Based on the last encountered state, it returns the corresponding token and advances the input buffer reader.
+// If the final state is invalid, it returns an ERR token with the Lexeme set to the error message.
+func (l *Lexer) evalDFA(state int) Token {
+	switch state {
+{{- range .DFA.FinalStates }}
+	case {{formatInts .States}}:
+		lexeme, pos := l.in.Lexeme()
+		return lexer.Token{Terminal: {{.Terminal}}, Lexeme: lexeme, Pos: pos}
+{{ end }}
+	}
+
+	// ERR
+	val, pos := l.in.Lexeme()
+	return Token{
+		Terminal: ERR,
+		Lexeme:   fmt.Sprintf("lexical error at %s:%s", pos, val),
+		Pos:      pos,
+	}
+}
+
+// advanceDFA determines the next state of a deterministic finite automaton (DFA)
+// given the current state and an input symbol. It functions as a coded lookup table.
+func advanceDFA(state int, r rune) int {
+	switch state {
+{{- range .DFA.Transitions }}
+	case {{.From}}:
+		switch r {
+		{{- range .Trans }}
+		case {{formatRunes .Symbols}}:
+			return {{.Next}}
+		{{- end }}
+		}
+{{ end }}
+	}
+
+	return errorState
 }
