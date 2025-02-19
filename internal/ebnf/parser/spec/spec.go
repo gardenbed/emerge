@@ -26,7 +26,7 @@ type Spec struct {
 
 // DFA constructs a deterministic finite automaton (DFA)
 // for recognizing all terminal symbols (tokens) in the grammar of the spec.
-func (s *Spec) DFA() (*auto.DFA, map[auto.State]grammar.Terminal, error) {
+func (s *Spec) DFA() (*auto.DFA, map[grammar.Terminal][]auto.State, error) {
 	errs := &errors.MultiError{
 		Format: errors.BulletErrorFormat,
 	}
@@ -53,20 +53,21 @@ func (s *Spec) DFA() (*auto.DFA, map[auto.State]grammar.Terminal, error) {
 	dfa, stateMap := auto.CombineDFA(ds...)
 
 	// Map final states in the DFA to their corresponding terminal definitions.
-	defMap := make(map[auto.State][]*TerminalDef)
+	stateDefs := make(map[auto.State][]*TerminalDef)
 	for i, finals := range stateMap {
 		for _, f := range finals {
-			defMap[f] = append(defMap[f], s.Definitions[i])
+			stateDefs[f] = append(stateDefs[f], s.Definitions[i])
 		}
 	}
 
-	// Map final states in the DFA to terminals, ensuring each final state identifies a single terminal.
-	termMap := make(map[auto.State]grammar.Terminal)
-	for f, defs := range defMap {
+	// Map each terminal to a set of final states while ensuring each final state identifies a single terminal.
+	termMap := make(map[grammar.Terminal][]auto.State)
+	for f, defs := range stateDefs {
 		switch len(defs) {
 		case 0:
 		case 1:
-			termMap[f] = defs[0].Terminal
+			a := defs[0].Terminal
+			termMap[a] = append(termMap[a], f)
 		default:
 			// Prefer a string-based definition over regex-based definitions.
 			// This ensures keywords take precedence over identifiers.
@@ -75,7 +76,8 @@ func (s *Spec) DFA() (*auto.DFA, map[auto.State]grammar.Terminal, error) {
 			})
 
 			if len(strDefs) == 1 {
-				termMap[f] = strDefs[0].Terminal
+				a := strDefs[0].Terminal
+				termMap[a] = append(termMap[a], f)
 			} else {
 				poses := generic.Transform(defs, func(def *TerminalDef) string {
 					return fmt.Sprintf("  %s: %s", def.Pos, def.Terminal)

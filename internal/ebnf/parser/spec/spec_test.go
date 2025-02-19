@@ -17,7 +17,7 @@ func TestSpec_DFA(t *testing.T) {
 		name                    string
 		s                       *Spec
 		expectedDFA             *auto.DFA
-		expectedTerminalMapping map[auto.State]grammar.Terminal
+		expectedTerminalMapping map[grammar.Terminal][]auto.State
 		expectedErrorStrings    []string
 	}{
 		{
@@ -64,12 +64,11 @@ func TestSpec_DFA(t *testing.T) {
 				},
 			},
 			expectedDFA: dfa[4],
-			expectedTerminalMapping: map[auto.State]grammar.Terminal{
-				1: "NUM",
-				2: ";",
-				3: "ID",
-				4: "ID",
-				5: "if",
+			expectedTerminalMapping: map[grammar.Terminal][]auto.State{
+				"NUM": {1},
+				";":   {2},
+				"ID":  {3, 4},
+				"if":  {5},
 			},
 			expectedErrorStrings: nil,
 		},
