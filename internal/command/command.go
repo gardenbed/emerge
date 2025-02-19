@@ -143,8 +143,7 @@ func New(u ui.UI) (*Command, error) {
 
 // PrintHelp prints the help text for the command.
 func (c *Command) PrintHelp() error {
-	tmpl := template.New("help")
-	tmpl = tmpl.Funcs(template.FuncMap{
+	tmpl := template.New("help").Funcs(template.FuncMap{
 		"join":    strings.Join,
 		"blue":    color.New(color.FgBlue).Sprintf,
 		"green":   color.New(color.FgGreen).Sprintf,
