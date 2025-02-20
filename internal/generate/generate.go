@@ -134,7 +134,7 @@ type (
 func (g *generator) generateLexer() error {
 	g.Infof(hotPink, "     Generating the lexer ...")
 
-	g.Infof(hotPink, "       Constructing DFA ...")
+	g.Infof(hotPink, "       Constructing Automaton ...")
 	dfa, termMap, err := g.Spec.DFA()
 	if err != nil {
 		return err
