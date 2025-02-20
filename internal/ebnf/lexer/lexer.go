@@ -212,7 +212,7 @@ func (l *Lexer) evalDFA(state int) lexer.Token {
 		return lexer.Token{Terminal: GRAMMER, Lexeme: "grammar", Pos: pos}
 
 	// IDENT
-	case 40:
+	case 32, 33, 34, 35, 36, 37, 39, 40:
 		lexeme, pos := l.in.Lexeme()
 		return lexer.Token{Terminal: IDENT, Lexeme: lexeme, Pos: pos}
 

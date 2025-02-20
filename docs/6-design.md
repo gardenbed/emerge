@@ -91,7 +91,9 @@ func main() {
 		3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 		17,
 		22, 27, 31,
-		38, 40, 42,
+		38,
+    32, 33, 34, 35, 36, 37, 40,
+    42,
 		46, 50,
 		51, 54,
 	})
@@ -321,14 +323,14 @@ digraph "Lexer DFA" {
   29 [label="29", shape=circle];
   30 [label="30", shape=circle];
   31 [label="31", shape=doublecircle style=filled color=orchid1];
-  32 [label="32", shape=circle];
-  33 [label="33", shape=circle];
-  34 [label="34", shape=circle];
-  35 [label="35", shape=circle];
-  36 [label="36", shape=circle];
-  37 [label="37", shape=circle];
+  32 [label="32", shape=doublecircle style=filled color=orangered];
+  33 [label="33", shape=doublecircle style=filled color=orangered];
+  34 [label="34", shape=doublecircle style=filled color=orangered];
+  35 [label="35", shape=doublecircle style=filled color=orangered];
+  36 [label="36", shape=doublecircle style=filled color=orangered];
+  37 [label="37", shape=doublecircle style=filled color=orangered];
   38 [label="38", shape=doublecircle style=filled color=chocolate];
-  39 [label="39", shape=circle];
+  39 [label="39", shape=doublecircle style=filled color=orangered];
   40 [label="40", shape=doublecircle style=filled color=orangered];
   41 [label="41", shape=circle];
   42 [label="42", shape=doublecircle style=filled color=dodgerblue];
