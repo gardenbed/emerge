@@ -30,7 +30,7 @@ type mappers struct {
 
 func (m *mappers) ToAnyChar(r comb.Result) (comb.Result, bool) {
 	alt := new(Alt)
-	for _, r := range parser.Alphabet {
+	for _, r := range parser.RuneClasses["ASCII"].Runes() {
 		alt.Exprs = append(alt.Exprs, runeToChar(r))
 	}
 
@@ -59,18 +59,18 @@ func (m *mappers) ToCharClass(r comb.Result) (comb.Result, bool) {
 	var chars []rune
 
 	switch class {
-	case `\d`:
-		node, chars = runeRangesToAlt(false, [2]rune{'0', '9'})
-	case `\D`:
-		node, chars = runeRangesToAlt(true, [2]rune{'0', '9'})
 	case `\s`:
-		node, chars = runesToAlt(false, ' ', '\t', '\n', '\r', '\f')
+		node, chars = runesToAlt(false, parser.RuneClasses[`\s`].Runes()...)
 	case `\S`:
-		node, chars = runesToAlt(true, ' ', '\t', '\n', '\r', '\f')
+		node, chars = runesToAlt(true, parser.RuneClasses[`\s`].Runes()...)
+	case `\d`:
+		node, chars = runesToAlt(false, parser.RuneClasses[`\d`].Runes()...)
+	case `\D`:
+		node, chars = runesToAlt(true, parser.RuneClasses[`\d`].Runes()...)
 	case `\w`:
-		node, chars = runeRangesToAlt(false, [2]rune{'0', '9'}, [2]rune{'A', 'Z'}, [2]rune{'_', '_'}, [2]rune{'a', 'z'})
+		node, chars = runesToAlt(false, parser.RuneClasses[`\w`].Runes()...)
 	case `\W`:
-		node, chars = runeRangesToAlt(true, [2]rune{'0', '9'}, [2]rune{'A', 'Z'}, [2]rune{'_', '_'}, [2]rune{'a', 'z'})
+		node, chars = runesToAlt(true, parser.RuneClasses[`\w`].Runes()...)
 	default:
 		return comb.Result{}, false
 	}
@@ -87,33 +87,40 @@ func (m *mappers) ToCharClass(r comb.Result) (comb.Result, bool) {
 func (m *mappers) ToASCIICharClass(r comb.Result) (comb.Result, bool) {
 	class := r.Val.(string)
 
-	var node *Alt
-	var chars []rune
-
-	switch class {
-	case "[:blank:]":
-		node, chars = runesToAlt(false, ' ', '\t')
-	case "[:space:]":
-		node, chars = runesToAlt(false, ' ', '\t', '\n', '\r', '\f', '\v')
-	case "[:digit:]":
-		node, chars = runeRangesToAlt(false, [2]rune{'0', '9'})
-	case "[:xdigit:]":
-		node, chars = runeRangesToAlt(false, [2]rune{'0', '9'}, [2]rune{'A', 'F'}, [2]rune{'a', 'f'})
-	case "[:upper:]":
-		node, chars = runeRangesToAlt(false, [2]rune{'A', 'Z'})
-	case "[:lower:]":
-		node, chars = runeRangesToAlt(false, [2]rune{'a', 'z'})
-	case "[:alpha:]":
-		node, chars = runeRangesToAlt(false, [2]rune{'A', 'Z'}, [2]rune{'a', 'z'})
-	case "[:alnum:]":
-		node, chars = runeRangesToAlt(false, [2]rune{'0', '9'}, [2]rune{'A', 'Z'}, [2]rune{'a', 'z'})
-	case "[:word:]":
-		node, chars = runeRangesToAlt(false, [2]rune{'0', '9'}, [2]rune{'A', 'Z'}, [2]rune{'_', '_'}, [2]rune{'a', 'z'})
-	case "[:ascii:]":
-		node, chars = runeRangesToAlt(false, [2]rune{0x00, 0x7f})
-	default:
+	rc, ok := parser.RuneClasses[class]
+	if !ok {
 		return comb.Result{}, false
 	}
+
+	node, chars := runesToAlt(false, rc.Runes()...)
+
+	return comb.Result{
+		Val: node,
+		Pos: r.Pos,
+		Bag: comb.Bag{
+			bagKeyChars: chars,
+		},
+	}, true
+}
+
+func (m *mappers) ToUnicodeCategory(r comb.Result) (comb.Result, bool) {
+	// Passing the result up the parsing chain
+	return r, true
+}
+
+func (m *mappers) ToUnicodeCharClass(r comb.Result) (comb.Result, bool) {
+	r0, _ := r.Get(0)
+	r2, _ := r.Get(2)
+
+	prop := r0.Val.(string)
+	class := r2.Val.(string)
+
+	rc, ok := parser.RuneClasses[class]
+	if !ok {
+		return comb.Result{}, false
+	}
+
+	node, chars := runesToAlt(prop == `\P`, rc.Runes()...)
 
 	return comb.Result{
 		Val: node,
@@ -237,7 +244,7 @@ func (m *mappers) ToCharGroup(r comb.Result) (comb.Result, bool) {
 
 	items := r2.Val.(comb.List)
 
-	charMap := make([]bool, len(parser.Alphabet))
+	charMap := make([]bool, len(parser.RuneClasses["ASCII"].Runes()))
 	for _, r := range items {
 		if chars, ok := r.Bag[bagKeyChars].([]rune); ok {
 			for _, c := range chars {
@@ -413,7 +420,7 @@ func runesToAlt(neg bool, runes ...rune) (*Alt, []rune) {
 	chars := []rune{}
 
 	if neg {
-		for _, r := range parser.Alphabet {
+		for _, r := range parser.RuneClasses["ASCII"].Runes() {
 			if !containsRune(r, runes) {
 				alt.Exprs = append(alt.Exprs, runeToChar(r))
 				chars = append(chars, r)
@@ -443,7 +450,7 @@ func runeRangesToAlt(neg bool, ranges ...[2]rune) (*Alt, []rune) {
 	chars := []rune{}
 
 	if neg {
-		for _, r := range parser.Alphabet {
+		for _, r := range parser.RuneClasses["ASCII"].Runes() {
 			if !includesRune(r, ranges...) {
 				alt.Exprs = append(alt.Exprs, runeToChar(r))
 				chars = append(chars, r)

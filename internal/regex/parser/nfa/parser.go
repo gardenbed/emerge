@@ -51,7 +51,7 @@ type mappers struct {
 
 func (m *mappers) ToAnyChar(r comb.Result) (comb.Result, bool) {
 	nfa := auto.NewNFA(0, []auto.State{1})
-	for _, r := range parser.Alphabet {
+	for _, r := range parser.RuneClasses["ASCII"].Runes() {
 		nfa.Add(0, auto.Symbol(r), []auto.State{1})
 	}
 
@@ -80,18 +80,18 @@ func (m *mappers) ToCharClass(r comb.Result) (comb.Result, bool) {
 	var chars []rune
 
 	switch class {
-	case `\d`:
-		nfa, chars = runeRangesToNFA(false, [2]rune{'0', '9'})
-	case `\D`:
-		nfa, chars = runeRangesToNFA(true, [2]rune{'0', '9'})
 	case `\s`:
-		nfa, chars = runesToNFA(false, ' ', '\t', '\n', '\r', '\f')
+		nfa, chars = runesToNFA(false, parser.RuneClasses[`\s`].Runes()...)
 	case `\S`:
-		nfa, chars = runesToNFA(true, ' ', '\t', '\n', '\r', '\f')
+		nfa, chars = runesToNFA(true, parser.RuneClasses[`\s`].Runes()...)
+	case `\d`:
+		nfa, chars = runesToNFA(false, parser.RuneClasses[`\d`].Runes()...)
+	case `\D`:
+		nfa, chars = runesToNFA(true, parser.RuneClasses[`\d`].Runes()...)
 	case `\w`:
-		nfa, chars = runeRangesToNFA(false, [2]rune{'0', '9'}, [2]rune{'A', 'Z'}, [2]rune{'_', '_'}, [2]rune{'a', 'z'})
+		nfa, chars = runesToNFA(false, parser.RuneClasses[`\w`].Runes()...)
 	case `\W`:
-		nfa, chars = runeRangesToNFA(true, [2]rune{'0', '9'}, [2]rune{'A', 'Z'}, [2]rune{'_', '_'}, [2]rune{'a', 'z'})
+		nfa, chars = runesToNFA(true, parser.RuneClasses[`\w`].Runes()...)
 	default:
 		return comb.Result{}, false
 	}
@@ -108,33 +108,40 @@ func (m *mappers) ToCharClass(r comb.Result) (comb.Result, bool) {
 func (m *mappers) ToASCIICharClass(r comb.Result) (comb.Result, bool) {
 	class := r.Val.(string)
 
-	var nfa *auto.NFA
-	var chars []rune
-
-	switch class {
-	case "[:blank:]":
-		nfa, chars = runesToNFA(false, ' ', '\t')
-	case "[:space:]":
-		nfa, chars = runesToNFA(false, ' ', '\t', '\n', '\r', '\f', '\v')
-	case "[:digit:]":
-		nfa, chars = runeRangesToNFA(false, [2]rune{'0', '9'})
-	case "[:xdigit:]":
-		nfa, chars = runeRangesToNFA(false, [2]rune{'0', '9'}, [2]rune{'A', 'F'}, [2]rune{'a', 'f'})
-	case "[:upper:]":
-		nfa, chars = runeRangesToNFA(false, [2]rune{'A', 'Z'})
-	case "[:lower:]":
-		nfa, chars = runeRangesToNFA(false, [2]rune{'a', 'z'})
-	case "[:alpha:]":
-		nfa, chars = runeRangesToNFA(false, [2]rune{'A', 'Z'}, [2]rune{'a', 'z'})
-	case "[:alnum:]":
-		nfa, chars = runeRangesToNFA(false, [2]rune{'0', '9'}, [2]rune{'A', 'Z'}, [2]rune{'a', 'z'})
-	case "[:word:]":
-		nfa, chars = runeRangesToNFA(false, [2]rune{'0', '9'}, [2]rune{'A', 'Z'}, [2]rune{'_', '_'}, [2]rune{'a', 'z'})
-	case "[:ascii:]":
-		nfa, chars = runeRangesToNFA(false, [2]rune{0x00, 0x7f})
-	default:
+	rc, ok := parser.RuneClasses[class]
+	if !ok {
 		return comb.Result{}, false
 	}
+
+	nfa, chars := runesToNFA(false, rc.Runes()...)
+
+	return comb.Result{
+		Val: nfa,
+		Pos: r.Pos,
+		Bag: comb.Bag{
+			bagKeyChars: chars,
+		},
+	}, true
+}
+
+func (m *mappers) ToUnicodeCategory(r comb.Result) (comb.Result, bool) {
+	// Passing the result up the parsing chain
+	return r, true
+}
+
+func (m *mappers) ToUnicodeCharClass(r comb.Result) (comb.Result, bool) {
+	r0, _ := r.Get(0)
+	r2, _ := r.Get(2)
+
+	prop := r0.Val.(string)
+	class := r2.Val.(string)
+
+	rc, ok := parser.RuneClasses[class]
+	if !ok {
+		return comb.Result{}, false
+	}
+
+	nfa, chars := runesToNFA(prop == `\P`, rc.Runes()...)
 
 	return comb.Result{
 		Val: nfa,
@@ -258,7 +265,7 @@ func (m *mappers) ToCharGroup(r comb.Result) (comb.Result, bool) {
 
 	items := r2.Val.(comb.List)
 
-	charMap := make([]bool, len(parser.Alphabet))
+	charMap := make([]bool, len(parser.RuneClasses["ASCII"].Runes()))
 	for _, r := range items {
 		if chars, ok := r.Bag[bagKeyChars].([]rune); ok {
 			for _, c := range chars {
@@ -432,7 +439,7 @@ func runesToNFA(neg bool, runes ...rune) (*auto.NFA, []rune) {
 	chars := []rune{}
 
 	if neg {
-		for _, r := range parser.Alphabet {
+		for _, r := range parser.RuneClasses["ASCII"].Runes() {
 			if !containsRune(r, runes) {
 				nfa.Add(0, auto.Symbol(r), []auto.State{1})
 				chars = append(chars, r)
@@ -462,7 +469,7 @@ func runeRangesToNFA(neg bool, ranges ...[2]rune) (*auto.NFA, []rune) {
 	chars := []rune{}
 
 	if neg {
-		for _, r := range parser.Alphabet {
+		for _, r := range parser.RuneClasses["ASCII"].Runes() {
 			if !includesRune(r, ranges...) {
 				nfa.Add(0, auto.Symbol(r), []auto.State{1})
 				chars = append(chars, r)

@@ -350,6 +350,91 @@ func TestMappers_ToASCIICharClass(t *testing.T) {
 	}
 }
 
+func TestMappers_ToUnicodeCategory(t *testing.T) {
+	tests := []MapperTest{
+		{
+			name: "Success",
+			r: comb.Result{
+				Val: "Letter",
+				Pos: 2,
+			},
+			expectedResult: comb.Result{
+				Val: "Letter",
+				Pos: 2,
+			},
+			expectedOK: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			m := new(mappers)
+			res, ok := m.ToUnicodeCategory(tc.r)
+
+			assert.Equal(t, tc.expectedResult, res)
+			assert.Equal(t, tc.expectedOK, ok)
+
+			if tc.expectedError != "" {
+				assert.EqualError(t, m.errors, tc.expectedError)
+			}
+		})
+	}
+}
+
+// TODO: Complete
+func TestMappers_ToUnicodeCharClass(t *testing.T) {
+	tests := []MapperTest{
+		{
+			name: "InvalidClass",
+			r: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 2},
+					{Val: '{', Pos: 4},
+					{Val: "Georgian", Pos: 5},
+					{Val: '}', Pos: 11},
+				},
+				Pos: 2,
+			},
+			expectedResult: comb.Result{},
+			expectedOK:     false,
+		},
+		{
+			name: "Success_Letter",
+			r: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 2},
+					{Val: '{', Pos: 4},
+					{Val: "Letter", Pos: 5},
+					{Val: '}', Pos: 11},
+				},
+				Pos: 2,
+			},
+			expectedResult: comb.Result{
+				Val: letter,
+				Pos: 2,
+				Bag: comb.Bag{
+					bagKeyChars: letterChars,
+				},
+			},
+			expectedOK: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			m := new(mappers)
+			res, ok := m.ToUnicodeCharClass(tc.r)
+
+			assert.Equal(t, tc.expectedResult, res)
+			assert.Equal(t, tc.expectedOK, ok)
+
+			if tc.expectedError != "" {
+				assert.EqualError(t, m.errors, tc.expectedError)
+			}
+		})
+	}
+}
+
 func TestMappers_ToRepOp(t *testing.T) {
 	tests := []MapperTest{
 		{
@@ -1849,6 +1934,8 @@ func TestMappers_ToRegex(t *testing.T) {
 //==================================================< HELPERS >==================================================
 
 var (
+	/* CHAR CLASSES */
+
 	digit = &Alt{
 		Exprs: []Node{
 			&Char{Val: '0'},
@@ -2309,6 +2396,8 @@ var (
 		123, 124, 125, 126, 127,
 	}
 
+	/* ASCII CLASSES */
+
 	blank = &Alt{
 		Exprs: []Node{
 			&Char{Val: ' '},
@@ -2715,6 +2804,70 @@ var (
 		91, 92, 93, 94, 95, 96,
 		97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122,
 		123, 124, 125, 126, 127,
+	}
+
+	/* UNICODE CLASSES */
+
+	letter = &Alt{
+		Exprs: []Node{
+			&Char{Val: 'A'},
+			&Char{Val: 'B'},
+			&Char{Val: 'C'},
+			&Char{Val: 'D'},
+			&Char{Val: 'E'},
+			&Char{Val: 'F'},
+			&Char{Val: 'G'},
+			&Char{Val: 'H'},
+			&Char{Val: 'I'},
+			&Char{Val: 'J'},
+			&Char{Val: 'K'},
+			&Char{Val: 'L'},
+			&Char{Val: 'M'},
+			&Char{Val: 'N'},
+			&Char{Val: 'O'},
+			&Char{Val: 'P'},
+			&Char{Val: 'Q'},
+			&Char{Val: 'R'},
+			&Char{Val: 'S'},
+			&Char{Val: 'T'},
+			&Char{Val: 'U'},
+			&Char{Val: 'V'},
+			&Char{Val: 'W'},
+			&Char{Val: 'X'},
+			&Char{Val: 'Y'},
+			&Char{Val: 'Z'},
+			&Char{Val: 'a'},
+			&Char{Val: 'b'},
+			&Char{Val: 'c'},
+			&Char{Val: 'd'},
+			&Char{Val: 'e'},
+			&Char{Val: 'f'},
+			&Char{Val: 'g'},
+			&Char{Val: 'h'},
+			&Char{Val: 'i'},
+			&Char{Val: 'j'},
+			&Char{Val: 'k'},
+			&Char{Val: 'l'},
+			&Char{Val: 'm'},
+			&Char{Val: 'n'},
+			&Char{Val: 'o'},
+			&Char{Val: 'p'},
+			&Char{Val: 'q'},
+			&Char{Val: 'r'},
+			&Char{Val: 's'},
+			&Char{Val: 't'},
+			&Char{Val: 'u'},
+			&Char{Val: 'v'},
+			&Char{Val: 'w'},
+			&Char{Val: 'x'},
+			&Char{Val: 'y'},
+			&Char{Val: 'z'},
+		},
+	}
+
+	letterChars = []rune{
+		'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+		'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
 	}
 )
 
