@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/gardenbed/emerge/internal/ebnf/parser/spec"
-	"github.com/gardenbed/emerge/internal/generate"
+	"github.com/gardenbed/emerge/internal/generate/golang"
 )
 
 func TestNew(t *testing.T) {
@@ -123,7 +123,7 @@ func TestCommand_Run(t *testing.T) {
 					Parse: func(string, io.Reader) (*spec.Spec, error) {
 						return &spec.Spec{}, nil
 					},
-					Generate: func(ui.UI, *generate.Params) error {
+					Generate: func(ui.UI, *golang.Params) error {
 						return errors.New("error on generating the parser")
 					},
 				},
@@ -143,7 +143,7 @@ func TestCommand_Run(t *testing.T) {
 					Parse: func(string, io.Reader) (*spec.Spec, error) {
 						return &spec.Spec{}, nil
 					},
-					Generate: func(ui.UI, *generate.Params) error {
+					Generate: func(ui.UI, *golang.Params) error {
 						return nil
 					},
 				},

@@ -14,7 +14,7 @@ import (
 	"github.com/moorara/algo/generic"
 
 	"github.com/gardenbed/emerge/internal/ebnf/parser/spec"
-	"github.com/gardenbed/emerge/internal/generate"
+	"github.com/gardenbed/emerge/internal/generate/golang"
 )
 
 const helpTemplate = `
@@ -119,7 +119,7 @@ type (
 	// This abstraction allows these functions to be mocked for testing purposes.
 	funcs struct {
 		Parse    func(string, io.Reader) (*spec.Spec, error)
-		Generate func(ui.UI, *generate.Params) error
+		Generate func(ui.UI, *golang.Params) error
 	}
 )
 
@@ -136,7 +136,7 @@ func New(u ui.UI) (*Command, error) {
 	}
 
 	c.funcs.Parse = spec.Parse
-	c.funcs.Generate = generate.Generate
+	c.funcs.Generate = golang.Generate
 
 	return c, nil
 }
@@ -196,7 +196,7 @@ func (c *Command) Run(args []string) error {
 
 	c.Infof(gold, "%c Generating parser ...", getAnimal())
 
-	err = c.funcs.Generate(c.UI, &generate.Params{
+	err = c.funcs.Generate(c.UI, &golang.Params{
 		Debug: c.Debug,
 		Path:  c.Out,
 		Spec:  spec,

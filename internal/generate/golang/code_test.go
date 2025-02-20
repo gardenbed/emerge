@@ -1,4 +1,4 @@
-package generate
+package golang
 
 import (
 	"testing"
@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test(t *testing.T) {
+func TestIsIDValid(t *testing.T) {
 	tests := []struct {
 		name         string
 		expectedBool bool
