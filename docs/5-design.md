@@ -10,8 +10,9 @@ The following features are NOT included in the Emerge's Regular Expression langu
 They seem unnecessary for the purpose of designing and defining tokens of a language.
 
   - Backreference
-  - Unicode character class
+  - Unicode character classes
   - Non-capturing group modifier `?:`
+  - Lookarounds `?=` `?!` `?<=` `?<!`
   - Anchors:
       - Word boundary `\b`
       - Non-word boundary`\B`
@@ -53,6 +54,10 @@ The following terminal symbols are removed from the Emerge's EBNF language for s
 The Solidus (Slash) character (`/`) is added to the Emerge's EBNF language for defining regex patterns.
 
 ### Lexer Design
+
+TBD
+
+#### State Machine
 
 ![Lexer DFA](./lexer-dfa.png)
 
@@ -461,5 +466,6 @@ The generated parser offers three primary modes of operation, similar to the exa
 
   - [Extended Backus–Naur Form](https://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_form)
   - [Parser Combinator](https://en.wikipedia.org/wiki/Parser_combinator)
+  - [Regular-Expressions.info](https://www.regular-expressions.info)
   - [Let's Build a Regex Engine](https://kean.blog/post/lets-build-regex)
     - https://github.com/kean/Regex

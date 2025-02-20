@@ -780,26 +780,6 @@ func TestParser_charClass(t *testing.T) {
 			expectedInResult: comb.Result{},
 		},
 		{
-			name: "Success_Digit",
-			m: &mockMappers{
-				ToCharClassMocks: []MapperMock{
-					{},
-				},
-			},
-			in:               newStringInput(`\d`),
-			expectedInResult: comb.Result{Val: "\\d", Pos: 0},
-		},
-		{
-			name: "Success_NotDigit",
-			m: &mockMappers{
-				ToCharClassMocks: []MapperMock{
-					{},
-				},
-			},
-			in:               newStringInput(`\D`),
-			expectedInResult: comb.Result{Val: "\\D", Pos: 0},
-		},
-		{
 			name: "Success_Whitespace",
 			m: &mockMappers{
 				ToCharClassMocks: []MapperMock{
@@ -818,6 +798,26 @@ func TestParser_charClass(t *testing.T) {
 			},
 			in:               newStringInput(`\S`),
 			expectedInResult: comb.Result{Val: "\\S", Pos: 0},
+		},
+		{
+			name: "Success_Digit",
+			m: &mockMappers{
+				ToCharClassMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput(`\d`),
+			expectedInResult: comb.Result{Val: "\\d", Pos: 0},
+		},
+		{
+			name: "Success_NotDigit",
+			m: &mockMappers{
+				ToCharClassMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput(`\D`),
+			expectedInResult: comb.Result{Val: "\\D", Pos: 0},
 		},
 		{
 			name: "Success_Word",
@@ -976,6 +976,2086 @@ func TestParser_asciiCharClass(t *testing.T) {
 
 			// Verify the expected result has been passed to the mapper function
 			if m := tc.m.ToASCIICharClassMocks; len(m) > 0 {
+				assert.Equal(t, tc.expectedInResult, m[len(m)-1].InResult)
+			}
+		})
+	}
+}
+
+func TestParser_unicodeCategory(t *testing.T) {
+	tests := []struct {
+		name             string
+		m                *mockMappers
+		in               comb.Input
+		expectedInResult comb.Result
+	}{
+		{
+			name:             "Failure",
+			m:                &mockMappers{},
+			in:               newStringInput("Invalid"),
+			expectedInResult: comb.Result{},
+		},
+		{
+			name: "Success_Math",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput("Math"),
+			expectedInResult: comb.Result{Val: "Math", Pos: 0},
+		},
+		{
+			name: "Success_Emoji",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput("Emoji"),
+			expectedInResult: comb.Result{Val: "Emoji", Pos: 0},
+		},
+		{
+			name: "Success_Latin",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput("Latin"),
+			expectedInResult: comb.Result{Val: "Latin", Pos: 0},
+		},
+		{
+			name: "Success_Greek",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput("Greek"),
+			expectedInResult: comb.Result{Val: "Greek", Pos: 0},
+		},
+		{
+			name: "Success_Cyrillic",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput("Cyrillic"),
+			expectedInResult: comb.Result{Val: "Cyrillic", Pos: 0},
+		},
+		{
+			name: "Success_Han",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput("Han"),
+			expectedInResult: comb.Result{Val: "Han", Pos: 0},
+		},
+		{
+			name: "Success_Persian",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput("Persian"),
+			expectedInResult: comb.Result{Val: "Persian", Pos: 0},
+		},
+		{
+			name: "Success_Letter",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput("Letter"),
+			expectedInResult: comb.Result{Val: "Letter", Pos: 0},
+		},
+		{
+			name: "Success_Lu",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput("Lu"),
+			expectedInResult: comb.Result{Val: "Lu", Pos: 0},
+		},
+		{
+			name: "Success_Ll",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput("Ll"),
+			expectedInResult: comb.Result{Val: "Ll", Pos: 0},
+		},
+		{
+			name: "Success_Lt",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput("Lt"),
+			expectedInResult: comb.Result{Val: "Lt", Pos: 0},
+		},
+		{
+			name: "Success_Lm",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput("Lm"),
+			expectedInResult: comb.Result{Val: "Lm", Pos: 0},
+		},
+		{
+			name: "Success_Lo",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput("Lo"),
+			expectedInResult: comb.Result{Val: "Lo", Pos: 0},
+		},
+		{
+			name: "Success_L",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput("L"),
+			expectedInResult: comb.Result{Val: "L", Pos: 0},
+		},
+		{
+			name: "Success_Mark",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput("Mark"),
+			expectedInResult: comb.Result{Val: "Mark", Pos: 0},
+		},
+		{
+			name: "Success_Mn",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput("Mn"),
+			expectedInResult: comb.Result{Val: "Mn", Pos: 0},
+		},
+		{
+			name: "Success_Mc",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput("Mc"),
+			expectedInResult: comb.Result{Val: "Mc", Pos: 0},
+		},
+		{
+			name: "Success_Me",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput("Me"),
+			expectedInResult: comb.Result{Val: "Me", Pos: 0},
+		},
+		{
+			name: "Success_M",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput("M"),
+			expectedInResult: comb.Result{Val: "M", Pos: 0},
+		},
+		{
+			name: "Success_Number",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput("Number"),
+			expectedInResult: comb.Result{Val: "Number", Pos: 0},
+		},
+		{
+			name: "Success_Nd",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput("Nd"),
+			expectedInResult: comb.Result{Val: "Nd", Pos: 0},
+		},
+		{
+			name: "Success_Nl",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput("Nl"),
+			expectedInResult: comb.Result{Val: "Nl", Pos: 0},
+		},
+		{
+			name: "Success_No",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput("No"),
+			expectedInResult: comb.Result{Val: "No", Pos: 0},
+		},
+		{
+			name: "Success_N",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput("N"),
+			expectedInResult: comb.Result{Val: "N", Pos: 0},
+		},
+		{
+			name: "Success_Punctuation",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput("Punctuation"),
+			expectedInResult: comb.Result{Val: "Punctuation", Pos: 0},
+		},
+		{
+			name: "Success_Pc",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput("Pc"),
+			expectedInResult: comb.Result{Val: "Pc", Pos: 0},
+		},
+		{
+			name: "Success_Pd",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput("Pd"),
+			expectedInResult: comb.Result{Val: "Pd", Pos: 0},
+		},
+		{
+			name: "Success_Ps",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput("Ps"),
+			expectedInResult: comb.Result{Val: "Ps", Pos: 0},
+		},
+		{
+			name: "Success_Pe",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput("Pe"),
+			expectedInResult: comb.Result{Val: "Pe", Pos: 0},
+		},
+		{
+			name: "Success_Pi",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput("Pi"),
+			expectedInResult: comb.Result{Val: "Pi", Pos: 0},
+		},
+		{
+			name: "Success_Pf",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput("Pf"),
+			expectedInResult: comb.Result{Val: "Pf", Pos: 0},
+		},
+		{
+			name: "Success_Po",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput("Po"),
+			expectedInResult: comb.Result{Val: "Po", Pos: 0},
+		},
+		{
+			name: "Success_P",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput("P"),
+			expectedInResult: comb.Result{Val: "P", Pos: 0},
+		},
+		{
+			name: "Success_Separator",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput("Separator"),
+			expectedInResult: comb.Result{Val: "Separator", Pos: 0},
+		},
+		{
+			name: "Success_Zs",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput("Zs"),
+			expectedInResult: comb.Result{Val: "Zs", Pos: 0},
+		},
+		{
+			name: "Success_Zl",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput("Zl"),
+			expectedInResult: comb.Result{Val: "Zl", Pos: 0},
+		},
+		{
+			name: "Success_Zp",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput("Zp"),
+			expectedInResult: comb.Result{Val: "Zp", Pos: 0},
+		},
+		{
+			name: "Success_Z",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput("Z"),
+			expectedInResult: comb.Result{Val: "Z", Pos: 0},
+		},
+		{
+			name: "Success_Symbol",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput("Symbol"),
+			expectedInResult: comb.Result{Val: "Symbol", Pos: 0},
+		},
+		{
+			name: "Success_Sm",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput("Sm"),
+			expectedInResult: comb.Result{Val: "Sm", Pos: 0},
+		},
+		{
+			name: "Success_Sc",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput("Sc"),
+			expectedInResult: comb.Result{Val: "Sc", Pos: 0},
+		},
+		{
+			name: "Success_Sk",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput("Sk"),
+			expectedInResult: comb.Result{Val: "Sk", Pos: 0},
+		},
+		{
+			name: "Success_So",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput("So"),
+			expectedInResult: comb.Result{Val: "So", Pos: 0},
+		},
+		{
+			name: "Success_S",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput("S"),
+			expectedInResult: comb.Result{Val: "S", Pos: 0},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			p := New(tc.m)
+			p.unicodeCategory(tc.in)
+
+			// Verify the expected result has been passed to the mapper function
+			if m := tc.m.ToUnicodeCategoryMocks; len(m) > 0 {
+				assert.Equal(t, tc.expectedInResult, m[len(m)-1].InResult)
+			}
+		})
+	}
+}
+
+func TestParser_unicodeCharClass(t *testing.T) {
+	tests := []struct {
+		name             string
+		m                *mockMappers
+		in               comb.Input
+		expectedInResult comb.Result
+	}{
+		{
+			name:             "Failure",
+			m:                &mockMappers{},
+			in:               newStringInput(`\p{Invalid}`),
+			expectedInResult: comb.Result{},
+		},
+		{
+			name: "Success_Math",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\p{Math}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Math", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Math_Negated",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\P{Math}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\P`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Math", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Emoji",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\p{Emoji}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Emoji", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Emoji_Negated",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\P{Emoji}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\P`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Emoji", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Latin",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\p{Latin}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Latin", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Latin_Negated",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\P{Latin}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\P`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Latin", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Greek",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\p{Greek}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Greek", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Greek_Negated",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\P{Greek}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\P`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Greek", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Cyrillic",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\p{Cyrillic}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Cyrillic", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Cyrillic_Negated",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\P{Cyrillic}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\P`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Cyrillic", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Han",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\p{Han}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Han", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Han_Negated",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\P{Han}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\P`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Han", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Persian",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\p{Persian}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Persian", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Persian_Negated",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\P{Persian}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\P`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Persian", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Letter",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\p{Letter}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Letter", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Letter_Negated",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\P{Letter}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\P`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Letter", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Lu",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\p{Lu}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Lu", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Lu_Negated",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\P{Lu}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\P`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Lu", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Ll",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\p{Ll}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Ll", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Ll_Negated",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\P{Ll}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\P`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Ll", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Lt",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\p{Lt}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Lt", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Lt_Negated",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\P{Lt}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\P`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Lt", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Lm",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\p{Lm}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Lm", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Lm_Negated",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\P{Lm}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\P`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Lm", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Lo",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\p{Lo}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Lo", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Lo_Negated",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\P{Lo}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\P`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Lo", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_L",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\p{L}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "L", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_L_Negated",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\P{L}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\P`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "L", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Mark",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\p{Mark}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Mark", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Mark_Negated",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\P{Mark}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\P`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Mark", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Mn",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\p{Mn}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Mn", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Mn_Negated",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\P{Mn}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\P`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Mn", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Mc",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\p{Mc}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Mc", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Mc_Negated",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\P{Mc}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\P`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Mc", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Me",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\p{Me}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Me", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Me_Negated",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\P{Me}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\P`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Me", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_M",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\p{M}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "M", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_M_Negated",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\P{M}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\P`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "M", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Number",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\p{Number}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Number", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Number_Negated",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\P{Number}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\P`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Number", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Nd",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\p{Nd}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Nd", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Nd_Negated",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\P{Nd}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\P`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Nd", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Nl",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\p{Nl}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Nl", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Nl_Negated",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\P{Nl}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\P`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Nl", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_No",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\p{No}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "No", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_No_Negated",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\P{No}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\P`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "No", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_N",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\p{N}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "N", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_N_Negated",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\P{N}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\P`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "N", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Punctuation",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\p{Punctuation}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Punctuation", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Punctuation_Negated",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\P{Punctuation}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\P`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Punctuation", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Pc",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\p{Pc}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Pc", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Pc_Negated",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\P{Pc}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\P`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Pc", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Pd",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\p{Pd}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Pd", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Pd_Negated",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\P{Pd}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\P`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Pd", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Ps",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\p{Ps}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Ps", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Ps_Negated",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\P{Ps}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\P`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Ps", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Pe",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\p{Pe}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Pe", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Pe_Negated",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\P{Pe}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\P`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Pe", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Pi",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\p{Pi}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Pi", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Pi_Negated",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\P{Pi}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\P`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Pi", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Pf",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\p{Pf}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Pf", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Pf_Negated",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\P{Pf}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\P`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Pf", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Po",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\p{Po}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Po", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Po_Negated",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\P{Po}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\P`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Po", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_P",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\p{P}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "P", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_P_Negated",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\P{P}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\P`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "P", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Separator",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\p{Separator}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Separator", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Separator_Negated",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\P{Separator}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\P`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Separator", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Zs",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\p{Zs}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Zs", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Zs_Negated",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\P{Zs}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\P`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Zs", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Zl",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\p{Zl}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Zl", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Zl_Negated",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\P{Zl}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\P`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Zl", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Zp",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\p{Zp}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Zp", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Zp_Negated",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\P{Zp}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\P`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Zp", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Z",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\p{Z}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Z", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Z_Negated",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\P{Z}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\P`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Z", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Symbol",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\p{Symbol}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Symbol", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Symbol_Negated",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\P{Symbol}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\P`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Symbol", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Sm",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\p{Sm}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Sm", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Sm_Negated",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\P{Sm}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\P`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Sm", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Sc",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\p{Sc}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Sc", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Sc_Negated",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\P{Sc}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\P`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Sc", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Sk",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\p{Sk}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Sk", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Sk_Negated",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\P{Sk}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\P`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "Sk", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_So",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\p{So}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "So", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_So_Negated",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\P{So}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\P`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "So", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_S",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\p{S}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "S", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_S_Negated",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{},
+				},
+			},
+			in: newStringInput(`\P{S}`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: `\P`, Pos: 0},
+					{Val: '{', Pos: 0},
+					{Val: "S", Pos: 0},
+					{Val: '}', Pos: 0},
+				},
+				Pos: 0,
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			p := New(tc.m)
+			p.unicodeCharClass(tc.in)
+
+			// Verify the expected result has been passed to the mapper function
+			if m := tc.m.ToUnicodeCharClassMocks; len(m) > 0 {
 				assert.Equal(t, tc.expectedInResult, m[len(m)-1].InResult)
 			}
 		})
@@ -1461,6 +3541,22 @@ func TestParser_charGroupItem(t *testing.T) {
 			expectedInResult: comb.Result{},
 		},
 		{
+			name: "Success_UnicodeCharClass",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{OutOK: true},
+				},
+				ToUnicodeCharClassMocks: []MapperMock{
+					{OutOK: true},
+				},
+				ToCharGroupItemMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput(`\p{Letter}`),
+			expectedInResult: comb.Result{},
+		},
+		{
 			name: "Success_ASCIICharClass",
 			m: &mockMappers{
 				ToASCIICharClassMocks: []MapperMock{
@@ -1697,6 +3793,22 @@ func TestParser_matchItem(t *testing.T) {
 				},
 			},
 			in:               newStringInput(`[:digit:]`),
+			expectedInResult: comb.Result{},
+		},
+		{
+			name: "Success_UnicodeCharClass",
+			m: &mockMappers{
+				ToUnicodeCategoryMocks: []MapperMock{
+					{OutOK: true},
+				},
+				ToUnicodeCharClassMocks: []MapperMock{
+					{OutOK: true},
+				},
+				ToMatchItemMocks: []MapperMock{
+					{},
+				},
+			},
+			in:               newStringInput(`\p{Letter}`),
 			expectedInResult: comb.Result{},
 		},
 		{
@@ -2386,6 +4498,12 @@ type (
 		ToASCIICharClassIndex int
 		ToASCIICharClassMocks []MapperMock
 
+		ToUnicodeCategoryIndex int
+		ToUnicodeCategoryMocks []MapperMock
+
+		ToUnicodeCharClassIndex int
+		ToUnicodeCharClassMocks []MapperMock
+
 		ToRepOpIndex int
 		ToRepOpMocks []MapperMock
 
@@ -2465,6 +4583,20 @@ func (m *mockMappers) ToASCIICharClass(r comb.Result) (comb.Result, bool) {
 	m.ToASCIICharClassIndex++
 	m.ToASCIICharClassMocks[i].InResult = r
 	return m.ToASCIICharClassMocks[i].OutResult, m.ToASCIICharClassMocks[i].OutOK
+}
+
+func (m *mockMappers) ToUnicodeCategory(r comb.Result) (comb.Result, bool) {
+	i := m.ToUnicodeCategoryIndex
+	m.ToUnicodeCategoryIndex++
+	m.ToUnicodeCategoryMocks[i].InResult = r
+	return m.ToUnicodeCategoryMocks[i].OutResult, m.ToUnicodeCategoryMocks[i].OutOK
+}
+
+func (m *mockMappers) ToUnicodeCharClass(r comb.Result) (comb.Result, bool) {
+	i := m.ToUnicodeCharClassIndex
+	m.ToUnicodeCharClassIndex++
+	m.ToUnicodeCharClassMocks[i].InResult = r
+	return m.ToUnicodeCharClassMocks[i].OutResult, m.ToUnicodeCharClassMocks[i].OutOK
 }
 
 func (m *mockMappers) ToRepOp(r comb.Result) (comb.Result, bool) {

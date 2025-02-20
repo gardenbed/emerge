@@ -410,6 +410,93 @@ func TestMappers_ToASCIICharClass(t *testing.T) {
 	}
 }
 
+func TestMappers_ToUnicodeCategory(t *testing.T) {
+	tests := []MapperTest{
+		{
+			name: "Success",
+			r: comb.Result{
+				Val: "Letter",
+				Pos: 2,
+			},
+			expectedResult: comb.Result{
+				Val: "Letter",
+				Pos: 2,
+			},
+			expectedOK: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			m := new(mappers)
+			res, ok := m.ToUnicodeCategory(tc.r)
+
+			EqualResults(t, tc.expectedResult, res)
+			assert.Equal(t, tc.expectedOK, ok)
+
+			if tc.expectedError != "" {
+				assert.EqualError(t, m.errors, tc.expectedError)
+			}
+		})
+	}
+}
+
+// TODO: Complete
+func TestMappers_ToUnicodeCharClass(t *testing.T) {
+	nfas := createTestNFAs()
+
+	tests := []MapperTest{
+		{
+			name: "InvalidClass",
+			r: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 2},
+					{Val: '{', Pos: 4},
+					{Val: "Georgian", Pos: 5},
+					{Val: '}', Pos: 11},
+				},
+				Pos: 2,
+			},
+			expectedResult: comb.Result{},
+			expectedOK:     false,
+		},
+		{
+			name: "Success_Letter",
+			r: comb.Result{
+				Val: comb.List{
+					{Val: `\p`, Pos: 2},
+					{Val: '{', Pos: 4},
+					{Val: "Letter", Pos: 5},
+					{Val: '}', Pos: 11},
+				},
+				Pos: 2,
+			},
+			expectedResult: comb.Result{
+				Val: nfas["letter"],
+				Pos: 2,
+				Bag: comb.Bag{
+					bagKeyChars: letterChars,
+				},
+			},
+			expectedOK: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			m := new(mappers)
+			res, ok := m.ToUnicodeCharClass(tc.r)
+
+			EqualResults(t, tc.expectedResult, res)
+			assert.Equal(t, tc.expectedOK, ok)
+
+			if tc.expectedError != "" {
+				assert.EqualError(t, m.errors, tc.expectedError)
+			}
+		})
+	}
+}
+
 func TestMappers_ToRepOp(t *testing.T) {
 	tests := []MapperTest{
 		{
@@ -1719,6 +1806,8 @@ func TestMappers_ToRegex(t *testing.T) {
 //==================================================< HELPERS >==================================================
 
 var (
+	/* CHAR CLASSES */
+
 	digitChars = []rune{
 		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
 	}
@@ -1765,6 +1854,8 @@ var (
 		123, 124, 125, 126, 127,
 	}
 
+	/* ASCII CLASSES */
+
 	blankChars = []rune{
 		' ', '\t',
 	}
@@ -1808,9 +1899,18 @@ var (
 		97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122,
 		123, 124, 125, 126, 127,
 	}
+
+	/* UNICODE CLASSES */
+
+	letterChars = []rune{
+		'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+		'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+	}
 )
 
 func createTestNFAs() map[string]*auto.NFA {
+	/* CHAR CLASSES */
+
 	digit := auto.NewNFA(0, []auto.State{1})
 	for _, r := range digitChars {
 		digit.Add(0, auto.Symbol(r), []auto.State{1})
@@ -1840,6 +1940,8 @@ func createTestNFAs() map[string]*auto.NFA {
 	for _, r := range notWordChars {
 		notWord.Add(0, auto.Symbol(r), []auto.State{1})
 	}
+
+	/* ASCII CLASSES */
 
 	blank := auto.NewNFA(0, []auto.State{1})
 	for _, r := range blankChars {
@@ -1881,6 +1983,13 @@ func createTestNFAs() map[string]*auto.NFA {
 		ascii.Add(0, auto.Symbol(r), []auto.State{1})
 	}
 
+	/* UNICODE CLASSES */
+
+	letter := auto.NewNFA(0, []auto.State{1})
+	for _, r := range letterChars {
+		letter.Add(0, auto.Symbol(r), []auto.State{1})
+	}
+
 	return map[string]*auto.NFA{
 		"digit":         digit,
 		"notDigit":      notDigit,
@@ -1896,6 +2005,7 @@ func createTestNFAs() map[string]*auto.NFA {
 		"alpha":         alpha,
 		"alnum":         alnum,
 		"ascii":         ascii,
+		"letter":        letter,
 	}
 }
 
