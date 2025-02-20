@@ -55,7 +55,21 @@ The Solidus (Slash) character (`/`) is added to the Emerge's EBNF language for d
 
 ### Lexer Design
 
-TBD
+  - Tokens can be defined implicitly by using strings in production rules or explicitly with string values or regular expressions.
+  - The following predefined regular expressions can be referenced when explicitly defining a token.
+    - `$WS`
+    - `$DIGIT`
+    - `$LETTER`
+    - `$ID`
+    - `$NUMBER`
+    - `$STRING`
+    - `$COMMENT`
+  - If multiple tokens match the same string, the lexer DFA may recognize more than one token in a final state.
+    Tokens defined by string values take precedence over those defined by regular expressions.
+    If multiple tokens share the same string value, lexer generation fails.
+  - Whitespaces (*space*, *tab*, *newline*, *carriage return*) is automatically discarded unless matched by a token.
+    If any token explicitly matches a whitespace, the lexer does not handle it automatically.
+    Unmatched whitespaces is always discarded.
 
 #### State Machine
 
