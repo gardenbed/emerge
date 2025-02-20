@@ -18,7 +18,7 @@ import (
 // Predefs defines the acceptable values for the PREDEF token in the EBNF specification.
 // Each value is a predefined regular expression for defining a token.
 var Predefs = map[string]string{
-	"$WS":      `[ \t\n\r]`,
+	"$WS":      `[\x09\x0A\x0D\x20]`,
 	"$DIGIT":   `[0-9]`,
 	"$LETTER":  `[A-Za-z]`,
 	"$ID":      `[A-Za-z_][0-9A-Za-z_]*`,
