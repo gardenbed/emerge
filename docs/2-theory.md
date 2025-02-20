@@ -168,7 +168,7 @@ It is hard for a lexical analyzer to tell, without the aid of other components, 
 The parser calls the lexical analyzer using the `getNextToken` command, causes the lexical analyzer to read characters
 from its input until it can identify the next lexeme and produce the next token, which it returns to the parser.
 
-For a more in-depth theory of lexical analysis and lexers, please see [Theory of Lexers](./2-lexer_theory.md).
+For a more in-depth theory of lexical analysis and lexers, please see [Theory of Lexers](./3-lexer_theory.md).
 
 ### Syntax Analysis
 
@@ -192,7 +192,7 @@ The syntax of programming language constructs can be specified by context-free g
   - From certain classes of grammars, we can automatically construct an efficient parser.
   - During the parser construction, we can reveal syntactic ambiguities that might have slipped through the initial design of a language.
 
-For a more in-depth theory of syntax analysis and parsers, please see [Theory of Parsers](./3-parser_theory.md).
+For a more in-depth theory of syntax analysis and parsers, please see [Theory of Parsers](./4-parser_theory.md).
 
 ### Semantic Analysis
 

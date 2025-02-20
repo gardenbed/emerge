@@ -53,8 +53,6 @@ Here is a summary of some of the other similar projects.
     It is written in Go and generates parsers in Go.
   - [ANTLR](https://www.antlr.org) generates a parser that can build and walk parse trees from a grammar.
     It is used for reading, processing, executing, or translating structured text or binary files.
-  - [Participle](https://github.com/alecthomas/participle) is simple Go library for building parsers from grammars.
-    A grammar is an annotated Go structure used for defining both the grammar and the abstract syntax tree.
   - [PEG](https://github.com/pointlander/peg) is an implementation of the [Packrat](https://en.wikipedia.org/wiki/Packrat_parser)
     parser generator originally implemented as [peg/leg](https://www.piumarta.com/software/peg/).
     A Packrat parser is a *top-down* *recursive-descent parser* capable of *backtracking*
@@ -63,14 +61,26 @@ Here is a summary of some of the other similar projects.
     A Parsing Expression Grammar (PEG) is a formal grammar framework used to define
     the syntax of languages in a way that enables efficient top-down recursive-descent parsing.
     Unlike Context-Free Grammars (CFGs), PEGs are *deterministic* and eliminate ambiguity by using *ordered choice*.
+  - [Participle](https://github.com/alecthomas/participle) is simple Go library for building parsers from grammars.
+    A grammar is an annotated Go structure used for defining both the grammar and the abstract syntax tree.
+
+### Comparison
+
+| **Features** | Emerge | Lex/Flex | Yacc/Bison | Goyacc | ANTLR | PEG |
+|--------------|--------|----------|------------|--------|-------|-----|
+| Lexer | | | | | | |
+| Parser | | | | | | |
+| Encoding | | | | | | |
+| Error Handling | | | | | | |
 
 ## Table of Contents
 
-  - [Theory of Languages and Compilers](./1-theory.md)
-      - [Theory of Lexers](./2-lexer_theory.md)
-      - [Theory of Parsers](./3-parser_theory.md)
-  - [Definitions](./4-definitions.md)
-  - [Design](./5-design.md)
+  - [Emerge Documentation](./1-documentation.md)
+  - [Theory of Languages and Compilers](./2-theory.md)
+      - [Theory of Lexers](./3-lexer_theory.md)
+      - [Theory of Parsers](./4-parser_theory.md)
+  - [Definitions](./5-definitions.md)
+  - [Design of Emerge](./6-design.md)
 
 ## References
 
