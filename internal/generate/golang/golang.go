@@ -222,18 +222,18 @@ func groupDFAStates(dfa *auto.DFA) symboltable.SymbolTable[int, symboltable.Symb
 	cmpState := generic.NewCompareFunc[int]()
 	groups := symboltable.NewRedBlack[int, symboltable.SymbolTable[int, []rune]](cmpState, nil)
 
-	for from, ftrans := range dfa.Trans.All() {
-		group, ok := groups.Get(int(from))
+	for tr := range dfa.Transitions() {
+		s, next := int(tr.State), int(tr.Next)
+
+		group, ok := groups.Get(s)
 		if !ok {
 			group = symboltable.NewRedBlack[int, []rune](cmpState, nil)
-			groups.Put(int(from), group)
+			groups.Put(s, group)
 		}
 
-		for sym, to := range ftrans.All() {
-			symbols, _ := group.Get(int(to))
-			symbols = append(symbols, rune(sym))
-			group.Put(int(to), symbols)
-		}
+		symbols, _ := group.Get(next)
+		symbols = append(symbols, rune(tr.Symbol))
+		group.Put(next, symbols)
 	}
 
 	return groups
