@@ -919,7 +919,65 @@ func TestLexer_evalDFA(t *testing.T) {
 			},
 		},
 		{
-			name: "IDENT",
+			name: "IDENT_01",
+			l: &Lexer{
+				in: &mockInputBuffer{
+					LexemeMocks: []LexemeMock{
+						{
+							OutVal: "gr",
+							OutPos: lexer.Position{
+								Filename: "test",
+								Offset:   8,
+								Line:     1,
+								Column:   9,
+							},
+						},
+					},
+				},
+			},
+			state: 40,
+			expectedToken: lexer.Token{
+				Terminal: IDENT,
+				Lexeme:   "gr",
+				Pos: lexer.Position{
+					Filename: "test",
+					Offset:   8,
+					Line:     1,
+					Column:   9,
+				},
+			},
+		},
+		{
+			name: "IDENT_02",
+			l: &Lexer{
+				in: &mockInputBuffer{
+					LexemeMocks: []LexemeMock{
+						{
+							OutVal: "a",
+							OutPos: lexer.Position{
+								Filename: "test",
+								Offset:   8,
+								Line:     1,
+								Column:   9,
+							},
+						},
+					},
+				},
+			},
+			state: 40,
+			expectedToken: lexer.Token{
+				Terminal: IDENT,
+				Lexeme:   "a",
+				Pos: lexer.Position{
+					Filename: "test",
+					Offset:   8,
+					Line:     1,
+					Column:   9,
+				},
+			},
+		},
+		{
+			name: "IDENT_03",
 			l: &Lexer{
 				in: &mockInputBuffer{
 					LexemeMocks: []LexemeMock{
@@ -948,7 +1006,7 @@ func TestLexer_evalDFA(t *testing.T) {
 			},
 		},
 		{
-			name: "TOKEN",
+			name: "TOKEN_01",
 			l: &Lexer{
 				in: &mockInputBuffer{
 					LexemeMocks: []LexemeMock{
@@ -977,7 +1035,7 @@ func TestLexer_evalDFA(t *testing.T) {
 			},
 		},
 		{
-			name: "STRING",
+			name: "STRING_01",
 			l: &Lexer{
 				in: &mockInputBuffer{
 					LexemeMocks: []LexemeMock{
@@ -1006,7 +1064,7 @@ func TestLexer_evalDFA(t *testing.T) {
 			},
 		},
 		{
-			name: "REGEX",
+			name: "REGEX_01",
 			l: &Lexer{
 				in: &mockInputBuffer{
 					LexemeMocks: []LexemeMock{
@@ -1328,6 +1386,7 @@ func TestLexer(t *testing.T) {
 
 			for token, err := lex.NextToken(); err != io.EOF; token, err = lex.NextToken() {
 				assert.NotEmpty(t, token)
+				assert.NoError(t, err)
 			}
 		})
 	}

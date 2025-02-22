@@ -1,4 +1,4 @@
-# Design
+# Design of Emerge
 
 In this document, we go over some of the design decisions and rationals behind **Emerge**.
 
@@ -55,10 +55,6 @@ The Solidus (Slash) character (`/`) is added to the Emerge's EBNF language for d
 
 ### Lexer Design
 
-TBD
-
-#### State Machine
-
 ![Lexer DFA](./lexer-dfa.png)
 
   - In the diagram above, `all` refers to characters in the `0x21` to `0x7E` range.
@@ -95,7 +91,9 @@ func main() {
 		3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 		17,
 		22, 27, 31,
-		38, 40, 42,
+		38,
+    32, 33, 34, 35, 36, 37, 40,
+    42,
 		46, 50,
 		51, 54,
 	})
@@ -325,14 +323,14 @@ digraph "Lexer DFA" {
   29 [label="29", shape=circle];
   30 [label="30", shape=circle];
   31 [label="31", shape=doublecircle style=filled color=orchid1];
-  32 [label="32", shape=circle];
-  33 [label="33", shape=circle];
-  34 [label="34", shape=circle];
-  35 [label="35", shape=circle];
-  36 [label="36", shape=circle];
-  37 [label="37", shape=circle];
+  32 [label="32", shape=doublecircle style=filled color=orangered];
+  33 [label="33", shape=doublecircle style=filled color=orangered];
+  34 [label="34", shape=doublecircle style=filled color=orangered];
+  35 [label="35", shape=doublecircle style=filled color=orangered];
+  36 [label="36", shape=doublecircle style=filled color=orangered];
+  37 [label="37", shape=doublecircle style=filled color=orangered];
   38 [label="38", shape=doublecircle style=filled color=chocolate];
-  39 [label="39", shape=circle];
+  39 [label="39", shape=doublecircle style=filled color=orangered];
   40 [label="40", shape=doublecircle style=filled color=orangered];
   41 [label="41", shape=circle];
   42 [label="42", shape=doublecircle style=filled color=dodgerblue];
@@ -432,35 +430,27 @@ digraph "Lexer DFA" {
 
 #### Input Buffer
 
-A *two-buffer* scheme, explained [here](./2-lexer_theory.md#input-buffering), is employed for implementing the EBNF lexer.
+A *two-buffer* scheme, explained [here](./3-lexer_theory.md#input-buffering), is employed for implementing the EBNF lexer.
 The two buffers are implemented as one buffer divided into two halves.
 
 ### Parser Design
 
-The EBNF parser is implemented as a [bottom-up](./3-parser_theory.md#bottom-up-parsing)
-[LALR](./3-parser_theory.md#lalr-parsers) parser, ensuring efficient and deterministic parsing.
+The EBNF parser is implemented as a [bottom-up](./4-parser_theory.md#bottom-up-parsing)
+[LALR](./4-parser_theory.md#lalr-parsers) parser, ensuring efficient and deterministic parsing.
 
 The parsing table for EBNF is generated using this
 [algorithm](https://pkg.go.dev/github.com/moorara/algo/parser/lr/lookahead#BuildParsingTable)
-based on the grammar and precedence rules defined [here](./4-definitions.md#extended-backus-naur-form).
+based on the grammar and precedence rules defined [here](./5-definitions.md#extended-backus-naur-form).
 
 To implement an LR parser, the grammar must be in `LR(1)` form.
 LR(1) grammars require minimal transformations, often closely resembling natural language structures.
-[Ambiguous grammars](./3-parser_theory.md#ambiguous-grammars) can also be handled using precedence rules.
+[Ambiguous grammars](./4-parser_theory.md#ambiguous-grammars) can also be handled using precedence rules.
 
 The Emerge parser generator also produces `LALR` parsers for the same reasons mentioned above,
 balancing efficiency and expressiveness.
 
-For error handling, the [panic-mode](./3-parser_theory.md#panic-mode-recovery) error recovery method is used
+For error handling, the [panic-mode](./4-parser_theory.md#panic-mode-recovery) error recovery method is used
 due to its simplicity and adaptability to any arbitrary grammar.
-
-The generated parser offers three primary modes of operation, similar to the examples
-[here](https://pkg.go.dev/github.com/moorara/algo/parser/lr/lookahead#pkg-examples):
-
-  - **Tokenization and Production Extraction**: Outputs tokens and their corresponding productions.
-  - **Abstract Syntax Tree (AST) Construction**: Builds an AST based on the grammar's production rules.
-  - **Rule-based Evaluation and Direct Translation**: Evaluates production rules
-    alongside previously computed values, enabling direct translation of the parsed input.
 
 ## Resources
 

@@ -1,8 +1,0 @@
-package {{.Package}}
-
-// Lexer defines the interface for a lexical analyzer.
-type Lexer interface {
-	// NextToken reads characters from the input source and returns the next token.
-	// It may also return an error if there is an issue during tokenization.
-	NextToken() (Token, error)
-}

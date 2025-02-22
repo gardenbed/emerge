@@ -25,7 +25,7 @@ For other platforms, you can download the binary from the [latest release](https
 
 ### Examples
 
-Below is the context-free grammar for the JSON language in EBNF format. Save this as `json.grammar`:
+Below is the context-free grammar for the JSON language in EBNF format. Save this as `json.ebnf`:
 
 ```
 grammar json
@@ -43,7 +43,7 @@ elements = elements "," value | value;
 ```
 
 ```bash
-emerge json.grammar
+emerge json.ebnf
 ```
 
 

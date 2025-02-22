@@ -9,15 +9,6 @@ import (
 	"github.com/gardenbed/emerge/internal/ebnf/parser"
 )
 
-var predefs = map[string]string{
-	"$DIGIT":  `[0-9]+`,
-	"$LETTER": `[A-Za-z]`,
-	"$ID":     `[A-Za-z_][0-9A-Za-z_]*`,
-	"$INT":    `-?[0-9]+`,
-	"$UINT":   `[0-9]+`,
-	"$FLOAT":  `-?[0-9]+(\.[0-9]+)?`,
-}
-
 // Parse implements the LR parsing algorithm.
 // It analyzes a sequence of input tokens (terminal symbols) provided by a lexical analyzer.
 // It attempts to parse the input according to the production rules of the EBNF grammar.
@@ -237,7 +228,7 @@ func Parse(filename string, src io.Reader) (*Grammar, error) {
 		case 11:
 			value := rhs[2].Val.(string)
 
-			regex, ok := predefs[value]
+			regex, ok := parser.Predefs[value]
 			if !ok {
 				return nil, fmt.Errorf("invalid predefined regex: %s", value)
 			}

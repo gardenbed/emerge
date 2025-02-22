@@ -1,4 +1,4 @@
-package generate
+package golang
 
 import (
 	"github.com/moorara/algo/grammar"
