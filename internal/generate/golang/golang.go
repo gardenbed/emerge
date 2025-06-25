@@ -1,3 +1,4 @@
+// Package golang provides functionality for generating Go code that implements a full LALR parser based on an EBNF specification.
 package golang
 
 import (

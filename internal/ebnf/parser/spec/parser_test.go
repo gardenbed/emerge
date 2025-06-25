@@ -47,7 +47,10 @@ func TestParse(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			f, err := os.Open(tc.filename)
 			assert.NoError(t, err)
-			defer f.Close()
+
+			defer func() {
+				assert.NoError(t, f.Close())
+			}()
 
 			spec, err := Parse(tc.filename, f)
 

@@ -1,3 +1,4 @@
+// Package parser implements a parser for the EBNF language.
 package parser
 
 import (

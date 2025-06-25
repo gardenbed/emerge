@@ -16,7 +16,10 @@ import (
 func TestGenerate(t *testing.T) {
 	tempDir, err := os.MkdirTemp("", "emerge-test-")
 	assert.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+
+	defer func() {
+		assert.NoError(t, os.RemoveAll(tempDir))
+	}()
 
 	tests := []struct {
 		name               string
@@ -80,11 +83,17 @@ func TestGenerate(t *testing.T) {
 func TestGenerator_prepare(t *testing.T) {
 	tempDir, err := os.MkdirTemp("", "emerge-test-")
 	assert.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+
+	defer func() {
+		assert.NoError(t, os.RemoveAll(tempDir))
+	}()
 
 	tempFile, err := os.CreateTemp("", "emerge-test-file-")
 	assert.NoError(t, err)
-	defer os.RemoveAll(tempFile.Name())
+
+	defer func() {
+		assert.NoError(t, os.RemoveAll(tempFile.Name()))
+	}()
 
 	tests := []struct {
 		name               string
@@ -158,7 +167,10 @@ func TestGenerator_prepare(t *testing.T) {
 func TestGenerator_generateCore(t *testing.T) {
 	tempDir, err := os.MkdirTemp("", "emerge-test-")
 	assert.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+
+	defer func() {
+		assert.NoError(t, os.RemoveAll(tempDir))
+	}()
 
 	tests := []struct {
 		name                 string
@@ -205,7 +217,10 @@ func TestGenerator_generateCore(t *testing.T) {
 func TestGenerator_generateLexer(t *testing.T) {
 	tempDir, err := os.MkdirTemp("", "emerge-test-")
 	assert.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+
+	defer func() {
+		assert.NoError(t, os.RemoveAll(tempDir))
+	}()
 
 	tests := []struct {
 		name                 string
@@ -273,7 +288,10 @@ func TestGenerator_generateLexer(t *testing.T) {
 func TestGenerator_generateParser(t *testing.T) {
 	tempDir, err := os.MkdirTemp("", "emerge-test-")
 	assert.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+
+	defer func() {
+		assert.NoError(t, os.RemoveAll(tempDir))
+	}()
 
 	tests := []struct {
 		name                 string
@@ -339,7 +357,10 @@ func TestGenerator_generateParser(t *testing.T) {
 func TestGenerator_renderTemplate(t *testing.T) {
 	tempDir, err := os.MkdirTemp("", "emerge-test-")
 	assert.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+
+	defer func() {
+		assert.NoError(t, os.RemoveAll(tempDir))
+	}()
 
 	tests := []struct {
 		name               string

@@ -1,3 +1,4 @@
+// Package spec defines the models and methods for parsing EBNF specifications.
 package spec
 
 import (

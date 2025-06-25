@@ -309,7 +309,7 @@ func (t *SymbolTable) Productions() []*grammar.Production {
 	return all
 }
 
-// AddPrecedence
+// AddPrecedence adds a new precedence level to the symbol table.
 func (t *SymbolTable) AddPrecedence(p *lr.PrecedenceLevel) {
 	t.Lock()
 	defer t.Unlock()
