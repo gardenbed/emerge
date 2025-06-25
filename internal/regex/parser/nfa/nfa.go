@@ -1,4 +1,4 @@
-// Package provides a combinator parser for parsing regular expression into a non-deterministic finite automata.
+// Package nfa provides a combinator parser for parsing regular expression into a non-deterministic finite automata.
 //
 // It implements the McNaughton-Yamada-Thompson algorithm to convert a regular expression to an NFA.
 // The algorithm is syntax-directed, in the sense that it works recursively up the parse tree for the regular expression.

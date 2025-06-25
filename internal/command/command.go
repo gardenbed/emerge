@@ -1,3 +1,4 @@
+// Package command implements the command for generating parsers from EBNF specifications.
 package command
 
 import (
@@ -182,7 +183,9 @@ func (c *Command) Run(args []string) error {
 		return err
 	}
 
-	defer f.Close()
+	defer func() {
+		_ = f.Close()
+	}()
 
 	spec, err := c.funcs.Parse(filename, f)
 	if err != nil {

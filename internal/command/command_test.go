@@ -56,8 +56,7 @@ func TestCommand_PrintHelp(t *testing.T) {
 				assert.EqualError(t, err, tc.expectedError)
 			} else {
 				assert.NoError(t, err)
-
-				w.Close()
+				assert.NoError(t, w.Close())
 
 				out, err := io.ReadAll(r)
 				assert.NotNil(t, out)

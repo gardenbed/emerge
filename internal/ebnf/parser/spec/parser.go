@@ -11,7 +11,7 @@ import (
 	"github.com/gardenbed/emerge/internal/ebnf/parser"
 )
 
-// parse processes an EBNF input, evaluates it, and returns the result of evaluation.
+// Parse processes an EBNF input, evaluates it, and returns the result of evaluation.
 // It returns the evaluation outcome or an error if parsing fails.
 func Parse(filename string, src io.Reader) (*Spec, error) {
 	table := NewSymbolTable()

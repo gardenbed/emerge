@@ -1,3 +1,4 @@
+// Package parser provides combinators for parsing regular expressions.
 package parser
 
 import comb "github.com/moorara/algo/parser/combinator"

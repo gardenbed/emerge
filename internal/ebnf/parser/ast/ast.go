@@ -1,3 +1,4 @@
+// Package ast defines the abstract syntax tree (AST) for EBNF grammars.
 package ast
 
 import (
