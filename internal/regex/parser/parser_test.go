@@ -3,8 +3,9 @@ package parser
 import (
 	"testing"
 
-	comb "github.com/moorara/algo/parser/combinator"
 	"github.com/stretchr/testify/assert"
+
+	comb "github.com/moorara/algo/parser/combinator"
 )
 
 func TestToDigit(t *testing.T) {
@@ -487,7 +488,7 @@ func TestParser_char(t *testing.T) {
 		{
 			name:        "Failure",
 			m:           &mockMappers{},
-			in:          newStringInput(`µ`),
+			in:          newStringInput("\x00"),
 			expectedOut: comb.Output{},
 			expectedOK:  false,
 		},
@@ -686,7 +687,7 @@ func TestParser_anyChar(t *testing.T) {
 		{
 			name: "Success",
 			m: &mockMappers{
-				ToAnyCharMocks: []MapperMock{
+				ToAnyCharMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -718,13 +719,13 @@ func TestParser_singleChar(t *testing.T) {
 		{
 			name:             "Failure",
 			m:                &mockMappers{},
-			in:               newStringInput(`µ`),
+			in:               newStringInput("\x00"),
 			expectedInResult: comb.Result{},
 		},
 		{
 			name: "Success",
 			m: &mockMappers{
-				ToSingleCharMocks: []MapperMock{
+				ToSingleCharMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -734,7 +735,7 @@ func TestParser_singleChar(t *testing.T) {
 		{
 			name: "Success_ASCII",
 			m: &mockMappers{
-				ToSingleCharMocks: []MapperMock{
+				ToSingleCharMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -744,7 +745,7 @@ func TestParser_singleChar(t *testing.T) {
 		{
 			name: "Success_Unicode",
 			m: &mockMappers{
-				ToSingleCharMocks: []MapperMock{
+				ToSingleCharMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -782,7 +783,7 @@ func TestParser_charClass(t *testing.T) {
 		{
 			name: "Success_Whitespace",
 			m: &mockMappers{
-				ToCharClassMocks: []MapperMock{
+				ToCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -792,7 +793,7 @@ func TestParser_charClass(t *testing.T) {
 		{
 			name: "Success_NotWhitespace",
 			m: &mockMappers{
-				ToCharClassMocks: []MapperMock{
+				ToCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -802,7 +803,7 @@ func TestParser_charClass(t *testing.T) {
 		{
 			name: "Success_Digit",
 			m: &mockMappers{
-				ToCharClassMocks: []MapperMock{
+				ToCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -812,7 +813,7 @@ func TestParser_charClass(t *testing.T) {
 		{
 			name: "Success_NotDigit",
 			m: &mockMappers{
-				ToCharClassMocks: []MapperMock{
+				ToCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -822,7 +823,7 @@ func TestParser_charClass(t *testing.T) {
 		{
 			name: "Success_Word",
 			m: &mockMappers{
-				ToCharClassMocks: []MapperMock{
+				ToCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -832,7 +833,7 @@ func TestParser_charClass(t *testing.T) {
 		{
 			name: "Success_NotWord",
 			m: &mockMappers{
-				ToCharClassMocks: []MapperMock{
+				ToCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -870,7 +871,7 @@ func TestParser_asciiCharClass(t *testing.T) {
 		{
 			name: "Success_Blank",
 			m: &mockMappers{
-				ToASCIICharClassMocks: []MapperMock{
+				ToASCIICharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -880,7 +881,7 @@ func TestParser_asciiCharClass(t *testing.T) {
 		{
 			name: "Success_Space",
 			m: &mockMappers{
-				ToASCIICharClassMocks: []MapperMock{
+				ToASCIICharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -890,7 +891,7 @@ func TestParser_asciiCharClass(t *testing.T) {
 		{
 			name: "Success_Digit",
 			m: &mockMappers{
-				ToASCIICharClassMocks: []MapperMock{
+				ToASCIICharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -900,7 +901,7 @@ func TestParser_asciiCharClass(t *testing.T) {
 		{
 			name: "Success_XDigit",
 			m: &mockMappers{
-				ToASCIICharClassMocks: []MapperMock{
+				ToASCIICharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -910,7 +911,7 @@ func TestParser_asciiCharClass(t *testing.T) {
 		{
 			name: "Success_Upper",
 			m: &mockMappers{
-				ToASCIICharClassMocks: []MapperMock{
+				ToASCIICharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -920,7 +921,7 @@ func TestParser_asciiCharClass(t *testing.T) {
 		{
 			name: "Success_Lower",
 			m: &mockMappers{
-				ToASCIICharClassMocks: []MapperMock{
+				ToASCIICharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -930,7 +931,7 @@ func TestParser_asciiCharClass(t *testing.T) {
 		{
 			name: "Success_Alpha",
 			m: &mockMappers{
-				ToASCIICharClassMocks: []MapperMock{
+				ToASCIICharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -940,7 +941,7 @@ func TestParser_asciiCharClass(t *testing.T) {
 		{
 			name: "Success_Alnum",
 			m: &mockMappers{
-				ToASCIICharClassMocks: []MapperMock{
+				ToASCIICharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -950,7 +951,7 @@ func TestParser_asciiCharClass(t *testing.T) {
 		{
 			name: "Success_Word",
 			m: &mockMappers{
-				ToASCIICharClassMocks: []MapperMock{
+				ToASCIICharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -960,7 +961,7 @@ func TestParser_asciiCharClass(t *testing.T) {
 		{
 			name: "Success_ASCII",
 			m: &mockMappers{
-				ToASCIICharClassMocks: []MapperMock{
+				ToASCIICharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -998,7 +999,7 @@ func TestParser_unicodeCategory(t *testing.T) {
 		{
 			name: "Success_Math",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1008,7 +1009,7 @@ func TestParser_unicodeCategory(t *testing.T) {
 		{
 			name: "Success_Emoji",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1018,7 +1019,7 @@ func TestParser_unicodeCategory(t *testing.T) {
 		{
 			name: "Success_Latin",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1028,7 +1029,7 @@ func TestParser_unicodeCategory(t *testing.T) {
 		{
 			name: "Success_Greek",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1038,7 +1039,7 @@ func TestParser_unicodeCategory(t *testing.T) {
 		{
 			name: "Success_Cyrillic",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1048,7 +1049,7 @@ func TestParser_unicodeCategory(t *testing.T) {
 		{
 			name: "Success_Han",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1058,7 +1059,7 @@ func TestParser_unicodeCategory(t *testing.T) {
 		{
 			name: "Success_Persian",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1068,7 +1069,7 @@ func TestParser_unicodeCategory(t *testing.T) {
 		{
 			name: "Success_Letter",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1078,7 +1079,7 @@ func TestParser_unicodeCategory(t *testing.T) {
 		{
 			name: "Success_Lu",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1088,7 +1089,7 @@ func TestParser_unicodeCategory(t *testing.T) {
 		{
 			name: "Success_Ll",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1098,7 +1099,7 @@ func TestParser_unicodeCategory(t *testing.T) {
 		{
 			name: "Success_Lt",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1108,7 +1109,7 @@ func TestParser_unicodeCategory(t *testing.T) {
 		{
 			name: "Success_Lm",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1118,7 +1119,7 @@ func TestParser_unicodeCategory(t *testing.T) {
 		{
 			name: "Success_Lo",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1128,7 +1129,7 @@ func TestParser_unicodeCategory(t *testing.T) {
 		{
 			name: "Success_L",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1138,7 +1139,7 @@ func TestParser_unicodeCategory(t *testing.T) {
 		{
 			name: "Success_Mark",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1148,7 +1149,7 @@ func TestParser_unicodeCategory(t *testing.T) {
 		{
 			name: "Success_Mn",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1158,7 +1159,7 @@ func TestParser_unicodeCategory(t *testing.T) {
 		{
 			name: "Success_Mc",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1168,7 +1169,7 @@ func TestParser_unicodeCategory(t *testing.T) {
 		{
 			name: "Success_Me",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1178,7 +1179,7 @@ func TestParser_unicodeCategory(t *testing.T) {
 		{
 			name: "Success_M",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1188,7 +1189,7 @@ func TestParser_unicodeCategory(t *testing.T) {
 		{
 			name: "Success_Number",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1198,7 +1199,7 @@ func TestParser_unicodeCategory(t *testing.T) {
 		{
 			name: "Success_Nd",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1208,7 +1209,7 @@ func TestParser_unicodeCategory(t *testing.T) {
 		{
 			name: "Success_Nl",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1218,7 +1219,7 @@ func TestParser_unicodeCategory(t *testing.T) {
 		{
 			name: "Success_No",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1228,7 +1229,7 @@ func TestParser_unicodeCategory(t *testing.T) {
 		{
 			name: "Success_N",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1238,7 +1239,7 @@ func TestParser_unicodeCategory(t *testing.T) {
 		{
 			name: "Success_Punctuation",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1248,7 +1249,7 @@ func TestParser_unicodeCategory(t *testing.T) {
 		{
 			name: "Success_Pc",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1258,7 +1259,7 @@ func TestParser_unicodeCategory(t *testing.T) {
 		{
 			name: "Success_Pd",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1268,7 +1269,7 @@ func TestParser_unicodeCategory(t *testing.T) {
 		{
 			name: "Success_Ps",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1278,7 +1279,7 @@ func TestParser_unicodeCategory(t *testing.T) {
 		{
 			name: "Success_Pe",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1288,7 +1289,7 @@ func TestParser_unicodeCategory(t *testing.T) {
 		{
 			name: "Success_Pi",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1298,7 +1299,7 @@ func TestParser_unicodeCategory(t *testing.T) {
 		{
 			name: "Success_Pf",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1308,7 +1309,7 @@ func TestParser_unicodeCategory(t *testing.T) {
 		{
 			name: "Success_Po",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1318,7 +1319,7 @@ func TestParser_unicodeCategory(t *testing.T) {
 		{
 			name: "Success_P",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1328,7 +1329,7 @@ func TestParser_unicodeCategory(t *testing.T) {
 		{
 			name: "Success_Separator",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1338,7 +1339,7 @@ func TestParser_unicodeCategory(t *testing.T) {
 		{
 			name: "Success_Zs",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1348,7 +1349,7 @@ func TestParser_unicodeCategory(t *testing.T) {
 		{
 			name: "Success_Zl",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1358,7 +1359,7 @@ func TestParser_unicodeCategory(t *testing.T) {
 		{
 			name: "Success_Zp",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1368,7 +1369,7 @@ func TestParser_unicodeCategory(t *testing.T) {
 		{
 			name: "Success_Z",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1378,7 +1379,7 @@ func TestParser_unicodeCategory(t *testing.T) {
 		{
 			name: "Success_Symbol",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1388,7 +1389,7 @@ func TestParser_unicodeCategory(t *testing.T) {
 		{
 			name: "Success_Sm",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1398,7 +1399,7 @@ func TestParser_unicodeCategory(t *testing.T) {
 		{
 			name: "Success_Sc",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1408,7 +1409,7 @@ func TestParser_unicodeCategory(t *testing.T) {
 		{
 			name: "Success_Sk",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1418,7 +1419,7 @@ func TestParser_unicodeCategory(t *testing.T) {
 		{
 			name: "Success_So",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1428,7 +1429,7 @@ func TestParser_unicodeCategory(t *testing.T) {
 		{
 			name: "Success_S",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1466,7 +1467,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Math",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1484,7 +1485,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Math_Negated",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1502,7 +1503,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Emoji",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1520,7 +1521,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Emoji_Negated",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1538,7 +1539,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Latin",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1556,7 +1557,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Latin_Negated",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1574,7 +1575,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Greek",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1592,7 +1593,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Greek_Negated",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1610,7 +1611,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Cyrillic",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1628,7 +1629,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Cyrillic_Negated",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1646,7 +1647,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Han",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1664,7 +1665,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Han_Negated",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1682,7 +1683,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Persian",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1700,7 +1701,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Persian_Negated",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1718,7 +1719,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Letter",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1736,7 +1737,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Letter_Negated",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1754,7 +1755,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Lu",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1772,7 +1773,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Lu_Negated",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1790,7 +1791,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Ll",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1808,7 +1809,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Ll_Negated",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1826,7 +1827,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Lt",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1844,7 +1845,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Lt_Negated",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1862,7 +1863,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Lm",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1880,7 +1881,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Lm_Negated",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1898,7 +1899,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Lo",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1916,7 +1917,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Lo_Negated",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1934,7 +1935,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_L",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1952,7 +1953,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_L_Negated",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1970,7 +1971,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Mark",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1988,7 +1989,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Mark_Negated",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2006,7 +2007,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Mn",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2024,7 +2025,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Mn_Negated",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2042,7 +2043,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Mc",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2060,7 +2061,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Mc_Negated",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2078,7 +2079,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Me",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2096,7 +2097,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Me_Negated",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2114,7 +2115,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_M",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2132,7 +2133,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_M_Negated",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2150,7 +2151,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Number",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2168,7 +2169,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Number_Negated",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2186,7 +2187,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Nd",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2204,7 +2205,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Nd_Negated",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2222,7 +2223,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Nl",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2240,7 +2241,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Nl_Negated",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2258,7 +2259,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_No",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2276,7 +2277,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_No_Negated",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2294,7 +2295,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_N",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2312,7 +2313,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_N_Negated",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2330,7 +2331,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Punctuation",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2348,7 +2349,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Punctuation_Negated",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2366,7 +2367,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Pc",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2384,7 +2385,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Pc_Negated",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2402,7 +2403,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Pd",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2420,7 +2421,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Pd_Negated",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2438,7 +2439,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Ps",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2456,7 +2457,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Ps_Negated",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2474,7 +2475,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Pe",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2492,7 +2493,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Pe_Negated",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2510,7 +2511,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Pi",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2528,7 +2529,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Pi_Negated",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2546,7 +2547,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Pf",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2564,7 +2565,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Pf_Negated",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2582,7 +2583,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Po",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2600,7 +2601,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Po_Negated",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2618,7 +2619,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_P",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2636,7 +2637,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_P_Negated",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2654,7 +2655,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Separator",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2672,7 +2673,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Separator_Negated",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2690,7 +2691,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Zs",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2708,7 +2709,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Zs_Negated",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2726,7 +2727,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Zl",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2744,7 +2745,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Zl_Negated",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2762,7 +2763,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Zp",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2780,7 +2781,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Zp_Negated",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2798,7 +2799,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Z",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2816,7 +2817,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Z_Negated",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2834,7 +2835,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Symbol",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2852,7 +2853,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Symbol_Negated",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2870,7 +2871,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Sm",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2888,7 +2889,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Sm_Negated",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2906,7 +2907,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Sc",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2924,7 +2925,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Sc_Negated",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2942,7 +2943,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Sk",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2960,7 +2961,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_Sk_Negated",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2978,7 +2979,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_So",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2996,7 +2997,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_So_Negated",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3014,7 +3015,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_S",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3032,7 +3033,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 		{
 			name: "Success_S_Negated",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3078,7 +3079,7 @@ func TestParser_repOp(t *testing.T) {
 		{
 			name: "Success_ZeroOrOne",
 			m: &mockMappers{
-				ToRepOpMocks: []MapperMock{
+				ToRepOpMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3088,7 +3089,7 @@ func TestParser_repOp(t *testing.T) {
 		{
 			name: "Success_ZeroOrMany",
 			m: &mockMappers{
-				ToRepOpMocks: []MapperMock{
+				ToRepOpMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3098,7 +3099,7 @@ func TestParser_repOp(t *testing.T) {
 		{
 			name: "Success_OneOrMany",
 			m: &mockMappers{
-				ToRepOpMocks: []MapperMock{
+				ToRepOpMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3136,7 +3137,7 @@ func TestParser_upperBound(t *testing.T) {
 		{
 			name: "Success_Unbounded",
 			m: &mockMappers{
-				ToUpperBoundMocks: []MapperMock{
+				ToUpperBoundMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3152,7 +3153,7 @@ func TestParser_upperBound(t *testing.T) {
 		{
 			name: "Success_Bounded",
 			m: &mockMappers{
-				ToUpperBoundMocks: []MapperMock{
+				ToUpperBoundMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3196,7 +3197,7 @@ func TestParser_range(t *testing.T) {
 		{
 			name: "Success_WithoutUpperBound",
 			m: &mockMappers{
-				ToRangeMocks: []MapperMock{
+				ToRangeMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3214,10 +3215,10 @@ func TestParser_range(t *testing.T) {
 		{
 			name: "Success_WithUpperBound",
 			m: &mockMappers{
-				ToUpperBoundMocks: []MapperMock{
+				ToUpperBoundMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToRangeMocks: []MapperMock{
+				ToRangeMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3263,10 +3264,10 @@ func TestParser_repetition(t *testing.T) {
 		{
 			name: "Success_RepOp",
 			m: &mockMappers{
-				ToRepOpMocks: []MapperMock{
+				ToRepOpMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToRepetitionMocks: []MapperMock{
+				ToRepetitionMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3276,13 +3277,13 @@ func TestParser_repetition(t *testing.T) {
 		{
 			name: "Success_Range",
 			m: &mockMappers{
-				ToUpperBoundMocks: []MapperMock{
+				ToUpperBoundMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToRangeMocks: []MapperMock{
+				ToRangeMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToRepetitionMocks: []MapperMock{
+				ToRepetitionMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3320,13 +3321,13 @@ func TestParser_quantifier(t *testing.T) {
 		{
 			name: "Success",
 			m: &mockMappers{
-				ToRepOpMocks: []MapperMock{
+				ToRepOpMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToRepetitionMocks: []MapperMock{
+				ToRepetitionMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToQuantifierMocks: []MapperMock{
+				ToQuantifierMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3341,13 +3342,13 @@ func TestParser_quantifier(t *testing.T) {
 		{
 			name: "Success_Lazy",
 			m: &mockMappers{
-				ToRepOpMocks: []MapperMock{
+				ToRepOpMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToRepetitionMocks: []MapperMock{
+				ToRepetitionMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToQuantifierMocks: []MapperMock{
+				ToQuantifierMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3384,13 +3385,13 @@ func TestParser_charInRange(t *testing.T) {
 		{
 			name:             "Failure",
 			m:                &mockMappers{},
-			in:               newStringInput(`µ`),
+			in:               newStringInput("\x00"),
 			expectedInResult: comb.Result{},
 		},
 		{
 			name: "Success",
 			m: &mockMappers{
-				ToCharInRangeMocks: []MapperMock{
+				ToCharInRangeMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3400,7 +3401,7 @@ func TestParser_charInRange(t *testing.T) {
 		{
 			name: "Success_ASCII",
 			m: &mockMappers{
-				ToCharInRangeMocks: []MapperMock{
+				ToCharInRangeMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3410,7 +3411,7 @@ func TestParser_charInRange(t *testing.T) {
 		{
 			name: "Success_Unicode",
 			m: &mockMappers{
-				ToCharInRangeMocks: []MapperMock{
+				ToCharInRangeMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3442,7 +3443,7 @@ func TestParser_charRange(t *testing.T) {
 		{
 			name: "Failure",
 			m: &mockMappers{
-				ToCharInRangeMocks: []MapperMock{
+				ToCharInRangeMocks: []MapFuncMock{
 					{OutOK: true},
 				},
 			},
@@ -3452,11 +3453,11 @@ func TestParser_charRange(t *testing.T) {
 		{
 			name: "Success",
 			m: &mockMappers{
-				ToCharInRangeMocks: []MapperMock{
+				ToCharInRangeMocks: []MapFuncMock{
 					{OutOK: true},
 					{OutOK: true},
 				},
-				ToCharRangeMocks: []MapperMock{
+				ToCharRangeMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3473,11 +3474,11 @@ func TestParser_charRange(t *testing.T) {
 		{
 			name: "Success_ASCII",
 			m: &mockMappers{
-				ToCharInRangeMocks: []MapperMock{
+				ToCharInRangeMocks: []MapFuncMock{
 					{OutOK: true},
 					{OutOK: true},
 				},
-				ToCharRangeMocks: []MapperMock{
+				ToCharRangeMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3494,11 +3495,11 @@ func TestParser_charRange(t *testing.T) {
 		{
 			name: "Success_Unicode",
 			m: &mockMappers{
-				ToCharInRangeMocks: []MapperMock{
+				ToCharInRangeMocks: []MapFuncMock{
 					{OutOK: true},
 					{OutOK: true},
 				},
-				ToCharRangeMocks: []MapperMock{
+				ToCharRangeMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3537,19 +3538,19 @@ func TestParser_charGroupItem(t *testing.T) {
 		{
 			name:             "Failure",
 			m:                &mockMappers{},
-			in:               newStringInput(`µ`),
+			in:               newStringInput("\x00"),
 			expectedInResult: comb.Result{},
 		},
 		{
 			name: "Success_UnicodeCharClass",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToUnicodeCharClassMocks: []MapperMock{
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToCharGroupItemMocks: []MapperMock{
+				ToCharGroupItemMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3559,10 +3560,10 @@ func TestParser_charGroupItem(t *testing.T) {
 		{
 			name: "Success_ASCIICharClass",
 			m: &mockMappers{
-				ToASCIICharClassMocks: []MapperMock{
+				ToASCIICharClassMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToCharGroupItemMocks: []MapperMock{
+				ToCharGroupItemMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3572,10 +3573,10 @@ func TestParser_charGroupItem(t *testing.T) {
 		{
 			name: "Success_CharClass",
 			m: &mockMappers{
-				ToCharClassMocks: []MapperMock{
+				ToCharClassMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToCharGroupItemMocks: []MapperMock{
+				ToCharGroupItemMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3585,14 +3586,14 @@ func TestParser_charGroupItem(t *testing.T) {
 		{
 			name: "Success_CharRange",
 			m: &mockMappers{
-				ToCharInRangeMocks: []MapperMock{
+				ToCharInRangeMocks: []MapFuncMock{
 					{OutOK: true},
 					{OutOK: true},
 				},
-				ToCharRangeMocks: []MapperMock{
+				ToCharRangeMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToCharGroupItemMocks: []MapperMock{
+				ToCharGroupItemMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3602,13 +3603,13 @@ func TestParser_charGroupItem(t *testing.T) {
 		{
 			name: "Success_SingleChar",
 			m: &mockMappers{
-				ToCharInRangeMocks: []MapperMock{
+				ToCharInRangeMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToSingleCharMocks: []MapperMock{
+				ToSingleCharMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToCharGroupItemMocks: []MapperMock{
+				ToCharGroupItemMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3646,20 +3647,20 @@ func TestParser_charGroup(t *testing.T) {
 		{
 			name: "Success_Chars",
 			m: &mockMappers{
-				ToCharInRangeMocks: []MapperMock{
+				ToCharInRangeMocks: []MapFuncMock{
 					{OutOK: true},
 					{OutOK: true},
 					{OutOK: true}, // ']'
 				},
-				ToSingleCharMocks: []MapperMock{
+				ToSingleCharMocks: []MapFuncMock{
 					{OutOK: true},
 					{OutOK: true},
 				},
-				ToCharGroupItemMocks: []MapperMock{
+				ToCharGroupItemMocks: []MapFuncMock{
 					{OutOK: true},
 					{OutOK: true},
 				},
-				ToCharGroupMocks: []MapperMock{
+				ToCharGroupMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3682,20 +3683,20 @@ func TestParser_charGroup(t *testing.T) {
 		{
 			name: "Success_Negated_Chars",
 			m: &mockMappers{
-				ToCharInRangeMocks: []MapperMock{
+				ToCharInRangeMocks: []MapFuncMock{
 					{OutOK: true},
 					{OutOK: true},
 					{OutOK: true}, // ']'
 				},
-				ToSingleCharMocks: []MapperMock{
+				ToSingleCharMocks: []MapFuncMock{
 					{OutOK: true},
 					{OutOK: true},
 				},
-				ToCharGroupItemMocks: []MapperMock{
+				ToCharGroupItemMocks: []MapFuncMock{
 					{OutOK: true},
 					{OutOK: true},
 				},
-				ToCharGroupMocks: []MapperMock{
+				ToCharGroupMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3746,10 +3747,10 @@ func TestParser_matchItem(t *testing.T) {
 		{
 			name: "Success_AnyChar",
 			m: &mockMappers{
-				ToAnyCharMocks: []MapperMock{
+				ToAnyCharMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToMatchItemMocks: []MapperMock{
+				ToMatchItemMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3759,10 +3760,10 @@ func TestParser_matchItem(t *testing.T) {
 		{
 			name: "Success_SingleChar",
 			m: &mockMappers{
-				ToSingleCharMocks: []MapperMock{
+				ToSingleCharMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToMatchItemMocks: []MapperMock{
+				ToMatchItemMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3772,10 +3773,10 @@ func TestParser_matchItem(t *testing.T) {
 		{
 			name: "Success_CharClass",
 			m: &mockMappers{
-				ToCharClassMocks: []MapperMock{
+				ToCharClassMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToMatchItemMocks: []MapperMock{
+				ToMatchItemMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3785,10 +3786,10 @@ func TestParser_matchItem(t *testing.T) {
 		{
 			name: "Success_ASCIICharClass",
 			m: &mockMappers{
-				ToASCIICharClassMocks: []MapperMock{
+				ToASCIICharClassMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToMatchItemMocks: []MapperMock{
+				ToMatchItemMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3798,13 +3799,13 @@ func TestParser_matchItem(t *testing.T) {
 		{
 			name: "Success_UnicodeCharClass",
 			m: &mockMappers{
-				ToUnicodeCategoryMocks: []MapperMock{
+				ToUnicodeCategoryMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToUnicodeCharClassMocks: []MapperMock{
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToMatchItemMocks: []MapperMock{
+				ToMatchItemMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3814,21 +3815,21 @@ func TestParser_matchItem(t *testing.T) {
 		{
 			name: "Success_CharGroup",
 			m: &mockMappers{
-				ToCharInRangeMocks: []MapperMock{
+				ToCharInRangeMocks: []MapFuncMock{
 					{OutOK: true},
 					{OutOK: true},
 					{OutOK: true}, // ]
 				},
-				ToCharRangeMocks: []MapperMock{
+				ToCharRangeMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToCharGroupItemMocks: []MapperMock{
+				ToCharGroupItemMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToCharGroupMocks: []MapperMock{
+				ToCharGroupMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToMatchItemMocks: []MapperMock{
+				ToMatchItemMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3866,13 +3867,13 @@ func TestParser_match(t *testing.T) {
 		{
 			name: "Success_WithoutQuantifier",
 			m: &mockMappers{
-				ToCharClassMocks: []MapperMock{
+				ToCharClassMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToMatchItemMocks: []MapperMock{
+				ToMatchItemMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToMatchMocks: []MapperMock{
+				ToMatchMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3887,22 +3888,22 @@ func TestParser_match(t *testing.T) {
 		{
 			name: "Success_WithQuantifier",
 			m: &mockMappers{
-				ToASCIICharClassMocks: []MapperMock{
+				ToASCIICharClassMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToMatchItemMocks: []MapperMock{
+				ToMatchItemMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToRepOpMocks: []MapperMock{
+				ToRepOpMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToRepetitionMocks: []MapperMock{
+				ToRepetitionMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToQuantifierMocks: []MapperMock{
+				ToQuantifierMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToMatchMocks: []MapperMock{
+				ToMatchMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3945,25 +3946,25 @@ func TestParser_group(t *testing.T) {
 		{
 			name: "Success_WithoutQuantifier",
 			m: &mockMappers{
-				ToSingleCharMocks: []MapperMock{
+				ToSingleCharMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToMatchItemMocks: []MapperMock{
+				ToMatchItemMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToMatchMocks: []MapperMock{
+				ToMatchMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToSubexprItemMocks: []MapperMock{
+				ToSubexprItemMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToSubexprMocks: []MapperMock{
+				ToSubexprMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToExprMocks: []MapperMock{
+				ToExprMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToGroupMocks: []MapperMock{
+				ToGroupMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3981,34 +3982,34 @@ func TestParser_group(t *testing.T) {
 		{
 			name: "Success_WithQuantifier",
 			m: &mockMappers{
-				ToSingleCharMocks: []MapperMock{
+				ToSingleCharMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToMatchItemMocks: []MapperMock{
+				ToMatchItemMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToMatchMocks: []MapperMock{
+				ToMatchMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToSubexprItemMocks: []MapperMock{
+				ToSubexprItemMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToSubexprMocks: []MapperMock{
+				ToSubexprMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToExprMocks: []MapperMock{
+				ToExprMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToRepOpMocks: []MapperMock{
+				ToRepOpMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToRepetitionMocks: []MapperMock{
+				ToRepetitionMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToQuantifierMocks: []MapperMock{
+				ToQuantifierMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToGroupMocks: []MapperMock{
+				ToGroupMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -4054,7 +4055,7 @@ func TestParser_anchor(t *testing.T) {
 		{
 			name: "Success",
 			m: &mockMappers{
-				ToAnchorMocks: []MapperMock{
+				ToAnchorMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -4092,10 +4093,10 @@ func TestParser_subexprItem(t *testing.T) {
 		{
 			name: "Success_Anchor",
 			m: &mockMappers{
-				ToAnchorMocks: []MapperMock{
+				ToAnchorMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToSubexprItemMocks: []MapperMock{
+				ToSubexprItemMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -4105,25 +4106,25 @@ func TestParser_subexprItem(t *testing.T) {
 		{
 			name: "Success_Group",
 			m: &mockMappers{
-				ToSingleCharMocks: []MapperMock{
+				ToSingleCharMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToMatchItemMocks: []MapperMock{
+				ToMatchItemMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToMatchMocks: []MapperMock{
+				ToMatchMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToSubexprMocks: []MapperMock{
+				ToSubexprMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToExprMocks: []MapperMock{
+				ToExprMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToGroupMocks: []MapperMock{
+				ToGroupMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToSubexprItemMocks: []MapperMock{
+				ToSubexprItemMocks: []MapFuncMock{
 					{OutOK: true},
 					{},
 				},
@@ -4134,16 +4135,16 @@ func TestParser_subexprItem(t *testing.T) {
 		{
 			name: "Success_Match",
 			m: &mockMappers{
-				ToCharClassMocks: []MapperMock{
+				ToCharClassMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToMatchItemMocks: []MapperMock{
+				ToMatchItemMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToMatchMocks: []MapperMock{
+				ToMatchMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToSubexprItemMocks: []MapperMock{
+				ToSubexprItemMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -4181,23 +4182,23 @@ func TestParser_subexpr(t *testing.T) {
 		{
 			name: "Success_UnescapedChar",
 			m: &mockMappers{
-				ToSingleCharMocks: []MapperMock{
+				ToSingleCharMocks: []MapFuncMock{
 					{OutOK: true},
 					{OutOK: true},
 				},
-				ToMatchItemMocks: []MapperMock{
+				ToMatchItemMocks: []MapFuncMock{
 					{OutOK: true},
 					{OutOK: true},
 				},
-				ToMatchMocks: []MapperMock{
+				ToMatchMocks: []MapFuncMock{
 					{OutOK: true},
 					{OutOK: true},
 				},
-				ToSubexprItemMocks: []MapperMock{
+				ToSubexprItemMocks: []MapFuncMock{
 					{OutOK: true},
 					{OutOK: true},
 				},
-				ToSubexprMocks: []MapperMock{
+				ToSubexprMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -4240,22 +4241,22 @@ func TestParser_expr(t *testing.T) {
 		{
 			name: "Success",
 			m: &mockMappers{
-				ToSingleCharMocks: []MapperMock{
+				ToSingleCharMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToMatchItemMocks: []MapperMock{
+				ToMatchItemMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToMatchMocks: []MapperMock{
+				ToMatchMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToSubexprItemMocks: []MapperMock{
+				ToSubexprItemMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToSubexprMocks: []MapperMock{
+				ToSubexprMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToExprMocks: []MapperMock{
+				ToExprMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -4270,27 +4271,27 @@ func TestParser_expr(t *testing.T) {
 		{
 			name: "Success",
 			m: &mockMappers{
-				ToSingleCharMocks: []MapperMock{
+				ToSingleCharMocks: []MapFuncMock{
 					{OutOK: true},
 					{OutOK: true},
 				},
-				ToMatchItemMocks: []MapperMock{
+				ToMatchItemMocks: []MapFuncMock{
 					{OutOK: true},
 					{OutOK: true},
 				},
-				ToMatchMocks: []MapperMock{
+				ToMatchMocks: []MapFuncMock{
 					{OutOK: true},
 					{OutOK: true},
 				},
-				ToSubexprItemMocks: []MapperMock{
+				ToSubexprItemMocks: []MapFuncMock{
 					{OutOK: true},
 					{OutOK: true},
 				},
-				ToSubexprMocks: []MapperMock{
+				ToSubexprMocks: []MapFuncMock{
 					{OutOK: true},
 					{OutOK: true},
 				},
-				ToExprMocks: []MapperMock{
+				ToExprMocks: []MapFuncMock{
 					{OutOK: true},
 					{},
 				},
@@ -4340,25 +4341,25 @@ func TestParser_regex(t *testing.T) {
 		{
 			name: "Success_WithoutStartOfString",
 			m: &mockMappers{
-				ToSingleCharMocks: []MapperMock{
+				ToSingleCharMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToMatchItemMocks: []MapperMock{
+				ToMatchItemMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToMatchMocks: []MapperMock{
+				ToMatchMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToSubexprItemMocks: []MapperMock{
+				ToSubexprItemMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToSubexprMocks: []MapperMock{
+				ToSubexprMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToExprMocks: []MapperMock{
+				ToExprMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToRegexMocks: []MapperMock{
+				ToRegexMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -4373,25 +4374,25 @@ func TestParser_regex(t *testing.T) {
 		{
 			name: "Success_WithStartOfString",
 			m: &mockMappers{
-				ToSingleCharMocks: []MapperMock{
+				ToSingleCharMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToMatchItemMocks: []MapperMock{
+				ToMatchItemMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToMatchMocks: []MapperMock{
+				ToMatchMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToSubexprItemMocks: []MapperMock{
+				ToSubexprItemMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToSubexprMocks: []MapperMock{
+				ToSubexprMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToExprMocks: []MapperMock{
+				ToExprMocks: []MapFuncMock{
 					{OutOK: true},
 				},
-				ToRegexMocks: []MapperMock{
+				ToRegexMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -4430,31 +4431,31 @@ func TestParser_Parse(t *testing.T) {
 		{
 			name: "Success",
 			m: &mockMappers{
-				ToSingleCharMocks: []MapperMock{
+				ToSingleCharMocks: []MapFuncMock{
 					{OutOK: true},
 					{OutOK: true},
 				},
-				ToMatchItemMocks: []MapperMock{
+				ToMatchItemMocks: []MapFuncMock{
 					{OutOK: true},
 					{OutOK: true},
 				},
-				ToMatchMocks: []MapperMock{
+				ToMatchMocks: []MapFuncMock{
 					{OutOK: true},
 					{OutOK: true},
 				},
-				ToSubexprItemMocks: []MapperMock{
+				ToSubexprItemMocks: []MapFuncMock{
 					{OutOK: true},
 					{OutOK: true},
 				},
-				ToSubexprMocks: []MapperMock{
+				ToSubexprMocks: []MapFuncMock{
 					{OutOK: true},
 					{OutOK: true},
 				},
-				ToExprMocks: []MapperMock{
+				ToExprMocks: []MapFuncMock{
 					{OutOK: true},
 					{OutOK: true},
 				},
-				ToRegexMocks: []MapperMock{
+				ToRegexMocks: []MapFuncMock{
 					{OutOK: true},
 				},
 			},
@@ -4477,85 +4478,83 @@ func TestParser_Parse(t *testing.T) {
 
 //==================================================< HELPERS >==================================================
 
-type (
-	MapperMock struct {
-		InResult  comb.Result
-		OutResult comb.Result
-		OutOK     bool
-	}
+type MapFuncMock struct {
+	InResult  comb.Result
+	OutResult comb.Result
+	OutOK     bool
+}
 
-	// mockMappers implements the Mapper interface for testing purposes.
-	mockMappers struct {
-		ToAnyCharIndex int
-		ToAnyCharMocks []MapperMock
+// mockMappers implements the Mapper interface for testing purposes.
+type mockMappers struct {
+	ToAnyCharIndex int
+	ToAnyCharMocks []MapFuncMock
 
-		ToSingleCharIndex int
-		ToSingleCharMocks []MapperMock
+	ToSingleCharIndex int
+	ToSingleCharMocks []MapFuncMock
 
-		ToCharClassIndex int
-		ToCharClassMocks []MapperMock
+	ToCharClassIndex int
+	ToCharClassMocks []MapFuncMock
 
-		ToASCIICharClassIndex int
-		ToASCIICharClassMocks []MapperMock
+	ToASCIICharClassIndex int
+	ToASCIICharClassMocks []MapFuncMock
 
-		ToUnicodeCategoryIndex int
-		ToUnicodeCategoryMocks []MapperMock
+	ToUnicodeCategoryIndex int
+	ToUnicodeCategoryMocks []MapFuncMock
 
-		ToUnicodeCharClassIndex int
-		ToUnicodeCharClassMocks []MapperMock
+	ToUnicodeCharClassIndex int
+	ToUnicodeCharClassMocks []MapFuncMock
 
-		ToRepOpIndex int
-		ToRepOpMocks []MapperMock
+	ToRepOpIndex int
+	ToRepOpMocks []MapFuncMock
 
-		ToUpperBoundIndex int
-		ToUpperBoundMocks []MapperMock
+	ToUpperBoundIndex int
+	ToUpperBoundMocks []MapFuncMock
 
-		ToRangeIndex int
-		ToRangeMocks []MapperMock
+	ToRangeIndex int
+	ToRangeMocks []MapFuncMock
 
-		ToRepetitionIndex int
-		ToRepetitionMocks []MapperMock
+	ToRepetitionIndex int
+	ToRepetitionMocks []MapFuncMock
 
-		ToQuantifierIndex int
-		ToQuantifierMocks []MapperMock
+	ToQuantifierIndex int
+	ToQuantifierMocks []MapFuncMock
 
-		ToCharInRangeIndex int
-		ToCharInRangeMocks []MapperMock
+	ToCharInRangeIndex int
+	ToCharInRangeMocks []MapFuncMock
 
-		ToCharRangeIndex int
-		ToCharRangeMocks []MapperMock
+	ToCharRangeIndex int
+	ToCharRangeMocks []MapFuncMock
 
-		ToCharGroupItemIndex int
-		ToCharGroupItemMocks []MapperMock
+	ToCharGroupItemIndex int
+	ToCharGroupItemMocks []MapFuncMock
 
-		ToCharGroupIndex int
-		ToCharGroupMocks []MapperMock
+	ToCharGroupIndex int
+	ToCharGroupMocks []MapFuncMock
 
-		ToMatchItemIndex int
-		ToMatchItemMocks []MapperMock
+	ToMatchItemIndex int
+	ToMatchItemMocks []MapFuncMock
 
-		ToMatchIndex int
-		ToMatchMocks []MapperMock
+	ToMatchIndex int
+	ToMatchMocks []MapFuncMock
 
-		ToGroupIndex int
-		ToGroupMocks []MapperMock
+	ToGroupIndex int
+	ToGroupMocks []MapFuncMock
 
-		ToAnchorIndex int
-		ToAnchorMocks []MapperMock
+	ToAnchorIndex int
+	ToAnchorMocks []MapFuncMock
 
-		ToSubexprItemIndex int
-		ToSubexprItemMocks []MapperMock
+	ToSubexprItemIndex int
+	ToSubexprItemMocks []MapFuncMock
 
-		ToSubexprIndex int
-		ToSubexprMocks []MapperMock
+	ToSubexprIndex int
+	ToSubexprMocks []MapFuncMock
 
-		ToExprIndex int
-		ToExprMocks []MapperMock
+	ToExprIndex int
+	ToExprMocks []MapFuncMock
 
-		ToRegexIndex int
-		ToRegexMocks []MapperMock
-	}
-)
+	ToRegexIndex int
+	ToRegexMocks []MapFuncMock
+}
 
 func (m *mockMappers) ToAnyChar(r comb.Result) (comb.Result, bool) {
 	i := m.ToAnyCharIndex
