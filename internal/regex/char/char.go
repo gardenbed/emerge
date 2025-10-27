@@ -79,10 +79,10 @@ func unicodeCategoryToRanges(c *unicode.RangeTable) RangeList {
 var Classes = map[string]RangeList{
 	// All Characters
 	`ASCII`:   {{0x00, 0x7F}},
-	`UNICODE`: {{0x000000, 0x10FFFF}},
+	`UNICODE`: {{0x00, 0x10FFFF}},
 
 	// Character Classes
-	`\s`: {{' ', ' '}, {'\t', '\n'}, {'\f', '\r'}},
+	`\s`: {{' ', ' '}, {'\t', '\r'}},
 	`\d`: {{'0', '9'}},
 	`\w`: {{'0', '9'}, {'A', 'Z'}, {'_', '_'}, {'a', 'z'}},
 

@@ -4,21 +4,12 @@
 // The algorithm is syntax-directed, in the sense that it works recursively up the parse tree for the regular expression.
 package nfa
 
-import auto "github.com/moorara/algo/automata"
+import "github.com/moorara/algo/automata"
 
 // Empty returns an NFA accepting the empty string ε.
-func empty() *auto.NFA {
-	nfa := auto.NewNFA(0, []auto.State{1})
-	nfa.Add(0, auto.E, []auto.State{1})
+func empty() *automata.NFA {
+	b := automata.NewNFABuilder().SetStart(0).SetFinal([]automata.State{1})
+	b.AddTransition(0, automata.E, automata.E, []automata.State{1})
 
-	return nfa
-}
-
-// Concat returns an NFA accepting the concatenation of a set of NFAs.
-func concat(ns ...*auto.NFA) *auto.NFA {
-	if len(ns) > 0 {
-		return ns[0].Concat(ns[1:]...)
-	}
-
-	return empty()
+	return b.Build()
 }
