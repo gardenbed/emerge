@@ -112,28 +112,26 @@ var (
 	}
 )
 
-type (
-	// Command represents the "emerge" command and its associated flags.
-	Command struct {
-		ui.UI
-		funcs
+// Command represents the "emerge" command and its associated flags.
+type Command struct {
+	ui.UI
+	funcs
 
-		Help    bool `flag:"help"`
-		Version bool `flag:"version"`
-		Verbose bool `flag:"verbose"`
+	Help    bool `flag:"help"`
+	Version bool `flag:"version"`
+	Verbose bool `flag:"verbose"`
 
-		Out   string `flag:"out"`
-		Name  string `flag:"name"`
-		Debug bool   `flag:"debug"`
-	}
+	Out   string `flag:"out"`
+	Name  string `flag:"name"`
+	Debug bool   `flag:"debug"`
+}
 
-	// funcs defines the function types required by the command.
-	// This abstraction allows these functions to be mocked for testing purposes.
-	funcs struct {
-		Parse    func(string, io.Reader) (*spec.Spec, error)
-		Generate func(ui.UI, *golang.Params) error
-	}
-)
+// funcs defines the function types required by the command.
+// This abstraction allows these functions to be mocked for testing purposes.
+type funcs struct {
+	Parse    func(string, io.Reader) (*spec.Spec, error)
+	Generate func(ui.UI, *golang.Params) error
+}
 
 // New creates a new instance of the command.
 func New(u ui.UI) (*Command, error) {
