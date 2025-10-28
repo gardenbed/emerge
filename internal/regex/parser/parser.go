@@ -3,36 +3,26 @@ package parser
 
 import comb "github.com/moorara/algo/parser/combinator"
 
-var (
-	escapedChars = []rune{'\\', '|', '.', '?', '*', '+', '(', ')', '[', ']', '{', '}', '$'}
-)
+var escapedChars = []rune{'\\', '|', '.', '?', '*', '+', '(', ')', '[', ']', '{', '}', '$'}
 
-//==================================================< MAPPERS >==================================================
+// excludeRunes can be bound on a rune parser to exclude certain runes.
+func excludeRunes(r ...rune) comb.BindFunc {
+	return func(res comb.Result) comb.Parser {
+		return func(in comb.Input) (comb.Output, bool) {
+			if a, ok := res.Val.(rune); ok {
+				for _, b := range r {
+					if a == b {
+						return comb.Output{}, false
+					}
+				}
+			}
 
-type Mappers interface {
-	ToAnyChar(comb.Result) (comb.Result, bool)          // any_char --> "."
-	ToSingleChar(comb.Result) (comb.Result, bool)       // single_char --> unicode_char | ascii_char | escaped_char | unescaped_char
-	ToCharClass(comb.Result) (comb.Result, bool)        // char_class --> "\s" | "\S" | "\d" | "\D" | "\w" | "\W"
-	ToASCIICharClass(comb.Result) (comb.Result, bool)   // ascii_char_class --> "[:blank:]" | "[:space:]" | "[:digit:]" | "[:xdigit:]" | ...
-	ToUnicodeCategory(comb.Result) (comb.Result, bool)  // unicode_category --> ...
-	ToUnicodeCharClass(comb.Result) (comb.Result, bool) // unicode_char_class --> "\p" "{" unicode_category "}"
-	ToRepOp(comb.Result) (comb.Result, bool)            // rep_op --> "?" | "*" | "+"
-	ToUpperBound(comb.Result) (comb.Result, bool)       // upper_bound --> "," num?
-	ToRange(comb.Result) (comb.Result, bool)            // range --> "{" num upper_bound? "}"
-	ToRepetition(comb.Result) (comb.Result, bool)       // repetition --> rep_op | range
-	ToQuantifier(comb.Result) (comb.Result, bool)       // quantifier --> repetition lazy_modifier?
-	ToCharInRange(comb.Result) (comb.Result, bool)      // char_in_range --> unicode_char | ascii_char | char
-	ToCharRange(comb.Result) (comb.Result, bool)        // char_range --> char_in_range "-" char_in_range
-	ToCharGroupItem(comb.Result) (comb.Result, bool)    // char_group_item --> unicode_char_class | ascii_char_class | char_class | char_range | single_char
-	ToCharGroup(comb.Result) (comb.Result, bool)        // char_group --> "[" "^"? char_group_item+ "]"
-	ToMatchItem(comb.Result) (comb.Result, bool)        // match_item --> any_char | single_char | char_class | ascii_char_class | unicode_char_class | char_group
-	ToMatch(comb.Result) (comb.Result, bool)            // match --> match_item quantifier?
-	ToGroup(comb.Result) (comb.Result, bool)            // group --> "(" expr ")" quantifier?
-	ToAnchor(comb.Result) (comb.Result, bool)           // anchor --> "$"
-	ToSubexprItem(comb.Result) (comb.Result, bool)      // subexpr_item --> anchor | group | match
-	ToSubexpr(comb.Result) (comb.Result, bool)          // subexpr --> subexpr_item+
-	ToExpr(comb.Result) (comb.Result, bool)             // expr --> subexpr ("|" expr)?
-	ToRegex(comb.Result) (comb.Result, bool)            // regex --> start_of_string? expr
+			return comb.Output{
+				Result:    res,
+				Remaining: in,
+			}, true
+		}
+	}
 }
 
 func toDigit(r comb.Result) (comb.Result, bool) {
@@ -145,7 +135,32 @@ func toUnicodeChar(r comb.Result) (comb.Result, bool) {
 	}, true
 }
 
-//==================================================< COMBINATORS >==================================================
+// Mappers defines mapping functions for various non-terminals in the regex grammar.
+type Mappers interface {
+	ToAnyChar(comb.Result) (comb.Result, bool)          // any_char --> "."
+	ToSingleChar(comb.Result) (comb.Result, bool)       // single_char --> unicode_char | ascii_char | escaped_char | unescaped_char
+	ToCharClass(comb.Result) (comb.Result, bool)        // char_class --> "\s" | "\S" | "\d" | "\D" | "\w" | "\W"
+	ToASCIICharClass(comb.Result) (comb.Result, bool)   // ascii_char_class --> "[:blank:]" | "[:space:]" | "[:digit:]" | "[:xdigit:]" | ...
+	ToUnicodeCategory(comb.Result) (comb.Result, bool)  // unicode_category --> ...
+	ToUnicodeCharClass(comb.Result) (comb.Result, bool) // unicode_char_class --> "\p" "{" unicode_category "}"
+	ToRepOp(comb.Result) (comb.Result, bool)            // rep_op --> "?" | "*" | "+"
+	ToUpperBound(comb.Result) (comb.Result, bool)       // upper_bound --> "," num?
+	ToRange(comb.Result) (comb.Result, bool)            // range --> "{" num upper_bound? "}"
+	ToRepetition(comb.Result) (comb.Result, bool)       // repetition --> rep_op | range
+	ToQuantifier(comb.Result) (comb.Result, bool)       // quantifier --> repetition lazy_modifier?
+	ToCharInRange(comb.Result) (comb.Result, bool)      // char_in_range --> unicode_char | ascii_char | char
+	ToCharRange(comb.Result) (comb.Result, bool)        // char_range --> char_in_range "-" char_in_range
+	ToCharGroupItem(comb.Result) (comb.Result, bool)    // char_group_item --> unicode_char_class | ascii_char_class | char_class | char_range | single_char
+	ToCharGroup(comb.Result) (comb.Result, bool)        // char_group --> "[" "^"? char_group_item+ "]"
+	ToMatchItem(comb.Result) (comb.Result, bool)        // match_item --> any_char | single_char | char_class | ascii_char_class | unicode_char_class | char_group
+	ToMatch(comb.Result) (comb.Result, bool)            // match --> match_item quantifier?
+	ToGroup(comb.Result) (comb.Result, bool)            // group --> "(" expr ")" quantifier?
+	ToAnchor(comb.Result) (comb.Result, bool)           // anchor --> "$"
+	ToSubexprItem(comb.Result) (comb.Result, bool)      // subexpr_item --> anchor | group | match
+	ToSubexpr(comb.Result) (comb.Result, bool)          // subexpr --> subexpr_item+
+	ToExpr(comb.Result) (comb.Result, bool)             // expr --> subexpr ("|" expr)?
+	ToRegex(comb.Result) (comb.Result, bool)            // regex --> start_of_string? expr
+}
 
 // Parser is a parser combinator for regular expressions.
 type Parser struct {
@@ -189,50 +204,38 @@ func New(m Mappers) *Parser {
 		m: m,
 	}
 
-	// digit --> "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
-	p.digit = comb.ExpectRuneInRange('0', '9').Map(toDigit)
-	// hex_digit --> "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "A" | "B" | "C" | "D" | "E" | "F"
-	p.hexDigit = comb.ExpectRuneInRange('0', '9').ALT(comb.ExpectRuneInRange('A', 'F')).Map(toHexDigit)
-	// letter --> "A" | ... | "Z" | "a" | ... | "z"
-	p.letter = comb.ExpectRuneInRange('A', 'Z').ALT(comb.ExpectRuneInRange('a', 'z'))
+	p.digit = comb.ExpectRuneInRange('0', '9').Map(toDigit)                                                   // digit --> "0" | ... | "9"
+	p.hexDigit = comb.ALT(comb.ExpectRuneInRange('0', '9'), comb.ExpectRuneInRange('A', 'F')).Map(toHexDigit) // hex_digit --> "0" | ... | "9" | "A" | ... | "F"
+	p.letter = comb.ALT(comb.ExpectRuneInRange('A', 'Z'), comb.ExpectRuneInRange('a', 'z'))                   // letter --> "A" | ... | "Z" | "a" | ... | "z"
+	p.num = p.digit.REP1().Map(toNum)                                                                         // num --> digit+
+	p.letters = p.letter.REP1().Map(toLetters)                                                                // letters --> letter+
 
-	p.num = p.digit.REP1().Map(toNum)          // num --> digit+
-	p.letters = p.letter.REP1().Map(toLetters) // letters --> letter+
-
-	// char --> all valid characters
-	p.char = comb.ExpectRuneInRange(0x20, 0x7E)
-	// unescaped_char --> all characters excluding the escaped ones
-	p.unescapedChar = p.char.Bind(comb.ExcludeRunes(escapedChars...))
-	// escaped_char --> "\" ( "\" | "|" | "." | "?" | "*" | "+" | "(" | ")" | "[" | "]" | "{" | "}" | "$" )
-	p.escapedChar = comb.ExpectRune('\\').CONCAT(comb.ExpectRuneIn(escapedChars...)).Map(toEscapedChar)
-
-	// ascii_char --> "\x" hex_digit{2}
-	p.asciiChar = comb.ExpectString(`\x`).CONCAT(p.hexDigit, p.hexDigit).Map(toASCIIChar)
+	p.char = comb.ExpectRuneInRange(0x20, 0x10FFFF)                                                     // char --> all Unicode characters
+	p.unescapedChar = p.char.Bind(excludeRunes(escapedChars...))                                        // unescaped_char --> all characters excluding the escaped ones
+	p.escapedChar = comb.ExpectRune('\\').CONCAT(comb.ExpectRuneIn(escapedChars...)).Map(toEscapedChar) // escaped_char --> "\" ( "\" | ... | "$" )
+	p.asciiChar = comb.ExpectString(`\x`).CONCAT(p.hexDigit, p.hexDigit).Map(toASCIIChar)               // ascii_char --> "\x" hex_digit{2}
 
 	// unicode_char --> "\x" hex_digit{4,8}
 	p.unicodeChar = comb.ExpectString(`\x`).CONCAT(p.hexDigit, p.hexDigit, p.hexDigit, p.hexDigit,
-		p.hexDigit.OPT(),
-		p.hexDigit.OPT(),
-		p.hexDigit.OPT(),
-		p.hexDigit.OPT(),
+		p.hexDigit.OPT(), p.hexDigit.OPT(), p.hexDigit.OPT(), p.hexDigit.OPT(),
 	).Map(toUnicodeChar)
 
 	// any_char --> "."
 	p.anyChar = comb.ExpectRune('.').Map(p.m.ToAnyChar)
 
 	// single_char --> unicode_char | ascii_char | escaped_char | unescaped_char
-	p.singleChar = p.unicodeChar.ALT(p.asciiChar, p.escapedChar, p.unescapedChar).Map(p.m.ToSingleChar)
+	p.singleChar = comb.ALT(p.unicodeChar, p.asciiChar, p.escapedChar, p.unescapedChar).Map(p.m.ToSingleChar)
 
 	// char_class --> "\s" | "\S" | "\d" | "\D" | "\w" | "\W"
-	p.charClass = comb.ExpectString(`\s`).ALT(
-		comb.ExpectString(`\S`),
+	p.charClass = comb.ALT(
+		comb.ExpectString(`\s`), comb.ExpectString(`\S`),
 		comb.ExpectString(`\d`), comb.ExpectString(`\D`),
 		comb.ExpectString(`\w`), comb.ExpectString(`\W`),
 	).Map(p.m.ToCharClass)
 
 	// ascii_char_class --> "[:blank:]" | "[:space:]" | "[:digit:]" | "[:xdigit:]" | "[:upper:]" | "[:lower:]" | "[:alpha:]" | "[:alnum:]" | "[:word:]" | "[:ascii:]"
-	p.asciiCharClass = comb.ExpectString("[:blank:]").ALT(
-		comb.ExpectString("[:space:]"),
+	p.asciiCharClass = comb.ALT(
+		comb.ExpectString("[:blank:]"), comb.ExpectString("[:space:]"),
 		comb.ExpectString("[:digit:]"), comb.ExpectString("[:xdigit:]"),
 		comb.ExpectString("[:upper:]"), comb.ExpectString("[:lower:]"),
 		comb.ExpectString("[:alpha:]"), comb.ExpectString("[:alnum:]"),
@@ -294,13 +297,15 @@ func New(m Mappers) *Parser {
 	p.charInRange = p.unicodeChar.ALT(p.asciiChar, p.char).Map(p.m.ToCharInRange)
 
 	// char_range --> char_in_range "-" char_in_range
-	p.charRange = p.charInRange.CONCAT(
+	p.charRange = comb.CONCAT(
+		p.charInRange,
 		comb.ExpectRune('-'),
 		p.charInRange,
 	).Map(p.m.ToCharRange)
 
 	// char_group_item --> unicode_char_class | ascii_char_class | char_class | char_range | single_char
-	p.charGroupItem = p.unicodeCharClass.ALT(
+	p.charGroupItem = comb.ALT(
+		p.unicodeCharClass,
 		p.asciiCharClass,
 		p.charClass,
 		p.charRange,
@@ -308,14 +313,16 @@ func New(m Mappers) *Parser {
 	).Map(p.m.ToCharGroupItem)
 
 	// char_group --> "[" "^"? char_group_item+ "]"
-	p.charGroup = comb.ExpectRune('[').CONCAT(
+	p.charGroup = comb.CONCAT(
+		comb.ExpectRune('['),
 		comb.ExpectRune('^').OPT(),
 		p.charGroupItem.REP1(),
 		comb.ExpectRune(']'),
 	).Map(p.m.ToCharGroup)
 
 	// match_item --> any_char | single_char | char_class | ascii_char_class | unicode_char_class | char_group
-	p.matchItem = p.anyChar.ALT(
+	p.matchItem = comb.ALT(
+		p.anyChar,
 		p.singleChar,
 		p.charClass,
 		p.asciiCharClass,

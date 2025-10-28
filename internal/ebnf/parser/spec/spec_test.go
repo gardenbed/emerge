@@ -3,7 +3,7 @@ package spec
 import (
 	"testing"
 
-	auto "github.com/moorara/algo/automata"
+	"github.com/moorara/algo/automata"
 	"github.com/moorara/algo/grammar"
 	"github.com/moorara/algo/lexer"
 	"github.com/moorara/algo/parser/lr"
@@ -11,13 +11,11 @@ import (
 )
 
 func TestSpec_DFA(t *testing.T) {
-	dfa := getDFA()
-
 	tests := []struct {
 		name                    string
 		s                       *Spec
-		expectedDFA             *auto.DFA
-		expectedTerminalMapping map[grammar.Terminal][]auto.State
+		expectedDFA             *automata.DFA
+		expectedTerminalMapping map[grammar.Terminal][]automata.State
 		expectedErrorStrings    []string
 	}{
 		{
@@ -63,8 +61,33 @@ func TestSpec_DFA(t *testing.T) {
 					{Terminal: "NUM", Value: "[0-9]+", IsRegex: true},
 				},
 			},
-			expectedDFA: dfa[4],
-			expectedTerminalMapping: map[grammar.Terminal][]auto.State{
+			expectedDFA: automata.NewDFABuilder().
+				SetStart(0).
+				SetFinal([]automata.State{1, 2, 3, 4, 5}).
+				AddTransition(0, '0', '9', 1).
+				AddTransition(1, '0', '9', 1).
+				AddTransition(0, ';', ';', 2).
+				AddTransition(0, 'A', 'Z', 3).
+				AddTransition(0, '_', '_', 3).
+				AddTransition(0, 'a', 'h', 3).
+				AddTransition(0, 'j', 'z', 3).
+				AddTransition(0, 'i', 'i', 4).
+				AddTransition(3, '0', '9', 3).
+				AddTransition(3, 'A', 'Z', 3).
+				AddTransition(3, '_', '_', 3).
+				AddTransition(3, 'a', 'z', 3).
+				AddTransition(4, '0', '9', 3).
+				AddTransition(4, 'A', 'Z', 3).
+				AddTransition(4, '_', '_', 3).
+				AddTransition(4, 'a', 'e', 3).
+				AddTransition(4, 'g', 'z', 3).
+				AddTransition(4, 'f', 'f', 5).
+				AddTransition(5, '0', '9', 3).
+				AddTransition(5, 'A', 'Z', 3).
+				AddTransition(5, '_', '_', 3).
+				AddTransition(5, 'a', 'z', 3).
+				Build(),
+			expectedTerminalMapping: map[grammar.Terminal][]automata.State{
 				"NUM": {1},
 				";":   {2},
 				"ID":  {3, 4},
@@ -79,7 +102,7 @@ func TestSpec_DFA(t *testing.T) {
 			dfa, termMap, err := tc.s.DFA()
 
 			if len(tc.expectedErrorStrings) == 0 {
-				assert.True(t, dfa.Equal(tc.expectedDFA))
+				assert.True(t, dfa.Equal(tc.expectedDFA), "Expected DFA:\n%s\nGot:\n%s\n", tc.expectedDFA, dfa)
 				assert.Equal(t, tc.expectedTerminalMapping, termMap)
 				assert.NoError(t, err)
 			} else {

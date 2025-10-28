@@ -99,30 +99,39 @@ var (
 	plum       = ui.Fg256Color(219)
 	gold       = ui.Fg256Color(220)
 	chartreuse = ui.Fg256Color(82)
-)
 
-type (
-	// Command represents the "emerge" command and its associated flags.
-	Command struct {
-		ui.UI
-		funcs
-
-		Help    bool `flag:"help"`
-		Version bool `flag:"version"`
-		Verbose bool `flag:"verbose"`
-
-		Out   string `flag:"out"`
-		Name  string `flag:"name"`
-		Debug bool   `flag:"debug"`
-	}
-
-	// funcs defines the function types required by the command.
-	// This abstraction allows these functions to be mocked for testing purposes.
-	funcs struct {
-		Parse    func(string, io.Reader) (*spec.Spec, error)
-		Generate func(ui.UI, *golang.Params) error
+	helpFuncMap = template.FuncMap{
+		"join":    strings.Join,
+		"blue":    color.New(color.FgBlue).Sprintf,
+		"green":   color.New(color.FgGreen).Sprintf,
+		"cyan":    color.New(color.FgCyan).Sprintf,
+		"magenta": color.New(color.FgMagenta).Sprintf,
+		"red":     color.New(color.FgRed).Sprintf,
+		"white":   color.New(color.FgWhite).Sprintf,
+		"yellow":  color.New(color.FgYellow).Sprintf,
 	}
 )
+
+// Command represents the "emerge" command and its associated flags.
+type Command struct {
+	ui.UI
+	funcs
+
+	Help    bool `flag:"help"`
+	Version bool `flag:"version"`
+	Verbose bool `flag:"verbose"`
+
+	Out   string `flag:"out"`
+	Name  string `flag:"name"`
+	Debug bool   `flag:"debug"`
+}
+
+// funcs defines the function types required by the command.
+// This abstraction allows these functions to be mocked for testing purposes.
+type funcs struct {
+	Parse    func(string, io.Reader) (*spec.Spec, error)
+	Generate func(ui.UI, *golang.Params) error
+}
 
 // New creates a new instance of the command.
 func New(u ui.UI) (*Command, error) {
@@ -144,16 +153,7 @@ func New(u ui.UI) (*Command, error) {
 
 // PrintHelp prints the help text for the command.
 func (c *Command) PrintHelp() error {
-	tmpl := template.New("help").Funcs(template.FuncMap{
-		"join":    strings.Join,
-		"blue":    color.New(color.FgBlue).Sprintf,
-		"green":   color.New(color.FgGreen).Sprintf,
-		"cyan":    color.New(color.FgCyan).Sprintf,
-		"magenta": color.New(color.FgMagenta).Sprintf,
-		"red":     color.New(color.FgRed).Sprintf,
-		"white":   color.New(color.FgWhite).Sprintf,
-		"yellow":  color.New(color.FgYellow).Sprintf,
-	})
+	tmpl := template.New("help").Funcs(helpFuncMap)
 
 	tmpl, err := tmpl.Parse(helpTemplate)
 	if err != nil {
@@ -183,9 +183,7 @@ func (c *Command) Run(args []string) error {
 		return err
 	}
 
-	defer func() {
-		_ = f.Close()
-	}()
+	// defer f.Close()
 
 	spec, err := c.funcs.Parse(filename, f)
 	if err != nil {
@@ -206,6 +204,10 @@ func (c *Command) Run(args []string) error {
 	})
 
 	if err != nil {
+		return err
+	}
+
+	if err := f.Close(); err != nil {
 		return err
 	}
 

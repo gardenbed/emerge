@@ -28,7 +28,8 @@ func main() {
 	}
 
 	if err := fs.Parse(os.Args[1:]); err != nil {
-		panic(err)
+		u.Errorf(ui.Red, "%s", err)
+		os.Exit(1)
 	}
 
 	// Update the verbosity level.
