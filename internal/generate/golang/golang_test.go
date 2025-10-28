@@ -6,12 +6,38 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/gardenbed/charm/ui"
-	"github.com/moorara/algo/parser/lr"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/gardenbed/charm/ui"
 
 	"github.com/gardenbed/emerge/internal/ebnf/parser/spec"
 )
+
+func TestIsIDValid(t *testing.T) {
+	tests := []struct {
+		name         string
+		expectedBool bool
+	}{
+		{
+			name:         "4ever",
+			expectedBool: false,
+		},
+		{
+			name:         "complex",
+			expectedBool: false,
+		},
+		{
+			name:         "pascal",
+			expectedBool: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.expectedBool, isIDValid(tc.name))
+		})
+	}
+}
 
 func TestGenerate(t *testing.T) {
 	tempDir, err := os.MkdirTemp("", "emerge-test-")
@@ -41,19 +67,14 @@ func TestGenerate(t *testing.T) {
 				Debug: false,
 				Path:  tempDir,
 				Spec: &spec.Spec{
-					Name:        "expr",
+					Name:        "foo",
 					Definitions: definitions,
 					Grammar:     grammars[0],
 					Precedences: precedences[0],
 				},
 			},
 			expectedFiles: []string{
-				"errors.go",
-				"types.go",
-				"stack.go",
-				"input.go",
-				"lexer.go",
-				"parser.go",
+				"foo.go",
 			},
 		},
 	}
@@ -140,7 +161,7 @@ func TestGenerator_prepare(t *testing.T) {
 				Params: &Params{
 					Path: tempDir,
 					Spec: &spec.Spec{
-						Name: "expr",
+						Name: "foo",
 					},
 				},
 			},
@@ -184,14 +205,12 @@ func TestGenerator_generateCore(t *testing.T) {
 				Params: &Params{
 					Path: tempDir,
 					Spec: &spec.Spec{
-						Name: "expr",
+						Name: "foo",
 					},
 				},
 			},
 			expectedErrorRegexes: []string{
-				`open .+/expr/errors.go: no such file or directory`,
-				`open .+/expr/types.go: no such file or directory`,
-				`open .+/expr/stack.go: no such file or directory`,
+				`open .+/foo/foo.go: no such file or directory`,
 			},
 		},
 	}
@@ -199,146 +218,6 @@ func TestGenerator_generateCore(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			err := tc.g.generateCore()
-
-			if len(tc.expectedErrorRegexes) == 0 {
-				assert.NoError(t, err)
-			} else {
-				assert.Error(t, err)
-
-				for _, expectedErrorRegex := range tc.expectedErrorRegexes {
-					re := regexp.MustCompile(expectedErrorRegex)
-					assert.True(t, re.MatchString(err.Error()), "%q DOES NOT MATCH %q", expectedErrorRegex, err)
-				}
-			}
-		})
-	}
-}
-
-func TestGenerator_generateLexer(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "emerge-test-")
-	assert.NoError(t, err)
-
-	defer func() {
-		assert.NoError(t, os.RemoveAll(tempDir))
-	}()
-
-	tests := []struct {
-		name                 string
-		g                    *generator
-		expectedErrorRegexes []string
-	}{
-		{
-			name: "PackageDirNotExist",
-			g: &generator{
-				UI: ui.NewNop(),
-				Params: &Params{
-					Path: tempDir,
-					Spec: &spec.Spec{
-						Name: "expr",
-						Definitions: []*spec.TerminalDef{
-							{Terminal: "ID", Value: "[A-Z", IsRegex: true},
-							{Terminal: "NUM", Value: "[0-9", IsRegex: true},
-						},
-					},
-				},
-			},
-			expectedErrorRegexes: []string{
-				`2 errors occurred:`,
-				`"ID": invalid regular expression: \[A-Z`,
-				`"NUM": invalid regular expression: \[0-9`,
-			},
-		},
-		{
-			name: "PackageDirNotExist",
-			g: &generator{
-				UI: ui.NewNop(),
-				Params: &Params{
-					Path: tempDir,
-					Spec: &spec.Spec{
-						Name:        "expr",
-						Definitions: definitions,
-					},
-				},
-			},
-			expectedErrorRegexes: []string{
-				`open .+/expr/input.go: no such file or directory`,
-				`open .+/expr/lexer.go: no such file or directory`,
-			},
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			err := tc.g.generateLexer()
-
-			if len(tc.expectedErrorRegexes) == 0 {
-				assert.NoError(t, err)
-			} else {
-				assert.Error(t, err)
-
-				for _, expectedErrorRegex := range tc.expectedErrorRegexes {
-					re := regexp.MustCompile(expectedErrorRegex)
-					assert.True(t, re.MatchString(err.Error()), "%q DOES NOT MATCH %q", expectedErrorRegex, err)
-				}
-			}
-		})
-	}
-}
-
-func TestGenerator_generateParser(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "emerge-test-")
-	assert.NoError(t, err)
-
-	defer func() {
-		assert.NoError(t, os.RemoveAll(tempDir))
-	}()
-
-	tests := []struct {
-		name                 string
-		g                    *generator
-		expectedErrorRegexes []string
-	}{
-		{
-			name: "ParsingTableFails",
-			g: &generator{
-				UI: ui.NewNop(),
-				Params: &Params{
-					Spec: &spec.Spec{
-						Name:        "expr",
-						Grammar:     grammars[0],
-						Precedences: lr.PrecedenceLevels{},
-					},
-				},
-			},
-			expectedErrorRegexes: []string{
-				`error on building LALR\(1\) parsing table:`,
-				`Error:      Ambiguous Grammar`,
-				`Cause:      Multiple conflicts in the parsing table:`,
-				`Resolution: Specify associativity and precedence for these Terminals/Productions:`,
-			},
-		},
-		{
-			name: "PackageDirNotExist",
-			g: &generator{
-				UI: ui.NewNop(),
-				Params: &Params{
-					Path: tempDir,
-					Spec: &spec.Spec{
-						Name:        "expr",
-						Grammar:     grammars[0],
-						Precedences: precedences[0],
-					},
-				},
-			},
-			expectedErrorRegexes: []string{
-				`open .+/expr/parser.go: no such file or directory`,
-			},
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			err := tc.g.generateParser()
 
 			if len(tc.expectedErrorRegexes) == 0 {
 				assert.NoError(t, err)
@@ -374,7 +253,7 @@ func TestGenerator_renderTemplate(t *testing.T) {
 			g: &generator{
 				UI: ui.NewNop(),
 			},
-			filename:           "missing.go",
+			filename:           "missing.go.tmpl",
 			data:               nil,
 			expectedErrorRegex: `open templates/missing.go.tmpl: file does not exist`,
 		},
@@ -385,13 +264,13 @@ func TestGenerator_renderTemplate(t *testing.T) {
 				Params: &Params{
 					Path: tempDir,
 					Spec: &spec.Spec{
-						Name: "expr",
+						Name: "foo",
 					},
 				},
 			},
-			filename:           "types.go",
+			filename:           "core.go.tmpl",
 			data:               nil,
-			expectedErrorRegex: `open .+/expr/types.go: no such file or directory`,
+			expectedErrorRegex: `open .+/foo/foo.go: no such file or directory`,
 		},
 	}
 

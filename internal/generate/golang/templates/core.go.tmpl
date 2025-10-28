@@ -1,9 +1,142 @@
+//go:generate {{.GenerateCommand}}
+
+// Package {{.Package}} includes an auto-generated parser by Emerge.
 package {{.Package}}
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 )
+
+/* ------------------------------------------------------------------------------------------------------------------------ */
+
+// Position represents a specific location in an input source.
+type Position struct {
+	Filename string // The name of the input source file (optional).
+	Offset   int    // The byte offset from the beginning of the file.
+	Line     int    // The line number (1-based).
+	Column   int    // The column number on the line (1-based).
+}
+
+// String implements the fmt.Stringer interface.
+//
+// It returns a formatted string representation of the position.
+func (p Position) String() string {
+	var b bytes.Buffer
+
+	if len(p.Filename) > 0 {
+		fmt.Fprintf(&b, "%s:", p.Filename)
+	}
+
+	if p.Line > 0 && p.Column > 0 {
+		fmt.Fprintf(&b, "%d:%d", p.Line, p.Column)
+	} else {
+		fmt.Fprintf(&b, "%d", p.Offset)
+	}
+
+	return b.String()
+}
+
+// Equal determines whether or not two positions are the same.
+func (p Position) Equal(rhs Position) bool {
+	return p.Filename == rhs.Filename &&
+		p.Offset == rhs.Offset &&
+		p.Line == rhs.Line &&
+		p.Column == rhs.Column
+}
+
+// IsZero checks if a position is a zero (empty) value.
+func (p Position) IsZero() bool {
+	var zero Position
+	return p == zero
+}
+
+/* ------------------------------------------------------------------------------------------------------------------------ */
+
+// endmarker is a special symbol that is used to indicate the end of a string.
+// This special symbol assumed not to be a symbol of any grammar and
+// it is taken from a Private Use Area (PUA) in Unicode.
+//
+// The endmarker is not a formal part of the grammar itself but is introduced during parsing
+// to simplify the handling of end-of-input scenarios.
+const endmarker = Terminal("\uEEEE")
+
+// Terminal represents a terminal symbol.
+type Terminal string
+
+// String returns a string representation of a terminal symbol.
+func (t Terminal) String() string {
+	if t == endmarker {
+		return "$"
+	}
+
+	return fmt.Sprintf("%q", t.Name())
+}
+
+// Name returns the name of terminal symbol.
+func (t Terminal) Name() string {
+	if t == endmarker {
+		return "$"
+	}
+
+	return string(t)
+}
+
+// NonTerminal represents a non-terminal symbol.
+type NonTerminal string
+
+// String returns a string representation of a non-terminal symbol.
+func (n NonTerminal) String() string {
+	return n.Name()
+}
+
+// Name returns the name of non-terminal symbol.
+func (n NonTerminal) Name() string {
+	return string(n)
+}
+
+// Token represents a unit of the input language.
+//
+// A token consists of a terminal symbol, along with additional information such as
+// the lexeme (the actual value of the token in the input) and its position in the input stream.
+type Token struct {
+	Terminal
+	Lexeme string
+	Pos    Position
+}
+
+// String implements the fmt.Stringer interface.
+//
+// It returns a formatted string representation of the token.
+func (t Token) String() string {
+	return fmt.Sprintf("%s <%s, %s>", t.Terminal, t.Lexeme, t.Pos)
+}
+
+// Equal determines whether or not two tokens are the same.
+func (t Token) Equal(rhs Token) bool {
+	return t.Terminal == rhs.Terminal &&
+		t.Lexeme == rhs.Lexeme &&
+		t.Pos.Equal(rhs.Pos)
+}
+
+/* ------------------------------------------------------------------------------------------------------------------------ */
+
+// InputError represents an error encountered when reading from an input source.
+type InputError struct {
+	Description string
+	Pos         Position
+}
+
+// Error implements the error interface.
+// It returns a formatted string describing the error in detail.
+func (e *InputError) Error() string {
+	var b bytes.Buffer
+	fmt.Fprintf(&b, "%s: %s", e.Pos, e.Description)
+	return b.String()
+}
+
+/* ------------------------------------------------------------------------------------------------------------------------ */
 
 const eof byte = 0x00
 
@@ -357,3 +490,120 @@ func (i *input) Skip() Position {
 
 	return pos
 }
+
+/* ------------------------------------------------------------------------------------------------------------------------ */
+
+// stack represents a stack abstract data type.
+type stack[T any] interface {
+	Size() int
+	IsEmpty() bool
+	Push(T)
+	Pop() (T, bool)
+	Peek() (T, bool)
+	Contains(T) bool
+}
+
+type arrayNode[T any] struct {
+	block []T
+	next  *arrayNode[T]
+}
+
+func newArrayNode[T any](size int, next *arrayNode[T]) *arrayNode[T] {
+	return &arrayNode[T]{
+		block: make([]T, size),
+		next:  next,
+	}
+}
+
+type arrayStack[T comparable] struct {
+	nodeSize int
+	listSize int
+	topIndex int
+	topNode  *arrayNode[T]
+}
+
+func newStack[T comparable](nodeSize int) stack[T] {
+	return &arrayStack[T]{
+		nodeSize: nodeSize,
+		listSize: 0,
+		topIndex: -1,
+		topNode:  nil,
+	}
+}
+
+// Size returns the number of values on the stack.
+func (s *arrayStack[T]) Size() int {
+	return s.listSize
+}
+
+// IsEmpty returns true if the stack is empty.
+func (s *arrayStack[T]) IsEmpty() bool {
+	return s.listSize == 0
+}
+
+// Enqueue adds a new value to the stack.
+func (s *arrayStack[T]) Push(val T) {
+	s.listSize++
+	s.topIndex++
+
+	if s.topNode == nil {
+		s.topNode = newArrayNode[T](s.nodeSize, nil)
+	} else if s.topIndex == s.nodeSize {
+		s.topNode = newArrayNode[T](s.nodeSize, s.topNode)
+		s.topIndex = 0
+	}
+
+	s.topNode.block[s.topIndex] = val
+}
+
+// Dequeue removes a value from the stack.
+func (s *arrayStack[T]) Pop() (T, bool) {
+	if s.IsEmpty() {
+		var zero T
+		return zero, false
+	}
+
+	val := s.topNode.block[s.topIndex]
+	s.topIndex--
+	s.listSize--
+
+	if s.topIndex == -1 {
+		s.topNode = s.topNode.next
+		if s.topNode != nil {
+			s.topIndex = s.nodeSize - 1
+		}
+	}
+
+	return val, true
+}
+
+// Peek returns the next value on stack without removing it from the stack.
+func (s *arrayStack[T]) Peek() (T, bool) {
+	if s.IsEmpty() {
+		var zero T
+		return zero, false
+	}
+
+	return s.topNode.block[s.topIndex], true
+}
+
+// Contains returns true if a given value is already on the stack.
+func (s *arrayStack[T]) Contains(val T) bool {
+	n := s.topNode
+	i := s.topIndex
+
+	for n != nil {
+		if n.block[i] == val {
+			return true
+		}
+
+		if i--; i < 0 {
+			n = n.next
+			i = s.nodeSize - 1
+		}
+	}
+
+	return false
+}
+
+/* ------------------------------------------------------------------------------------------------------------------------ */
