@@ -23,8 +23,8 @@ var templates embed.FS
 var (
 	navajoWhite = ui.Fg256Color(223)
 	darkOrange  = ui.Fg256Color(166)
-	hotPink     = ui.Fg256Color(168)
-	orchid      = ui.Fg256Color(170)
+	// hotPink     = ui.Fg256Color(168)
+	// orchid      = ui.Fg256Color(170)
 )
 
 var (
