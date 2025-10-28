@@ -5,8 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/gardenbed/emerge/internal/regex/parser/nfa"
-	auto "github.com/moorara/algo/automata"
+	"github.com/moorara/algo/automata"
 	"github.com/moorara/algo/errors"
 	"github.com/moorara/algo/generic"
 	"github.com/moorara/algo/grammar"
@@ -15,6 +14,8 @@ import (
 	"github.com/moorara/algo/parser/lr/lookahead"
 	"github.com/moorara/algo/parser/lr/simple"
 	"github.com/moorara/algo/sort"
+
+	"github.com/gardenbed/emerge/internal/regex/parser/nfa"
 )
 
 // Spec contains the result of a successful input parsing.
@@ -27,22 +28,22 @@ type Spec struct {
 
 // DFA constructs a deterministic finite automaton (DFA)
 // for recognizing all terminal symbols (tokens) in the grammar of the spec.
-func (s *Spec) DFA() (*auto.DFA, map[grammar.Terminal][]auto.State, error) {
+func (s *Spec) DFA() (*automata.DFA, map[grammar.Terminal][]automata.State, error) {
 	errs := &errors.MultiError{
 		Format: errors.BulletErrorFormat,
 	}
 
 	// Construct a DFA for each terminal.
-	ds := make([]*auto.DFA, len(s.Definitions))
+	ds := make([]*automata.DFA, len(s.Definitions))
 	for i, def := range s.Definitions {
-		if !def.IsRegex {
-			ds[i] = stringToDFA(def.Value)
-		} else {
+		if def.IsRegex {
 			var err error
 			ds[i], err = regexToDFA(def.Value)
 			if err != nil {
 				errs = errors.Append(errs, fmt.Errorf("%s: %s", def.Terminal, err))
 			}
+		} else {
+			ds[i] = stringToDFA(def.Value)
 		}
 	}
 
@@ -51,18 +52,18 @@ func (s *Spec) DFA() (*auto.DFA, map[grammar.Terminal][]auto.State, error) {
 	}
 
 	// Combine multiple DFAs into one, preserving state mappings.
-	dfa, stateMap := auto.CombineDFA(ds...)
+	dfa, finalMap := automata.UnionDFA(ds...)
 
 	// Map final states in the DFA to their corresponding terminal definitions.
-	stateDefs := make(map[auto.State][]*TerminalDef)
-	for i, finals := range stateMap {
+	stateDefs := make(map[automata.State][]*TerminalDef)
+	for i, finals := range finalMap {
 		for _, f := range finals {
 			stateDefs[f] = append(stateDefs[f], s.Definitions[i])
 		}
 	}
 
 	// Map each terminal to a set of final states while ensuring each final state identifies a single terminal.
-	termMap := make(map[grammar.Terminal][]auto.State)
+	termMap := make(map[grammar.Terminal][]automata.State)
 	for f, defs := range stateDefs {
 		switch len(defs) {
 		case 0:
@@ -91,6 +92,11 @@ func (s *Spec) DFA() (*auto.DFA, map[grammar.Terminal][]auto.State, error) {
 		}
 	}
 
+	// Sort the final states for each terminal for consistency.
+	for _, final := range termMap {
+		sort.Quick(final, automata.CmpState)
+	}
+
 	if err := errs.ErrorOrNil(); err != nil {
 		return nil, nil, err
 	}
@@ -98,22 +104,7 @@ func (s *Spec) DFA() (*auto.DFA, map[grammar.Terminal][]auto.State, error) {
 	return dfa, termMap, nil
 }
 
-func stringToDFA(value string) *auto.DFA {
-	start := auto.State(0)
-	d := auto.NewDFA(start, nil)
-
-	curr, next := start, start+1
-	for _, r := range value {
-		d.Add(curr, auto.Symbol(r), next)
-		curr, next = next, next+1
-	}
-
-	d.Final = auto.NewStates(curr)
-
-	return d
-}
-
-func regexToDFA(regex string) (*auto.DFA, error) {
+func regexToDFA(regex string) (*automata.DFA, error) {
 	n, err := nfa.Parse(regex)
 	if err != nil {
 		return nil, err
@@ -122,6 +113,23 @@ func regexToDFA(regex string) (*auto.DFA, error) {
 	d := n.ToDFA().Minimize().EliminateDeadStates().ReindexStates()
 
 	return d, nil
+}
+
+func stringToDFA(value string) *automata.DFA {
+	start := automata.State(0)
+	b := automata.NewDFABuilder().SetStart(start)
+
+	curr, next := start, start+1
+	for _, r := range value {
+		sym := automata.Symbol(r)
+		b.AddTransition(curr, sym, sym, next)
+		curr, next = next, next+1
+	}
+
+	final := []automata.State{curr}
+	b.SetFinal(final)
+
+	return b.Build()
 }
 
 // Productions returns an ordered list of all production rules in the grammar of the spec.
