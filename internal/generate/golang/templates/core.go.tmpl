@@ -5,9 +5,54 @@ package {{.Package}}
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 )
+
+/* ------------------------------------------------------------------------------------------------------------------------ */
+
+// Endmarker is a special symbol that is used to indicate the end of a string.
+// The endmarker special symbol is assumed not to be a symbol of any grammar.
+// It is taken from the Unicode Private Use Area (BMP PUA) and
+// must be a valid string since the underlying type of Terminal is string.
+//
+// For more information and details, see "Compilers: Principles, Techniques, and Tools (2nd Edition)".
+const endmarker = Terminal("\uEEEE")
+
+// Terminal represents a terminal symbol.
+type Terminal string
+
+// String returns a string representation of a terminal symbol.
+func (t Terminal) String() string {
+	if t == endmarker {
+		return "$"
+	}
+
+	return fmt.Sprintf("%q", t.Name())
+}
+
+// Name returns the name of terminal symbol.
+func (t Terminal) Name() string {
+	if t == endmarker {
+		return "$"
+	}
+
+	return string(t)
+}
+
+// NonTerminal represents a non-terminal symbol.
+type NonTerminal string
+
+// String returns a string representation of a non-terminal symbol.
+func (n NonTerminal) String() string {
+	return n.Name()
+}
+
+// Name returns the name of non-terminal symbol.
+func (n NonTerminal) Name() string {
+	return string(n)
+}
 
 /* ------------------------------------------------------------------------------------------------------------------------ */
 
@@ -52,50 +97,6 @@ func (p Position) IsZero() bool {
 	return p == zero
 }
 
-/* ------------------------------------------------------------------------------------------------------------------------ */
-
-// endmarker is a special symbol that is used to indicate the end of a string.
-// This special symbol assumed not to be a symbol of any grammar and
-// it is taken from a Private Use Area (PUA) in Unicode.
-//
-// The endmarker is not a formal part of the grammar itself but is introduced during parsing
-// to simplify the handling of end-of-input scenarios.
-const endmarker = Terminal("\uEEEE")
-
-// Terminal represents a terminal symbol.
-type Terminal string
-
-// String returns a string representation of a terminal symbol.
-func (t Terminal) String() string {
-	if t == endmarker {
-		return "$"
-	}
-
-	return fmt.Sprintf("%q", t.Name())
-}
-
-// Name returns the name of terminal symbol.
-func (t Terminal) Name() string {
-	if t == endmarker {
-		return "$"
-	}
-
-	return string(t)
-}
-
-// NonTerminal represents a non-terminal symbol.
-type NonTerminal string
-
-// String returns a string representation of a non-terminal symbol.
-func (n NonTerminal) String() string {
-	return n.Name()
-}
-
-// Name returns the name of non-terminal symbol.
-func (n NonTerminal) Name() string {
-	return string(n)
-}
-
 // Token represents a unit of the input language.
 //
 // A token consists of a terminal symbol, along with additional information such as
@@ -121,24 +122,6 @@ func (t Token) Equal(rhs Token) bool {
 }
 
 /* ------------------------------------------------------------------------------------------------------------------------ */
-
-// InputError represents an error encountered when reading from an input source.
-type InputError struct {
-	Description string
-	Pos         Position
-}
-
-// Error implements the error interface.
-// It returns a formatted string describing the error in detail.
-func (e *InputError) Error() string {
-	var b bytes.Buffer
-	fmt.Fprintf(&b, "%s: %s", e.Pos, e.Description)
-	return b.String()
-}
-
-/* ------------------------------------------------------------------------------------------------------------------------ */
-
-const eof byte = 0x00
 
 const (
 	// The default lowest and highest continuation byte.
@@ -204,6 +187,26 @@ var acceptRanges = [16]acceptRange{
 	3: {0x90, hicb},
 	4: {locb, 0x8F},
 }
+
+/* ------------------------------------------------------------------------------------------------------------------------ */
+
+// InputError represents an error encountered when reading from an input source.
+type InputError struct {
+	Description string
+	Pos         Position
+}
+
+// Error implements the error interface.
+// It returns a formatted string describing the error in detail.
+func (e *InputError) Error() string {
+	var b bytes.Buffer
+	fmt.Fprintf(&b, "%s: %s", e.Pos, e.Description)
+	return b.String()
+}
+
+/* ------------------------------------------------------------------------------------------------------------------------ */
+
+const eof byte = 0x00
 
 // input implements the two-buffer scheme for reading the input characters.
 type input struct {
