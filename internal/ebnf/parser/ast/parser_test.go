@@ -9,19 +9,21 @@ import (
 
 func TestParse(t *testing.T) {
 	tests := []struct {
-		name          string
-		filename      string
-		expectedError string
+		name                 string
+		filename             string
+		expectedErrorStrings []string
 	}{
 		{
-			name:          "Invalid",
-			filename:      "../../fixture/test.invalid.grammar",
-			expectedError: "lexical error at ../../fixture/test.invalid.grammar:1:1:L",
+			name:     "Invalid",
+			filename: "../../fixture/test.invalid.grammar",
+			expectedErrorStrings: []string{
+				`unexpected string "L": no action exists in the parsing table for ACTION[0, "TOKEN"]`,
+			},
 		},
 		{
-			name:          "Success",
-			filename:      "../../fixture/test.success.grammar",
-			expectedError: "",
+			name:                 "Success",
+			filename:             "../../fixture/test.success.grammar",
+			expectedErrorStrings: nil,
 		},
 	}
 
@@ -36,12 +38,17 @@ func TestParse(t *testing.T) {
 
 			root, err := Parse(tc.filename, f)
 
-			if len(tc.expectedError) == 0 {
+			if len(tc.expectedErrorStrings) == 0 {
 				assert.NotNil(t, root)
 				assert.NoError(t, err)
 			} else {
 				assert.Nil(t, root)
-				assert.EqualError(t, err, tc.expectedError)
+				assert.Error(t, err)
+
+				s := err.Error()
+				for _, expectedErrorString := range tc.expectedErrorStrings {
+					assert.Contains(t, s, expectedErrorString)
+				}
 			}
 		})
 	}

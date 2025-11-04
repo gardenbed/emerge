@@ -2,8 +2,10 @@
 package golang
 
 import (
+	"bytes"
 	"embed"
 	"fmt"
+	"iter"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -11,8 +13,10 @@ import (
 	"text/template"
 
 	"github.com/gardenbed/charm/ui"
+	"github.com/moorara/algo/automata"
 	"github.com/moorara/algo/errors"
 	"github.com/moorara/algo/generic"
+	"github.com/moorara/algo/range/disc"
 
 	"github.com/gardenbed/emerge/internal/ebnf/parser/spec"
 )
@@ -23,7 +27,7 @@ var templates embed.FS
 var (
 	navajoWhite = ui.Fg256Color(223)
 	darkOrange  = ui.Fg256Color(166)
-	// hotPink     = ui.Fg256Color(168)
+	hotPink     = ui.Fg256Color(168)
 	// orchid      = ui.Fg256Color(170)
 )
 
@@ -90,6 +94,14 @@ func Generate(u ui.UI, params *Params) error {
 		errs = errors.Append(errs, err)
 	}
 
+	if err := g.generateLexer(); err != nil {
+		errs = errors.Append(errs, err)
+	}
+
+	/* if err := g.generateParser(); err != nil {
+		errs = errors.Append(errs, err)
+	} */
+
 	return errs
 }
 
@@ -152,6 +164,36 @@ type coreData struct {
 	Package         string
 }
 
+// generateLexer generates the lexer code based on the provided terminal (token) definitions for the input language.
+func (g *generator) generateLexer() error {
+	g.Infof(hotPink, "     Generating the lexer ...")
+
+	g.Infof(hotPink, "       Constructing Automaton ...")
+	dfa, assocs, err := g.Spec.DFA()
+	if err != nil {
+		return err
+	}
+
+	data := &lexerData{
+		Package:        g.Spec.Name,
+		Assocs:         assocs,
+		DFATransitions: dfa.Transitions(),
+	}
+
+	var errs error
+	if err := g.renderTemplate("lexer.go.tmpl", data); err != nil {
+		errs = errors.Append(errs, err)
+	}
+
+	return errs
+}
+
+type lexerData struct {
+	Package        string
+	Assocs         []spec.FinalTerminalAssociation
+	DFATransitions iter.Seq2[automata.State, iter.Seq2[[]disc.Range[automata.Symbol], automata.State]]
+}
+
 // renderTemplate renders an embedded template by name and
 // writes the output to a file in the directory specified by Path and Package.
 func (g *generator) renderTemplate(filename string, data any) error {
@@ -162,7 +204,10 @@ func (g *generator) renderTemplate(filename string, data any) error {
 		return err
 	}
 
-	tmpl := template.New(filename).Funcs(template.FuncMap{})
+	tmpl := template.New(filename).Funcs(template.FuncMap{
+		"formatStates": formatStates,
+		"formatRanges": formatRanges,
+	})
 
 	tmpl, err = tmpl.Parse(string(content))
 	if err != nil {
@@ -176,4 +221,38 @@ func (g *generator) renderTemplate(filename string, data any) error {
 	}
 
 	return tmpl.Execute(f, data)
+}
+
+func formatStates(states automata.States) string {
+	var b bytes.Buffer
+
+	for s := range states.All() {
+		fmt.Fprintf(&b, "%d, ", s)
+	}
+
+	// Remove trailing comma and space
+	if b.Len() >= 2 {
+		b.Truncate(b.Len() - 2)
+	}
+
+	return b.String()
+}
+
+func formatRanges(ranges []disc.Range[automata.Symbol]) string {
+	var b bytes.Buffer
+
+	for _, r := range ranges {
+		if r.Lo == r.Hi {
+			fmt.Fprintf(&b, "r == %q, ", r.Lo)
+		} else {
+			fmt.Fprintf(&b, "%q <= r && r <= %q, ", r.Lo, r.Hi)
+		}
+	}
+
+	// Remove trailing comma and space
+	if b.Len() >= 2 {
+		b.Truncate(b.Len() - 2)
+	}
+
+	return b.String()
 }

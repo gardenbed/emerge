@@ -1,11 +1,10 @@
-// Package lexer implements a lexical analyzer for an extension of EBNF language.
+// Package lexer implements a lexical analyzer for the EBNF language.
 package lexer
 
 import (
 	"errors"
 	"fmt"
 	"io"
-	"strings"
 
 	"github.com/moorara/algo/grammar"
 	"github.com/moorara/algo/lexer"
@@ -41,8 +40,8 @@ const (
 	GRAMMER = grammar.Terminal("grammar") // GRAMMER is the token for "grammar".
 	IDENT   = grammar.Terminal("IDENT")   // IDENT is the token for /[a-z][0-9a-z_]*/.
 	TOKEN   = grammar.Terminal("TOKEN")   // TOKEN is the token for /[A-Z][0-9A-Z_]*/.
-	STRING  = grammar.Terminal("STRING")  // STRING is the token for /"([\x21\x23-\x5B\x5D-\x7E]|\\[\x21-\x7E])+"/.
-	REGEX   = grammar.Terminal("REGEX")   // REGEX is the token for /\/([\x20-\x2E\x30-\x5B\x5D-\x7E]|\\[\x20-\x7E])*\//.
+	STRING  = grammar.Terminal("STRING")  // STRING is the token for /"([^\\"]\|\\[\\"'tnr]\|\\x[0-9A-Fa-f]{2}\|\\u[0-9A-Fa-f]{4}\|\\U[0-9A-Fa-f]{8})*"/.
+	REGEX   = grammar.Terminal("REGEX")   // REGEX is the token for /\/([^\/\\*]\|\\.)([^\/\\]\|\\.)*\//.
 	COMMENT = grammar.Terminal("COMMENT") // COMMENT is the token for single-line and multi-line comments.
 )
 
@@ -212,34 +211,34 @@ func (l *Lexer) evalDFA(state int) lexer.Token {
 		return lexer.Token{Terminal: GRAMMER, Lexeme: "grammar", Pos: pos}
 
 	// IDENT
-	case 32, 33, 34, 35, 36, 37, 39, 40:
+	case 32, 33, 34, 35, 36, 37, 39:
 		lexeme, pos := l.in.Lexeme()
 		return lexer.Token{Terminal: IDENT, Lexeme: lexeme, Pos: pos}
 
 	// TOKEN
-	case 42:
+	case 40:
 		lexeme, pos := l.in.Lexeme()
 		return lexer.Token{Terminal: TOKEN, Lexeme: lexeme, Pos: pos}
 
 	// STRING
-	case 46:
+	case 61:
 		lexeme, pos := l.in.Lexeme()
 		lexeme = lexeme[1 : len(lexeme)-1]
 		return lexer.Token{Terminal: STRING, Lexeme: lexeme, Pos: pos}
 
 	// REGEX
-	case 50:
+	case 65:
 		lexeme, pos := l.in.Lexeme()
-		lexeme = strings.Trim(lexeme, "/")
+		lexeme = lexeme[1 : len(lexeme)-1]
 		return lexer.Token{Terminal: REGEX, Lexeme: lexeme, Pos: pos}
 
 	// Single-Line COMMENT
-	case 51:
+	case 66:
 		pos := l.in.Skip()
 		return lexer.Token{Terminal: COMMENT, Lexeme: "", Pos: pos}
 
 	// Multi-Line COMMENT
-	case 54:
+	case 69:
 		pos := l.in.Skip()
 		return lexer.Token{Terminal: COMMENT, Lexeme: "", Pos: pos}
 	}
@@ -259,66 +258,48 @@ func (l *Lexer) evalDFA(state int) lexer.Token {
 func advanceDFA(state int, r rune) int {
 	switch state {
 	case 0:
-		switch r {
-		case '\t', ' ':
+		switch {
+		case r == '\t', r == ' ':
 			return 1
-
-		case '\n', '\r':
+		case r == '\n', r == '\r':
 			return 2
-
-		case '=':
+		case r == '=':
 			return 3
-
-		case ';':
+		case r == ';':
 			return 4
-
-		case '|':
+		case r == '|':
 			return 5
-
-		case '(':
+		case r == '(':
 			return 6
-
-		case ')':
+		case r == ')':
 			return 7
-
-		case '[':
+		case r == '[':
 			return 8
-
-		case ']':
+		case r == ']':
 			return 9
-
-		case '{':
+		case r == '{':
 			return 10
-
-		case '}':
+		case r == '}':
 			return 11
-
-		case '<':
+		case r == '<':
 			return 14
-
-		case '>':
+		case r == '>':
 			return 15
-
-		case '$':
+		case r == '$':
 			return 16
-
-		case '@':
+		case r == '@':
 			return 18
-
-		case 'g':
+		case r == 'g':
 			return 32
-
-		case 'a', 'b', 'c', 'd', 'e', 'f' /*g*/, 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z':
+		case 'a' <= r && r <= 'f',
+			'h' <= r && r <= 'z':
 			return 39
-
-		case 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z':
+		case 'A' <= r && r <= 'Z':
+			return 40
+		case r == '"':
 			return 41
-
-		case '"':
-			return 43
-
-		case '/':
-			return 47
+		case r == '/':
+			return 62
 		}
 
 	case 1:
@@ -346,16 +327,16 @@ func advanceDFA(state int, r rune) int {
 		}
 
 	case 16:
-		switch r {
-		case 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z':
+		switch {
+		case 'A' <= r && r <= 'Z':
 			return 17
 		}
 
 	case 17:
-		switch r {
-		case '_',
-			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-			'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z':
+		switch {
+		case '0' <= r && r <= '9',
+			'A' <= r && r <= 'Z',
+			r == '_':
 			return 17
 		}
 
@@ -363,12 +344,10 @@ func advanceDFA(state int, r rune) int {
 		switch r {
 		case 'l':
 			return 19
-
-		case 'r':
-			return 23
-
 		case 'n':
 			return 28
+		case 'r':
+			return 23
 		}
 
 	case 19:
@@ -432,250 +411,338 @@ func advanceDFA(state int, r rune) int {
 		}
 
 	case 32:
-		switch r {
-		case 'r':
+		switch {
+		case r == 'r':
 			return 33
-
-		case '_',
-			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-			'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q' /*r*/, 's', 't', 'u', 'v', 'w', 'x', 'y', 'z':
-			return 40
+		case '0' <= r && r <= '9',
+			r == '_',
+			'a' <= r && r <= 'q',
+			's' <= r && r <= 'z':
+			return 39
 		}
 
 	case 33:
-		switch r {
-		case 'a':
+		switch {
+		case r == 'a':
 			return 34
-
-		case '_',
-			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-			/*a*/ 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z':
-			return 40
+		case '0' <= r && r <= '9',
+			r == '_',
+			'b' <= r && r <= 'z':
+			return 39
 		}
 
 	case 34:
-		switch r {
-		case 'm':
+		switch {
+		case r == 'm':
 			return 35
-
-		case '_',
-			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-			'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l' /*m*/, 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z':
-			return 40
+		case '0' <= r && r <= '9',
+			r == '_',
+			'a' <= r && r <= 'l',
+			'n' <= r && r <= 'z':
+			return 39
 		}
 
 	case 35:
-		switch r {
-		case 'm':
+		switch {
+		case r == 'm':
 			return 36
-
-		case '_',
-			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-			'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l' /*m*/, 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z':
-			return 40
+		case '0' <= r && r <= '9',
+			r == '_',
+			'a' <= r && r <= 'l',
+			'n' <= r && r <= 'z':
+			return 39
 		}
 
 	case 36:
-		switch r {
-		case 'a':
+		switch {
+		case r == 'a':
 			return 37
-
-		case '_',
-			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-			/*a*/ 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z':
-			return 40
+		case '0' <= r && r <= '9',
+			r == '_',
+			'b' <= r && r <= 'z':
+			return 39
 		}
 
 	case 37:
-		switch r {
-		case 'r':
+		switch {
+		case r == 'r':
 			return 38
-
-		case '_',
-			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-			'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q' /*r*/, 's', 't', 'u', 'v', 'w', 'x', 'y', 'z':
-			return 40
+		case '0' <= r && r <= '9',
+			r == '_',
+			'a' <= r && r <= 'q',
+			's' <= r && r <= 'z':
+			return 39
 		}
 
 	case 38:
-		switch r {
-		case '_',
-			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-			'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z':
-			return 40
+		switch {
+		case '0' <= r && r <= '9':
+			return 39
+		case r == '_':
+			return 39
+		case 'a' <= r && r <= 'z':
+			return 39
 		}
 
 	case 39:
-		switch r {
-		case '_',
-			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-			'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z':
-			return 40
+		switch {
+		case '0' <= r && r <= '9',
+			r == '_',
+			'a' <= r && r <= 'z':
+			return 39
 		}
 
 	case 40:
-		switch r {
-		case '_',
-			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-			'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z':
+		switch {
+		case '0' <= r && r <= '9',
+			'A' <= r && r <= 'Z',
+			r == '_':
 			return 40
 		}
 
 	case 41:
-		switch r {
-		case '_',
-			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-			'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z':
+		switch {
+		case r == '"':
+			return 61
+		case r == '\\':
 			return 42
+		case 0x00 <= r && r <= 0x21,
+			0x23 <= r && r <= 0x5B,
+			0x5D <= r && r <= 0x10FFFF:
+			return 41
 		}
 
 	case 42:
 		switch r {
-		case '_',
-			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-			'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z':
-			return 42
+		case '"', '\'', '\\', 'n', 'r', 't':
+			return 43
+		case 'x':
+			return 44
+		case 'u':
+			return 47
+		case 'U':
+			return 52
 		}
 
 	case 43:
-		switch r {
-		case '\\':
-			return 44
-
-		case '!' /*"*/, '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/',
-			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-			':', ';', '<', '=', '>', '?', '@',
-			'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-			'[' /*\*/, ']', '^', '_', '`',
-			'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-			'{', '|', '}', '~':
-			return 45
+		switch {
+		case r == '"':
+			return 61
+		case r == '\\':
+			return 42
+		case 0x00 <= r && r <= 0x21,
+			0x23 <= r && r <= 0x5B,
+			0x5D <= r && r <= 0x10FFFF:
+			return 41
 		}
 
 	case 44:
-		switch r {
-		case '!', '"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/',
-			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-			':', ';', '<', '=', '>', '?', '@',
-			'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-			'[', '\\', ']', '^', '_', '`',
-			'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-			'{', '|', '}', '~':
+		switch {
+		case '0' <= r && r <= '9',
+			'A' <= r && r <= 'F',
+			'a' <= r && r <= 'f':
 			return 45
 		}
 
 	case 45:
-		switch r {
-		case '\\':
-			return 44
-
-		case '!' /*"*/, '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/',
-			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-			':', ';', '<', '=', '>', '?', '@',
-			'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-			'[' /*\*/, ']', '^', '_', '`',
-			'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-			'{', '|', '}', '~':
-			return 45
-
-		case '"':
+		switch {
+		case '0' <= r && r <= '9',
+			'A' <= r && r <= 'F',
+			'a' <= r && r <= 'f':
 			return 46
 		}
 
+	case 46:
+		switch {
+		case r == '"':
+			return 61
+		case r == '\\':
+			return 42
+		case 0x00 <= r && r <= 0x21,
+			0x23 <= r && r <= 0x5B,
+			0x5D <= r && r <= 0x10FFFF:
+			return 41
+		}
+
 	case 47:
-		switch r {
-		case '\\':
+		switch {
+		case '0' <= r && r <= '9',
+			'A' <= r && r <= 'F',
+			'a' <= r && r <= 'f':
 			return 48
-
-		case ' ', '!', '"', '#', '$', '%', '&', '\'', '(', ')' /***/, '+', ',', '-', '.', /*/*/
-			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-			':', ';', '<', '=', '>', '?', '@',
-			'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-			'[' /*\*/, ']', '^', '_', '`',
-			'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-			'{', '|', '}', '~':
-			return 49
-
-		case '/':
-			return 51
-
-		case '*':
-			return 52
 		}
 
 	case 48:
-		switch r {
-		case ' ', '!', '"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/',
-			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-			':', ';', '<', '=', '>', '?', '@',
-			'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-			'[', '\\', ']', '^', '_', '`',
-			'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-			'{', '|', '}', '~':
+		switch {
+		case '0' <= r && r <= '9',
+			'A' <= r && r <= 'F',
+			'a' <= r && r <= 'f':
 			return 49
 		}
 
 	case 49:
-		switch r {
-		case '\\':
-			return 48
-
-		case ' ', '!', '"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', /*/*/
-			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-			':', ';', '<', '=', '>', '?', '@',
-			'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-			'[' /*\*/, ']', '^', '_', '`',
-			'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-			'{', '|', '}', '~':
-			return 49
-
-		case '/':
+		switch {
+		case '0' <= r && r <= '9',
+			'A' <= r && r <= 'F',
+			'a' <= r && r <= 'f':
 			return 50
 		}
 
-	case 51:
-		switch r {
-		case '\t',
-			' ', '!', '"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/',
-			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-			':', ';', '<', '=', '>', '?', '@',
-			'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-			'[', '\\', ']', '^', '_', '`',
-			'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-			'{', '|', '}', '~':
+	case 50:
+		switch {
+		case '0' <= r && r <= '9',
+			'A' <= r && r <= 'F',
+			'a' <= r && r <= 'f':
 			return 51
 		}
 
-	case 52:
-		switch r {
-		case '\t', '\n', '\r',
-			' ', '!', '"', '#', '$', '%', '&', '\'', '(', ')' /***/, '+', ',', '-', '.', '/',
-			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-			':', ';', '<', '=', '>', '?', '@',
-			'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-			'[', '\\', ']', '^', '_', '`',
-			'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-			'{', '|', '}', '~':
-			return 52
+	case 51:
+		switch {
+		case r == '"':
+			return 61
+		case r == '\\':
+			return 42
+		case 0x00 <= r && r <= 0x21,
+			0x23 <= r && r <= 0x5B,
+			0x5D <= r && r <= 0x10FFFF:
+			return 41
+		}
 
-		case '*':
+	case 52:
+		switch {
+		case '0' <= r && r <= '9',
+			'A' <= r && r <= 'F',
+			'a' <= r && r <= 'f':
 			return 53
 		}
 
 	case 53:
-		switch r {
-		case '\t', '\n', '\r',
-			' ', '!', '"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', /*/*/
-			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-			':', ';', '<', '=', '>', '?', '@',
-			'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-			'[', '\\', ']', '^', '_', '`',
-			'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-			'{', '|', '}', '~':
-			return 52
-
-		case '/':
+		switch {
+		case '0' <= r && r <= '9',
+			'A' <= r && r <= 'F',
+			'a' <= r && r <= 'f':
 			return 54
+		}
+
+	case 54:
+		switch {
+		case '0' <= r && r <= '9',
+			'A' <= r && r <= 'F',
+			'a' <= r && r <= 'f':
+			return 55
+		}
+
+	case 55:
+		switch {
+		case '0' <= r && r <= '9',
+			'A' <= r && r <= 'F',
+			'a' <= r && r <= 'f':
+			return 56
+		}
+
+	case 56:
+		switch {
+		case '0' <= r && r <= '9',
+			'A' <= r && r <= 'F',
+			'a' <= r && r <= 'f':
+			return 57
+		}
+
+	case 57:
+		switch {
+		case '0' <= r && r <= '9',
+			'A' <= r && r <= 'F',
+			'a' <= r && r <= 'f':
+			return 58
+		}
+
+	case 58:
+		switch {
+		case '0' <= r && r <= '9',
+			'A' <= r && r <= 'F',
+			'a' <= r && r <= 'f':
+			return 59
+		}
+
+	case 59:
+		switch {
+		case '0' <= r && r <= '9',
+			'A' <= r && r <= 'F',
+			'a' <= r && r <= 'f':
+			return 60
+		}
+
+	case 60:
+		switch {
+		case r == '"':
+			return 61
+		case r == '\\':
+			return 42
+		case 0x00 <= r && r <= 0x21,
+			0x23 <= r && r <= 0x5B,
+			0x5D <= r && r <= 0x10FFFF:
+			return 41
+		}
+
+	case 62:
+		switch {
+		case r == '*':
+			return 67
+		case r == '/':
+			return 66
+		case r == '\\':
+			return 63
+		case 0x00 <= r && r <= 0x29,
+			0x2B <= r && r <= 0x2E,
+			0x30 <= r && r <= 0x5B,
+			0x5D <= r && r <= 0x10FFFF:
+			return 64
+		}
+
+	case 63:
+		switch {
+		case 0x00 <= r && r <= 0x10FFFF:
+			return 64
+		}
+
+	case 64:
+		switch {
+		case r == '/':
+			return 65
+		case r == '\\':
+			return 63
+		case 0x00 <= r && r <= 0x2E,
+			0x30 <= r && r <= 0x5B,
+			0x5D <= r && r <= 0x10FFFF:
+			return 64
+		}
+
+	case 66:
+		switch {
+		case 0x00 <= r && r <= 0x09,
+			0x0E <= r && r <= 0x10FFFF:
+			return 66
+		}
+
+	case 67:
+		switch {
+		case r == '*':
+			return 68
+		case 0x00 <= r && r <= 0x29,
+			0x2B <= r && r <= 0x10FFFF:
+			return 67
+		}
+
+	case 68:
+		switch {
+		case r == '*':
+			return 68
+		case r == '/':
+			return 69
+		case 0x00 <= r && r <= 0x29,
+			0x2B <= r && r <= 0x2E,
+			0x30 <= r && r <= 0x10FFFF:
+			return 67
 		}
 	}
 

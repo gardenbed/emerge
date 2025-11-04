@@ -12,22 +12,22 @@ import (
 
 func TestSpec_DFA(t *testing.T) {
 	tests := []struct {
-		name                    string
-		s                       *Spec
-		expectedDFA             *automata.DFA
-		expectedTerminalMapping map[grammar.Terminal][]automata.State
-		expectedErrorStrings    []string
+		name                   string
+		s                      *Spec
+		expectedDFA            *automata.DFA
+		expectedTerminalFinals []FinalTerminalAssociation
+		expectedErrorStrings   []string
 	}{
 		{
 			name: "InvalidRegex",
 			s: &Spec{
 				Definitions: []*TerminalDef{
-					{Terminal: "ID", Value: "[A-Z", IsRegex: true},
-					{Terminal: "NUM", Value: "[0-9", IsRegex: true},
+					{Terminal: "ID", Kind: RegexDef, Value: "[A-Z"},
+					{Terminal: "NUM", Kind: RegexDef, Value: "[0-9"},
 				},
 			},
-			expectedDFA:             nil,
-			expectedTerminalMapping: nil,
+			expectedDFA:            nil,
+			expectedTerminalFinals: nil,
 			expectedErrorStrings: []string{
 				`2 errors occurred:`,
 				`"ID": invalid regular expression: [A-Z`,
@@ -38,12 +38,12 @@ func TestSpec_DFA(t *testing.T) {
 			name: "OverlappingDefinitions",
 			s: &Spec{
 				Definitions: []*TerminalDef{
-					{Terminal: "NUM", Value: "[0-9]+", IsRegex: true, Pos: &lexer.Position{Filename: "test", Offset: 20, Line: 2, Column: 1}},
-					{Terminal: "INT", Value: "[0-9]+", IsRegex: true, Pos: &lexer.Position{Filename: "test", Offset: 30, Line: 3, Column: 1}},
+					{Terminal: "NUM", Kind: RegexDef, Value: "[0-9]+", Pos: &lexer.Position{Filename: "test", Offset: 20, Line: 2, Column: 1}},
+					{Terminal: "INT", Kind: RegexDef, Value: "[0-9]+", Pos: &lexer.Position{Filename: "test", Offset: 30, Line: 3, Column: 1}},
 				},
 			},
-			expectedDFA:             nil,
-			expectedTerminalMapping: nil,
+			expectedDFA:            nil,
+			expectedTerminalFinals: nil,
 			expectedErrorStrings: []string{
 				`1 error occurred:`,
 				`conflicting definitions capture the same string:`,
@@ -55,10 +55,10 @@ func TestSpec_DFA(t *testing.T) {
 			name: "Success",
 			s: &Spec{
 				Definitions: []*TerminalDef{
-					{Terminal: ";", Value: ";", IsRegex: false},
-					{Terminal: "if", Value: "if", IsRegex: false},
-					{Terminal: "ID", Value: "[A-Za-z_][0-9A-Za-z_]*", IsRegex: true},
-					{Terminal: "NUM", Value: "[0-9]+", IsRegex: true},
+					{Terminal: ";", Kind: StringDef, Value: ";"},
+					{Terminal: "if", Kind: StringDef, Value: "if"},
+					{Terminal: "ID", Kind: RegexDef, Value: "[A-Za-z_][0-9A-Za-z_]*"},
+					{Terminal: "NUM", Kind: RegexDef, Value: "[0-9]+"},
 				},
 			},
 			expectedDFA: automata.NewDFABuilder().
@@ -87,11 +87,31 @@ func TestSpec_DFA(t *testing.T) {
 				AddTransition(5, '_', '_', 3).
 				AddTransition(5, 'a', 'z', 3).
 				Build(),
-			expectedTerminalMapping: map[grammar.Terminal][]automata.State{
-				"NUM": {1},
-				";":   {2},
-				"ID":  {3, 4},
-				"if":  {5},
+			expectedTerminalFinals: []FinalTerminalAssociation{
+				{
+					Final:    automata.NewStates(1),
+					Terminal: "NUM",
+					Kind:     RegexDef,
+					Value:    "[0-9]+",
+				},
+				{
+					Final:    automata.NewStates(2),
+					Terminal: ";",
+					Kind:     StringDef,
+					Value:    ";",
+				},
+				{
+					Final:    automata.NewStates(3, 4),
+					Terminal: "ID",
+					Kind:     RegexDef,
+					Value:    "[A-Za-z_][0-9A-Za-z_]*",
+				},
+				{
+					Final:    automata.NewStates(5),
+					Terminal: "if",
+					Kind:     StringDef,
+					Value:    "if",
+				},
 			},
 			expectedErrorStrings: nil,
 		},
@@ -102,9 +122,16 @@ func TestSpec_DFA(t *testing.T) {
 			dfa, termMap, err := tc.s.DFA()
 
 			if len(tc.expectedErrorStrings) == 0 {
-				assert.True(t, dfa.Equal(tc.expectedDFA), "Expected DFA:\n%s\nGot:\n%s\n", tc.expectedDFA, dfa)
-				assert.Equal(t, tc.expectedTerminalMapping, termMap)
 				assert.NoError(t, err)
+				assert.True(t, dfa.Equal(tc.expectedDFA), "Expected DFA:\n%s\nGot:\n%s\n", tc.expectedDFA, dfa)
+
+				assert.Len(t, termMap, len(tc.expectedTerminalFinals))
+				for i, expectedTerminalFinal := range tc.expectedTerminalFinals {
+					assert.True(t, termMap[i].Final.Equal(expectedTerminalFinal.Final))
+					assert.Equal(t, expectedTerminalFinal.Terminal, termMap[i].Terminal)
+					assert.Equal(t, expectedTerminalFinal.Kind, termMap[i].Kind)
+					assert.Equal(t, expectedTerminalFinal.Value, termMap[i].Value)
+				}
 			} else {
 				assert.Nil(t, dfa)
 				assert.Nil(t, termMap)

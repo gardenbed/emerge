@@ -42,6 +42,6 @@ var precedences = []lr.PrecedenceLevels{
 }
 
 var definitions = []*spec.TerminalDef{
-	{Terminal: "ID", Value: "[A-Za-z_][0-9A-Za-z_]*", IsRegex: true},
-	{Terminal: "NUM", Value: "[0-9]+", IsRegex: true},
+	{Terminal: "ID", Kind: spec.RegexDef, Value: "[A-Za-z_][0-9A-Za-z_]*"},
+	{Terminal: "NUM", Kind: spec.RegexDef, Value: "[0-9]+"},
 }

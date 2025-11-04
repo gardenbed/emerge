@@ -88,7 +88,7 @@ func TestGenerate(t *testing.T) {
 				assert.Error(t, err)
 
 				re := regexp.MustCompile(tc.expectedErrorRegex)
-				assert.True(t, re.MatchString(err.Error()), "%q DOES NOT MATCH %q", tc.expectedErrorRegex, err)
+				assert.True(t, re.MatchString(err.Error()), "%q DOES NOT INCLUDE %q", err, tc.expectedErrorRegex)
 			} else {
 				assert.NoError(t, err)
 
@@ -179,7 +179,7 @@ func TestGenerator_prepare(t *testing.T) {
 				assert.Error(t, err)
 
 				re := regexp.MustCompile(tc.expectedErrorRegex)
-				assert.True(t, re.MatchString(err.Error()), "%q DOES NOT MATCH %q", tc.expectedErrorRegex, err)
+				assert.True(t, re.MatchString(err.Error()), "%q DOES NOT INCLUDE %q", err, tc.expectedErrorRegex)
 			}
 		})
 	}
@@ -226,7 +226,77 @@ func TestGenerator_generateCore(t *testing.T) {
 
 				for _, expectedErrorRegex := range tc.expectedErrorRegexes {
 					re := regexp.MustCompile(expectedErrorRegex)
-					assert.True(t, re.MatchString(err.Error()), "%q DOES NOT MATCH %q", expectedErrorRegex, err)
+					assert.True(t, re.MatchString(err.Error()), "%q DOES NOT INCLUDE %q", err, expectedErrorRegex)
+				}
+			}
+		})
+	}
+}
+
+func TestGenerator_generateLexer(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "emerge-test-")
+	assert.NoError(t, err)
+
+	defer func() {
+		assert.NoError(t, os.RemoveAll(tempDir))
+	}()
+
+	tests := []struct {
+		name                 string
+		g                    *generator
+		expectedErrorRegexes []string
+	}{
+		{
+			name: "InvalidRegexDefinitions",
+			g: &generator{
+				UI: ui.NewNop(),
+				Params: &Params{
+					Path: tempDir,
+					Spec: &spec.Spec{
+						Name: "expr",
+						Definitions: []*spec.TerminalDef{
+							{Terminal: "ID", Kind: spec.RegexDef, Value: "[A-Z"},
+							{Terminal: "NUM", Kind: spec.RegexDef, Value: "[0-9"},
+						},
+					},
+				},
+			},
+			expectedErrorRegexes: []string{
+				`2 errors occurred:`,
+				`"ID": invalid regular expression: \[A-Z`,
+				`"NUM": invalid regular expression: \[0-9`,
+			},
+		},
+		{
+			name: "PackageDirNotExist",
+			g: &generator{
+				UI: ui.NewNop(),
+				Params: &Params{
+					Path: tempDir,
+					Spec: &spec.Spec{
+						Name:        "expr",
+						Definitions: definitions,
+					},
+				},
+			},
+			expectedErrorRegexes: []string{
+				`open .+/expr/expr.go: no such file or directory`,
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			err := tc.g.generateLexer()
+
+			if len(tc.expectedErrorRegexes) == 0 {
+				assert.NoError(t, err)
+			} else {
+				assert.Error(t, err)
+
+				for _, expectedErrorRegex := range tc.expectedErrorRegexes {
+					re := regexp.MustCompile(expectedErrorRegex)
+					assert.True(t, re.MatchString(err.Error()), "%q DOES NOT INCLUDE %q", err, expectedErrorRegex)
 				}
 			}
 		})
@@ -284,7 +354,7 @@ func TestGenerator_renderTemplate(t *testing.T) {
 				assert.Error(t, err)
 
 				re := regexp.MustCompile(tc.expectedErrorRegex)
-				assert.True(t, re.MatchString(err.Error()), "%q DOES NOT MATCH %q", tc.expectedErrorRegex, err)
+				assert.True(t, re.MatchString(err.Error()), "%q DOES NOT INCLUDE %q", err, tc.expectedErrorRegex)
 			}
 		})
 	}
