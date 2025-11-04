@@ -3,7 +3,7 @@ package parser
 
 import comb "github.com/moorara/algo/parser/combinator"
 
-var escapedChars = []rune{'\\', '|', '.', '?', '*', '+', '(', ')', '[', ']', '{', '}', '$'}
+var escapedChars = []rune{'\\', 't', 'n', 'r', '|', '.', '?', '*', '+', '-', '(', ')', '[', ']', '{', '}', '^', '$'}
 
 // excludeRunes can be bound on a rune parser to exclude certain runes.
 func excludeRunes(r ...rune) comb.BindFunc {
@@ -85,15 +85,12 @@ func toEscapedChar(r comb.Result) (comb.Result, bool) {
 	r1, _ := r.Get(1)
 
 	c := r1.Val.(rune)
+
 	switch c {
 	case 't':
 		c = '\t'
 	case 'n':
 		c = '\n'
-	case 'v':
-		c = '\v'
-	case 'f':
-		c = '\f'
 	case 'r':
 		c = '\r'
 	}
@@ -224,7 +221,12 @@ func New(m Mappers) *Parser {
 	p.anyChar = comb.ExpectRune('.').Map(p.m.ToAnyChar)
 
 	// single_char --> unicode_char | ascii_char | escaped_char | unescaped_char
-	p.singleChar = comb.ALT(p.unicodeChar, p.asciiChar, p.escapedChar, p.unescapedChar).Map(p.m.ToSingleChar)
+	p.singleChar = comb.ALT(
+		p.unicodeChar,
+		p.asciiChar,
+		p.escapedChar,
+		p.unescapedChar,
+	).Map(p.m.ToSingleChar)
 
 	// char_class --> "\s" | "\S" | "\d" | "\D" | "\w" | "\W"
 	p.charClass = comb.ALT(
@@ -266,35 +268,26 @@ func New(m Mappers) *Parser {
 	).Map(p.m.ToUnicodeCharClass)
 
 	// rep_op --> "?" | "*" | "+"
-	p.repOp = comb.ExpectRune('?').ALT(
+	p.repOp = comb.ALT(
+		comb.ExpectRune('?'),
 		comb.ExpectRune('*'),
 		comb.ExpectRune('+'),
 	).Map(p.m.ToRepOp)
 
 	// upper_bound --> "," num?
-	p.upperBound = comb.ExpectRune(',').CONCAT(
-		p.num.OPT(),
-	).Map(p.m.ToUpperBound)
+	p.upperBound = comb.ExpectRune(',').CONCAT(p.num.OPT()).Map(p.m.ToUpperBound)
 
 	// range --> "{" num upper_bound? "}"
-	p.range_ = comb.ExpectRune('{').CONCAT(
+	p.range_ = comb.CONCAT(
+		comb.ExpectRune('{'),
 		p.num,
 		p.upperBound.OPT(),
 		comb.ExpectRune('}'),
 	).Map(p.m.ToRange)
 
-	// repetition --> rep_op | range
-	p.repetition = p.repOp.ALT(
-		p.range_,
-	).Map(p.m.ToRepetition)
-
-	// quantifier --> repetition lazy_modifier?
-	p.quantifier = p.repetition.CONCAT(
-		comb.ExpectRune('?').OPT(),
-	).Map(p.m.ToQuantifier)
-
-	// char_in_range --> unicode_char | ascii_char | char
-	p.charInRange = p.unicodeChar.ALT(p.asciiChar, p.char).Map(p.m.ToCharInRange)
+	p.repetition = p.repOp.ALT(p.range_).Map(p.m.ToRepetition)                           // repetition --> rep_op | range
+	p.quantifier = p.repetition.CONCAT(comb.ExpectRune('?').OPT()).Map(p.m.ToQuantifier) // quantifier --> repetition lazy_modifier?
+	p.charInRange = p.unicodeChar.ALT(p.asciiChar, p.char).Map(p.m.ToCharInRange)        // char_in_range --> unicode_char | ascii_char | char
 
 	// char_range --> char_in_range "-" char_in_range
 	p.charRange = comb.CONCAT(
@@ -330,14 +323,9 @@ func New(m Mappers) *Parser {
 		p.charGroup,
 	).Map(p.m.ToMatchItem)
 
-	// match --> match_item quantifier?
-	p.match = p.matchItem.CONCAT(p.quantifier.OPT()).Map(p.m.ToMatch)
-
-	// anchor --> "$"
-	p.anchor = comb.ExpectRune('$').Map(p.m.ToAnchor)
-
-	// regex --> start_of_string? expr
-	p.regex = comb.ExpectRune('^').OPT().CONCAT(p.expr).Map(p.m.ToRegex)
+	p.match = p.matchItem.CONCAT(p.quantifier.OPT()).Map(p.m.ToMatch)    // match --> match_item quantifier?
+	p.anchor = comb.ExpectRune('$').Map(p.m.ToAnchor)                    // anchor --> "$"
+	p.regex = comb.ExpectRune('^').OPT().CONCAT(p.expr).Map(p.m.ToRegex) // regex --> start_of_string? expr
 
 	return p
 }

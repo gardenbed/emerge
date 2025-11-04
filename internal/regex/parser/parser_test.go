@@ -168,28 +168,6 @@ func TestToEscapedChar(t *testing.T) {
 			expectedOK:     true,
 		},
 		{
-			name: "VerticalTab",
-			r: comb.Result{
-				Val: comb.List{
-					{Val: '\\', Pos: 1},
-					{Val: 'v', Pos: 2},
-				},
-			},
-			expectedResult: comb.Result{Val: '\v', Pos: 1},
-			expectedOK:     true,
-		},
-		{
-			name: "FormFeed",
-			r: comb.Result{
-				Val: comb.List{
-					{Val: '\\', Pos: 1},
-					{Val: 'f', Pos: 2},
-				},
-			},
-			expectedResult: comb.Result{Val: '\f', Pos: 1},
-			expectedOK:     true,
-		},
-		{
 			name: "CarriageReturn",
 			r: comb.Result{
 				Val: comb.List{
@@ -198,6 +176,160 @@ func TestToEscapedChar(t *testing.T) {
 				},
 			},
 			expectedResult: comb.Result{Val: '\r', Pos: 1},
+			expectedOK:     true,
+		},
+		{
+			name: "Bar",
+			r: comb.Result{
+				Val: comb.List{
+					{Val: '\\', Pos: 1},
+					{Val: '|', Pos: 2},
+				},
+			},
+			expectedResult: comb.Result{Val: '|', Pos: 1},
+			expectedOK:     true,
+		},
+		{
+			name: "Dot",
+			r: comb.Result{
+				Val: comb.List{
+					{Val: '\\', Pos: 1},
+					{Val: '.', Pos: 2},
+				},
+			},
+			expectedResult: comb.Result{Val: '.', Pos: 1},
+			expectedOK:     true,
+		},
+		{
+			name: "Question",
+			r: comb.Result{
+				Val: comb.List{
+					{Val: '\\', Pos: 1},
+					{Val: '?', Pos: 2},
+				},
+			},
+			expectedResult: comb.Result{Val: '?', Pos: 1},
+			expectedOK:     true,
+		},
+		{
+			name: "Asterisk",
+			r: comb.Result{
+				Val: comb.List{
+					{Val: '\\', Pos: 1},
+					{Val: '*', Pos: 2},
+				},
+			},
+			expectedResult: comb.Result{Val: '*', Pos: 1},
+			expectedOK:     true,
+		},
+		{
+			name: "Plus",
+			r: comb.Result{
+				Val: comb.List{
+					{Val: '\\', Pos: 1},
+					{Val: '+', Pos: 2},
+				},
+			},
+			expectedResult: comb.Result{Val: '+', Pos: 1},
+			expectedOK:     true,
+		},
+		{
+			name: "Hyphen",
+			r: comb.Result{
+				Val: comb.List{
+					{Val: '\\', Pos: 1},
+					{Val: '-', Pos: 2},
+				},
+			},
+			expectedResult: comb.Result{Val: '-', Pos: 1},
+			expectedOK:     true,
+		},
+		{
+			name: "OpenningParenthesis",
+			r: comb.Result{
+				Val: comb.List{
+					{Val: '\\', Pos: 1},
+					{Val: '(', Pos: 2},
+				},
+			},
+			expectedResult: comb.Result{Val: '(', Pos: 1},
+			expectedOK:     true,
+		},
+		{
+			name: "ClosingParenthesis",
+			r: comb.Result{
+				Val: comb.List{
+					{Val: '\\', Pos: 1},
+					{Val: ')', Pos: 2},
+				},
+			},
+			expectedResult: comb.Result{Val: ')', Pos: 1},
+			expectedOK:     true,
+		},
+		{
+			name: "OpenningBracket",
+			r: comb.Result{
+				Val: comb.List{
+					{Val: '\\', Pos: 1},
+					{Val: '[', Pos: 2},
+				},
+			},
+			expectedResult: comb.Result{Val: '[', Pos: 1},
+			expectedOK:     true,
+		},
+		{
+			name: "ClosingBracket",
+			r: comb.Result{
+				Val: comb.List{
+					{Val: '\\', Pos: 1},
+					{Val: ']', Pos: 2},
+				},
+			},
+			expectedResult: comb.Result{Val: ']', Pos: 1},
+			expectedOK:     true,
+		},
+		{
+			name: "OpenningBrace",
+			r: comb.Result{
+				Val: comb.List{
+					{Val: '\\', Pos: 1},
+					{Val: '{', Pos: 2},
+				},
+			},
+			expectedResult: comb.Result{Val: '{', Pos: 1},
+			expectedOK:     true,
+		},
+		{
+			name: "ClosingBrace",
+			r: comb.Result{
+				Val: comb.List{
+					{Val: '\\', Pos: 1},
+					{Val: '}', Pos: 2},
+				},
+			},
+			expectedResult: comb.Result{Val: '}', Pos: 1},
+			expectedOK:     true,
+		},
+		{
+			name: "Caret",
+			r: comb.Result{
+				Val: comb.List{
+					{Val: '\\', Pos: 1},
+					{Val: '^', Pos: 2},
+				},
+			},
+			expectedResult: comb.Result{Val: '^', Pos: 1},
+			expectedOK:     true,
+		},
+		{
+			name: "Dollar",
+			r: comb.Result{
+				Val: comb.List{
+					{Val: '\\', Pos: 1},
+					{Val: '$', Pos: 2},
+				},
+			},
+			expectedResult: comb.Result{Val: '$', Pos: 1},
 			expectedOK:     true,
 		},
 	}
@@ -4476,7 +4608,7 @@ func TestParser_Parse(t *testing.T) {
 	}
 }
 
-//==================================================< HELPERS >==================================================
+//==================================================< MAPPERS >==================================================
 
 type MapFuncMock struct {
 	InResult  comb.Result

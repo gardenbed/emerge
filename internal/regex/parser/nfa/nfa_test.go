@@ -18,6 +18,18 @@ var testNFA = map[string]*automata.NFA{
 		AddTransition(0, 'x', 'x', []automata.State{1}).
 		Build(),
 
+	"\n": automata.NewNFABuilder().
+		SetStart(0).
+		SetFinal([]automata.State{1}).
+		AddTransition(0, '\n', '\n', []automata.State{1}).
+		Build(),
+
+	"\r": automata.NewNFABuilder().
+		SetStart(0).
+		SetFinal([]automata.State{1}).
+		AddTransition(0, '\r', '\r', []automata.State{1}).
+		Build(),
+
 	/* CHAR CLASSES */
 
 	"ws": automata.NewNFABuilder().
@@ -506,7 +518,16 @@ func TestParse(t *testing.T) {
 			expectedError: "invalid repetition range {4,2}",
 		},
 		{
-			name:  "Success",
+			name:  "Success_EscapedChars",
+			regex: `\n|\r|\r\n`,
+			expectedNFA: testNFA["\n"].Union(
+				testNFA["\r"].Union(
+					testNFA["\r"].Concat(testNFA["\n"]),
+				),
+			),
+		},
+		{
+			name:  "Success_CharRanges",
 			regex: `^[A-Z]?[a-z][0-9A-Za-z]{1,}$`,
 			expectedNFA: empty().Union(testNFA["upper"]).Concat(
 				testNFA["lower"],
