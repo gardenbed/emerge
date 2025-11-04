@@ -341,12 +341,12 @@ func advanceDFA(state int, r rune) int {
 		}
 
 	case 18:
-		switch {
-		case r == 'l':
+		switch r {
+		case 'l':
 			return 19
-		case r == 'n':
+		case 'n':
 			return 28
-		case r == 'r':
+		case 'r':
 			return 23
 		}
 
@@ -513,19 +513,14 @@ func advanceDFA(state int, r rune) int {
 		}
 
 	case 42:
-		switch {
-		case r == '"',
-			r == '\'',
-			r == '\\',
-			r == 'n',
-			r == 'r',
-			r == 't':
+		switch r {
+		case '"', '\'', '\\', 'n', 'r', 't':
 			return 43
-		case r == 'x':
+		case 'x':
 			return 44
-		case r == 'u':
+		case 'u':
 			return 47
-		case r == 'U':
+		case 'U':
 			return 52
 		}
 
