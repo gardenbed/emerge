@@ -2,6 +2,7 @@ package lexer
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"strings"
@@ -919,7 +920,36 @@ func TestLexer_evalDFA(t *testing.T) {
 			},
 		},
 		{
-			name: "IDENT_01",
+			name: "IDENT_g",
+			l: &Lexer{
+				in: &mockInputBuffer{
+					LexemeMocks: []LexemeMock{
+						{
+							OutVal: "g",
+							OutPos: lexer.Position{
+								Filename: "test",
+								Offset:   8,
+								Line:     1,
+								Column:   9,
+							},
+						},
+					},
+				},
+			},
+			state: 32,
+			expectedToken: lexer.Token{
+				Terminal: IDENT,
+				Lexeme:   "g",
+				Pos: lexer.Position{
+					Filename: "test",
+					Offset:   8,
+					Line:     1,
+					Column:   9,
+				},
+			},
+		},
+		{
+			name: "IDENT_gr",
 			l: &Lexer{
 				in: &mockInputBuffer{
 					LexemeMocks: []LexemeMock{
@@ -935,7 +965,7 @@ func TestLexer_evalDFA(t *testing.T) {
 					},
 				},
 			},
-			state: 40,
+			state: 33,
 			expectedToken: lexer.Token{
 				Terminal: IDENT,
 				Lexeme:   "gr",
@@ -948,12 +978,12 @@ func TestLexer_evalDFA(t *testing.T) {
 			},
 		},
 		{
-			name: "IDENT_02",
+			name: "IDENT_gra",
 			l: &Lexer{
 				in: &mockInputBuffer{
 					LexemeMocks: []LexemeMock{
 						{
-							OutVal: "a",
+							OutVal: "gra",
 							OutPos: lexer.Position{
 								Filename: "test",
 								Offset:   8,
@@ -964,10 +994,10 @@ func TestLexer_evalDFA(t *testing.T) {
 					},
 				},
 			},
-			state: 40,
+			state: 34,
 			expectedToken: lexer.Token{
 				Terminal: IDENT,
-				Lexeme:   "a",
+				Lexeme:   "gra",
 				Pos: lexer.Position{
 					Filename: "test",
 					Offset:   8,
@@ -977,12 +1007,12 @@ func TestLexer_evalDFA(t *testing.T) {
 			},
 		},
 		{
-			name: "IDENT_03",
+			name: "IDENT_gram",
 			l: &Lexer{
 				in: &mockInputBuffer{
 					LexemeMocks: []LexemeMock{
 						{
-							OutVal: "statement",
+							OutVal: "gram",
 							OutPos: lexer.Position{
 								Filename: "test",
 								Offset:   8,
@@ -993,10 +1023,10 @@ func TestLexer_evalDFA(t *testing.T) {
 					},
 				},
 			},
-			state: 40,
+			state: 35,
 			expectedToken: lexer.Token{
 				Terminal: IDENT,
-				Lexeme:   "statement",
+				Lexeme:   "gram",
 				Pos: lexer.Position{
 					Filename: "test",
 					Offset:   8,
@@ -1006,7 +1036,94 @@ func TestLexer_evalDFA(t *testing.T) {
 			},
 		},
 		{
-			name: "TOKEN_01",
+			name: "IDENT_gramm",
+			l: &Lexer{
+				in: &mockInputBuffer{
+					LexemeMocks: []LexemeMock{
+						{
+							OutVal: "gramm",
+							OutPos: lexer.Position{
+								Filename: "test",
+								Offset:   8,
+								Line:     1,
+								Column:   9,
+							},
+						},
+					},
+				},
+			},
+			state: 36,
+			expectedToken: lexer.Token{
+				Terminal: IDENT,
+				Lexeme:   "gramm",
+				Pos: lexer.Position{
+					Filename: "test",
+					Offset:   8,
+					Line:     1,
+					Column:   9,
+				},
+			},
+		},
+		{
+			name: "IDENT_gramma",
+			l: &Lexer{
+				in: &mockInputBuffer{
+					LexemeMocks: []LexemeMock{
+						{
+							OutVal: "gramma",
+							OutPos: lexer.Position{
+								Filename: "test",
+								Offset:   8,
+								Line:     1,
+								Column:   9,
+							},
+						},
+					},
+				},
+			},
+			state: 37,
+			expectedToken: lexer.Token{
+				Terminal: IDENT,
+				Lexeme:   "gramma",
+				Pos: lexer.Position{
+					Filename: "test",
+					Offset:   8,
+					Line:     1,
+					Column:   9,
+				},
+			},
+		},
+		{
+			name: "IDENT_stmt",
+			l: &Lexer{
+				in: &mockInputBuffer{
+					LexemeMocks: []LexemeMock{
+						{
+							OutVal: "stmt",
+							OutPos: lexer.Position{
+								Filename: "test",
+								Offset:   8,
+								Line:     1,
+								Column:   9,
+							},
+						},
+					},
+				},
+			},
+			state: 39,
+			expectedToken: lexer.Token{
+				Terminal: IDENT,
+				Lexeme:   "stmt",
+				Pos: lexer.Position{
+					Filename: "test",
+					Offset:   8,
+					Line:     1,
+					Column:   9,
+				},
+			},
+		},
+		{
+			name: "TOKEN",
 			l: &Lexer{
 				in: &mockInputBuffer{
 					LexemeMocks: []LexemeMock{
@@ -1022,7 +1139,7 @@ func TestLexer_evalDFA(t *testing.T) {
 					},
 				},
 			},
-			state: 42,
+			state: 40,
 			expectedToken: lexer.Token{
 				Terminal: TOKEN,
 				Lexeme:   "NUM",
@@ -1035,7 +1152,7 @@ func TestLexer_evalDFA(t *testing.T) {
 			},
 		},
 		{
-			name: "STRING_01",
+			name: "STRING",
 			l: &Lexer{
 				in: &mockInputBuffer{
 					LexemeMocks: []LexemeMock{
@@ -1051,7 +1168,7 @@ func TestLexer_evalDFA(t *testing.T) {
 					},
 				},
 			},
-			state: 46,
+			state: 61,
 			expectedToken: lexer.Token{
 				Terminal: STRING,
 				Lexeme:   "foo",
@@ -1064,7 +1181,7 @@ func TestLexer_evalDFA(t *testing.T) {
 			},
 		},
 		{
-			name: "REGEX_01",
+			name: "REGEX",
 			l: &Lexer{
 				in: &mockInputBuffer{
 					LexemeMocks: []LexemeMock{
@@ -1080,7 +1197,7 @@ func TestLexer_evalDFA(t *testing.T) {
 					},
 				},
 			},
-			state: 50,
+			state: 65,
 			expectedToken: lexer.Token{
 				Terminal: REGEX,
 				Lexeme:   "[a-z]+",
@@ -1108,7 +1225,7 @@ func TestLexer_evalDFA(t *testing.T) {
 					},
 				},
 			},
-			state: 51,
+			state: 66,
 			expectedToken: lexer.Token{
 				Terminal: COMMENT,
 				Lexeme:   "",
@@ -1136,7 +1253,7 @@ func TestLexer_evalDFA(t *testing.T) {
 					},
 				},
 			},
-			state: 54,
+			state: 69,
 			expectedToken: lexer.Token{
 				Terminal: COMMENT,
 				Lexeme:   "",
@@ -1189,175 +1306,213 @@ func TestLexer_evalDFA(t *testing.T) {
 
 func TestAdvanceDFA(t *testing.T) {
 	tests := []struct {
-		name          string
 		state         int
 		r             rune
 		expectedState int
 	}{
-		// Whitespace
-		{"0_Tab", 0, '\t', 1},
-		{"0_Space", 0, ' ', 1},
-		{"1_Tab", 1, '\t', 1},
-		{"1_Space", 1, ' ', 1},
+		// Whitespaces
+		{0, '\t', 1},
+		{0, ' ', 1},
+		{1, '\t', 1},
+		{1, ' ', 1},
 
-		// Newline
-		{"0_Tab", 0, '\n', 2},
-		{"0_Space", 0, '\r', 2},
-		{"2_Tab", 2, '\n', 2},
-		{"2_Space", 2, '\r', 2},
+		// Newlines
+		{0, '\n', 2},
+		{0, '\r', 2},
+		{2, '\n', 2},
+		{2, '\r', 2},
 
-		{"0_DEF", 0, '=', 3},
-		{"0_SEMI", 0, ';', 4},
-		{"0_ALT", 0, '|', 5},
-		{"0_LPAREN", 0, '(', 6},
-		{"0_RPAREN", 0, ')', 7},
-		{"0_LBRACK", 0, '[', 8},
-		{"0_RBRACK", 0, ']', 9},
-		{"0_LBRACE", 0, '{', 10},
-		{"0_RBRACE", 0, '}', 11},
-		{"10_LBRACE", 10, '{', 12},
-		{"11_RBRACE", 11, '}', 13},
-		{"0_LANGLE", 0, '<', 14},
-		{"0_RANGLE", 0, '>', 15},
+		{0, '=', 3},
+		{0, ';', 4},
+		{0, '|', 5},
+		{0, '(', 6},
+		{0, ')', 7},
+		{0, '[', 8},
+		{0, ']', 9},
+		{0, '{', 10},
+		{0, '}', 11},
+		{10, '{', 12},
+		{11, '}', 13},
+		{0, '<', 14},
+		{0, '>', 15},
 
 		// $
-		{"0_$", 0, '$', 16},
+		{0, '$', 16},
 
 		// $STRING
-		{"16_S", 16, 'S', 17},
-		{"17_T", 17, 'S', 17},
-		{"17_R", 17, 'R', 17},
-		{"17_I", 17, 'I', 17},
-		{"17_N", 17, 'N', 17},
-		{"17_G", 17, 'G', 17},
+		{16, 'S', 17},
+		{17, 'T', 17},
+		{17, 'R', 17},
+		{17, 'I', 17},
+		{17, 'N', 17},
+		{17, 'G', 17},
 
 		// @
-		{"0_@", 0, '@', 18},
+		{0, '@', 18},
 
 		// @left
-		{"18_l", 18, 'l', 19},
-		{"19_e", 19, 'e', 20},
-		{"20_f", 20, 'f', 21},
-		{"21_t", 21, 't', 22},
+		{18, 'l', 19},
+		{19, 'e', 20},
+		{20, 'f', 21},
+		{21, 't', 22},
 
 		// @ right
-		{"18_r", 18, 'r', 23},
-		{"23_i", 23, 'i', 24},
-		{"24_g", 24, 'g', 25},
-		{"25_h", 25, 'h', 26},
-		{"26_t", 26, 't', 27},
+		{18, 'r', 23},
+		{23, 'i', 24},
+		{24, 'g', 25},
+		{25, 'h', 26},
+		{26, 't', 27},
 
 		// @none
-		{"18_n", 18, 'n', 28},
-		{"28_o", 28, 'o', 29},
-		{"29_n", 29, 'n', 30},
-		{"30_e", 30, 'e', 31},
+		{18, 'n', 28},
+		{28, 'o', 29},
+		{29, 'n', 30},
+		{30, 'e', 31},
 
 		// grammar
-		{"0_g", 0, 'g', 32},
-		{"32_r", 32, 'r', 33},
-		{"33_a", 33, 'a', 34},
-		{"34_m", 34, 'm', 35},
-		{"35_m", 35, 'm', 36},
-		{"36_a", 36, 'a', 37},
-		{"37_r", 37, 'r', 38},
+		{0, 'g', 32},
+		{32, 'r', 33},
+		{33, 'a', 34},
+		{34, 'm', 35},
+		{35, 'm', 36},
+		{36, 'a', 37},
+		{37, 'r', 38},
 
-		{"32_o", 32, 'o', 40}, // go
-		{"33_e", 33, 'e', 40}, // gre
-		{"34_n", 34, 'n', 40}, // gran
-		{"35_s", 35, 's', 40}, // grams
-		{"36_o", 36, 'o', 40}, // grammo
-		{"37_t", 37, 't', 40}, // grammat
-		{"38_i", 38, 'i', 40}, // grammari
-		{"40_n", 40, 'n', 40}, // grammarian
+		{32, 'o', 39}, // go
+		{33, 'e', 39}, // gre
+		{34, 'n', 39}, // gran
+		{35, 's', 39}, // grams
+		{36, 'o', 39}, // grammo
+		{37, 't', 39}, // grammat
+		{38, 'i', 39}, // grammari
+		{39, 'n', 39}, // grammarian
 
 		// name
-		{"0_d", 0, 'n', 39},
-		{"39_e", 39, 'a', 40},
-		{"40_c", 40, 'm', 40},
-		{"40_l", 40, 'e', 40},
+		{0, 'n', 39},
+		{39, 'a', 39},
+		{39, 'm', 39},
+		{39, 'e', 39},
 
 		// NAME
-		{"0_N", 0, 'N', 41},
-		{"41_A", 41, 'A', 42},
-		{"42_M", 42, 'M', 42},
-		{"42_E", 42, 'E', 42},
+		{0, 'N', 40},
+		{40, 'A', 40},
+		{40, 'M', 40},
+		{40, 'E', 40},
+
+		// "
+		{0, '"', 41},
 
 		// "foo"
-		{"0_QUOT", 0, '"', 43},
-		{"43_f", 43, 'f', 45},
-		{"45_o", 45, 'o', 45},
-		{"45_o", 45, 'o', 45},
-		{"45_QUOT", 45, '"', 46},
+		{41, 'f', 41},
+		{41, 'o', 41},
+		{41, 'o', 41},
+		{41, '"', 61},
 
-		// "\"\\"
-		{"0_QUOT", 0, '"', 43},
-		{"43_BSOL", 43, '\\', 44},
-		{"44_QUOT", 44, '"', 45},
-		{"45_BSOL", 45, '\\', 44},
-		{"44_BSOL", 44, '\\', 45},
-		{"45_QUOT", 45, '"', 46},
+		// \
+		{41, '\\', 42},
+
+		// \" \' \\ \n \r \t
+		{42, '"', 43},
+		{42, '\'', 43},
+		{42, '\\', 43},
+		{42, 'n', 43},
+		{42, 'r', 43},
+		{42, 't', 43},
+		{43, 's', 41},
+		{43, '\\', 42},
+		{43, '"', 61},
+
+		// \xHH
+		{42, 'x', 44},
+		{44, '7', 45},
+		{45, 'F', 46},
+		{46, 's', 41},
+		{46, '\\', 42},
+		{46, '"', 61},
+
+		// \uHHHH
+		{42, 'u', 47},
+		{47, '0', 48},
+		{48, '1', 49},
+		{49, 'F', 50},
+		{50, 'D', 51},
+		{51, 's', 41},
+		{51, '\\', 42},
+		{51, '"', 61},
+
+		// \UHHHHHH
+		{42, 'U', 52},
+		{52, '0', 53},
+		{53, '0', 54},
+		{54, '0', 55},
+		{55, '1', 56},
+		{56, 'F', 57},
+		{57, '4', 58},
+		{58, '0', 59},
+		{59, '9', 60},
+		{60, 's', 41},
+		{60, '\\', 42},
+		{60, '"', 61},
+
+		// /
+		{0, '/', 62},
 
 		// /[a-z]+/
-		{"0_SOL", 0, '/', 47},
-		{"47_LSQB", 47, '[', 49},
-		{"49_a", 49, 'a', 49},
-		{"49_MINUS", 49, '-', 49},
-		{"49_z", 49, 'z', 49},
-		{"49_RSQB", 49, ']', 49},
-		{"49_PLUS", 49, '+', 49},
-		{"49_SOL", 49, '/', 50},
+		{62, '[', 64},
+		{64, 'a', 64},
+		{64, '-', 64},
+		{64, 'z', 64},
+		{64, ']', 64},
+		{64, '+', 64},
+		{64, '/', 65},
 
 		// /\{\}/
-		{"0_SOL", 0, '/', 47},
-		{"47_BSOL", 47, '\\', 48},
-		{"48_LCUB", 48, '{', 49},
-		{"49_BSOL", 49, '\\', 48},
-		{"48_RCUB", 48, '}', 49},
-		{"49_SOL", 49, '/', 50},
+		{62, '\\', 63},
+		{63, '{', 64},
+		{64, '\\', 63},
+		{63, '}', 64},
+		{64, '/', 65},
 
 		// // comment
-		{"0_SOL", 0, '/', 47},
-		{"47_SOL", 47, '/', 51},
-		{"51_Space", 51, ' ', 51},
-		{"51_c", 51, 'c', 51},
-		{"51_o", 51, 'o', 51},
-		{"51_m", 51, 'm', 51},
-		{"51_m", 51, 'm', 51},
-		{"51_e", 51, 'e', 51},
-		{"51_n", 51, 'n', 51},
-		{"51_t", 51, 't', 51},
+		{62, '/', 66},
+		{66, ' ', 66},
+		{66, 'c', 66},
+		{66, 'o', 66},
+		{66, 'm', 66},
+		{66, 'm', 66},
+		{66, 'e', 66},
+		{66, 'n', 66},
+		{66, 't', 66},
 
-		// /* foo*bar */
-		{"0_SOL", 0, '/', 47},
-		{"47_AST", 47, '*', 52},
-		{"52_Space", 52, ' ', 52},
-		{"52_f", 52, 'f', 52},
-		{"52_o", 52, 'o', 52},
-		{"52_o", 52, 'o', 52},
-		{"52_AST", 52, '*', 53},
-		{"53_b", 53, 'b', 52},
-		{"52_a", 52, 'a', 52},
-		{"52_r", 52, 'r', 52},
-		{"52_Space", 52, ' ', 52},
-		{"52_AST", 52, '*', 53},
-		{"53_SOL", 53, '/', 54},
+		// /* comment */
+		{62, '*', 67},
+		{67, ' ', 67},
+		{67, 'c', 67},
+		{67, 'o', 67},
+		{67, 'm', 67},
+		{67, 'm', 67},
+		{67, 'e', 67},
+		{67, 'n', 67},
+		{67, 't', 67},
+		{67, ' ', 67},
+		{67, '*', 68},
+		{68, '/', 69},
 
 		// ERR
-		{"0_0", 0, '0', -1},
-		{"0_1", 0, '1', -1},
-		{"0_2", 0, '2', -1},
-		{"0_3", 0, '3', -1},
-		{"0_4", 0, '4', -1},
-		{"0_5", 0, '5', -1},
-		{"0_6", 0, '6', -1},
-		{"0_7", 0, '7', -1},
-		{"0_8", 0, '8', -1},
-		{"0_9", 0, '9', -1},
+		{0, '0', -1},
+		{0, '1', -1},
+		{0, '2', -1},
+		{0, '3', -1},
+		{0, '4', -1},
+		{0, '5', -1},
+		{0, '6', -1},
+		{0, '7', -1},
+		{0, '8', -1},
+		{0, '9', -1},
 	}
 
 	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(fmt.Sprintf("%d_%c", tc.state, tc.r), func(t *testing.T) {
 			state := advanceDFA(tc.state, tc.r)
 			assert.Equal(t, tc.expectedState, state)
 		})
@@ -1370,7 +1525,11 @@ func TestLexer(t *testing.T) {
 		filename string
 	}{
 		{
-			name:     "Success",
+			name:     "EBNF",
+			filename: "../fixture/ebnf.grammar",
+		},
+		{
+			name:     "Please",
 			filename: "../fixture/please.grammar",
 		},
 	}

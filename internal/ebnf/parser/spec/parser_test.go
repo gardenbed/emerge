@@ -18,7 +18,7 @@ func TestParse(t *testing.T) {
 			name:     "Invalid",
 			filename: "../../fixture/test.invalid.grammar",
 			expectedErrorStrings: []string{
-				`lexical error at ../../fixture/test.invalid.grammar:1:1:L`,
+				`unexpected string "L": no action exists in the parsing table for ACTION[0, "TOKEN"]`,
 			},
 		},
 		{
