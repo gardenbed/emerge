@@ -115,7 +115,64 @@ func TestParse(t *testing.T) {
 			expectedLastPos:  Poses{6},
 		},
 		{
-			name:  "Success_Complex",
+			name:  "Success_EscapedChars",
+			regex: `\n|\r|\r\n`,
+			expectedAST: &AST{
+				Root: &Concat{
+					Exprs: []Node{
+						&Alt{
+							Exprs: []Node{
+								&Concat{
+									Exprs: []Node{
+										&Char{Lo: '\n', Hi: '\n', Pos: 1},
+									},
+								},
+								&Alt{
+									Exprs: []Node{
+										&Concat{
+											Exprs: []Node{
+												&Char{Lo: '\r', Hi: '\r', Pos: 2},
+											},
+										},
+										&Concat{
+											Exprs: []Node{
+												&Char{Lo: '\r', Hi: '\r', Pos: 3},
+												&Char{Lo: '\n', Hi: '\n', Pos: 4},
+											},
+										},
+									},
+								},
+							},
+						},
+						&Char{Lo: endMarker, Hi: endMarker, Pos: 5},
+					},
+				},
+				lastPos: 5,
+				posToChar: map[Pos]char.Range{
+					1: {'\n', '\n'},
+					2: {'\r', '\r'},
+					3: {'\r', '\r'},
+					4: {'\n', '\n'},
+					5: {endMarker, endMarker},
+				},
+				charToPos: map[char.Range]Poses{
+					{'\n', '\n'}:           {1, 4},
+					{'\r', '\r'}:           {2, 3},
+					{endMarker, endMarker}: {5},
+				},
+				follows: map[Pos]Poses{
+					1: {5},
+					2: {5},
+					3: {4},
+					4: {5},
+				},
+			},
+			expectedNullable: false,
+			expectedFirstPos: Poses{1, 2, 3},
+			expectedLastPos:  Poses{5},
+		},
+		{
+			name:  "Success_CharRanges",
 			regex: `^[a-f][0-9a-f]*$`,
 			expectedAST: &AST{
 				Root: &Concat{
