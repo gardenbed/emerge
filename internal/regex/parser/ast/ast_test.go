@@ -8,7 +8,7 @@ import (
 	"github.com/moorara/algo/automata"
 	"github.com/moorara/algo/parser/combinator"
 
-	"github.com/gardenbed/emerge/internal/regex/char"
+	"github.com/gardenbed/emerge/internal/char"
 )
 
 func TestParse(t *testing.T) {

@@ -112,8 +112,8 @@ a  b  c  d  e  f  g  h  i  j  k  l  m  n  o  p  q  r  s  t  u  v  w  x  y  z
 | `GRAMMER` | `"grammar"` | Keyword for declaring grammar name |
 | `IDENT`   | `/[a-z][0-9a-z_]*/` | Regex for grammar name and *non-terminal* symbols |
 | `TOKEN`   | `/[A-Z][0-9A-Z_]*/` | Regex for declaring and referencing *terminal* symbols |
-| `STRING`  | `/"([\x21\x23-\x5B\x5D-\x7E]\|\\[\x21-\x7E])+"/` | Regex for defining *string* patterns |
-| `REGEX`   | `/\/([\x20-\x2E\x30-\x5B\x5D-\x7E]\|\\[\x20-\x7E])*\//` | Regex for defining *regular expression* patterns |
+| `STRING`  | `/"([^\\"]\|\\[\\"'tnr]\|\\x[0-9A-Fa-f]{2}\|\\u[0-9A-Fa-f]{4}\|\\U[0-9A-Fa-f]{8})*"/` | Regex for defining *strings* |
+| `REGEX`   | `/\/([^\/\\*]\|\\.)([^\/\\]\|\\.)*\//` | Regex for defining *regular expressions* |
 {% endraw %}
 
 ### Grammar
