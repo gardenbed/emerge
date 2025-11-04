@@ -204,10 +204,10 @@ func TestSymbolTable_Definitions(t *testing.T) {
 			name: "OK",
 			st:   st,
 			expectedDefinitions: []*TerminalDef{
-				{Terminal: ";", Value: ";", IsRegex: false},
-				{Terminal: "if", Value: "if", IsRegex: false},
-				{Terminal: "ID", Value: "[A-Za-z_][0-9A-Za-z_]*", IsRegex: true},
-				{Terminal: "NUM", Value: "[0-9]+", IsRegex: true},
+				{Terminal: ";", Kind: StringDef, Value: ";"},
+				{Terminal: "if", Kind: StringDef, Value: "if"},
+				{Terminal: "ID", Kind: RegexDef, Value: "[A-Za-z_][0-9A-Za-z_]*"},
+				{Terminal: "NUM", Kind: RegexDef, Value: "[0-9]+"},
 			},
 		},
 	}
@@ -221,8 +221,8 @@ func TestSymbolTable_Definitions(t *testing.T) {
 			for i, expectedDef := range tc.expectedDefinitions {
 				t.Run(fmt.Sprintf("DFA[%d]", i), func(t *testing.T) {
 					assert.True(t, defs[i].Terminal.Equal(expectedDef.Terminal))
+					assert.Equal(t, expectedDef.Kind, defs[i].Kind)
 					assert.Equal(t, expectedDef.Value, defs[i].Value)
-					assert.Equal(t, expectedDef.IsRegex, defs[i].IsRegex)
 				})
 			}
 		})
@@ -383,7 +383,7 @@ func TestSymbolTable_AddStringTokenDef(t *testing.T) {
 
 			assert.True(t, def.Terminal.Equal(tc.token))
 			assert.Equal(t, tc.value, e.definitions[0].Value)
-			assert.False(t, e.definitions[0].IsRegex)
+			assert.Equal(t, StringDef, e.definitions[0].Kind)
 			assert.True(t, def.Pos.Equal(*tc.pos))
 		})
 	}
@@ -423,7 +423,7 @@ func TestSymbolTable_AddRegexTokenDef(t *testing.T) {
 
 			assert.True(t, def.Terminal.Equal(tc.token))
 			assert.Equal(t, tc.regex, e.definitions[0].Value)
-			assert.True(t, e.definitions[0].IsRegex)
+			assert.Equal(t, RegexDef, e.definitions[0].Kind)
 			assert.True(t, def.Pos.Equal(*tc.pos))
 		})
 	}
@@ -473,7 +473,7 @@ func TestSymbolTable_AddStringTerminal(t *testing.T) {
 			assert.Len(t, e.definitions, 1)
 			assert.True(t, e.definitions[0].Terminal.Equal(tc.a))
 			assert.Equal(t, string(tc.a), e.definitions[0].Value)
-			assert.False(t, e.definitions[0].IsRegex)
+			assert.Equal(t, StringDef, e.definitions[0].Kind)
 			assert.Nil(t, e.definitions[0].Pos)
 			assert.Contains(t, e.occurrences, tc.pos)
 		})

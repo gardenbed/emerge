@@ -14,7 +14,24 @@ import (
 	"github.com/moorara/algo/symboltable"
 )
 
+// start is always the start symbol of an EBNF grammar by convention.
 const start = grammar.NonTerminal("start")
+
+// TerminalDefKind indicates whether a terminal definition is based on a string or a regex.
+type TerminalDefKind int
+
+const (
+	StringDef TerminalDefKind = iota
+	RegexDef
+)
+
+// TerminalDef represents a terminal symbol along with a deterministic finite automaton (DFA) for recognizing it.
+type TerminalDef struct {
+	grammar.Terminal
+	Kind  TerminalDefKind
+	Value string
+	Pos   *lexer.Position
+}
 
 type (
 	// SymbolTable is used by an EBNF parser during parsing.
@@ -78,14 +95,6 @@ type (
 		Plus  grammar.NonTerminal
 	}
 )
-
-// TerminalDef represents a terminal symbol along with a deterministic finite automaton (DFA) for recognizing it.
-type TerminalDef struct {
-	grammar.Terminal
-	Value   string
-	IsRegex bool
-	Pos     *lexer.Position
-}
 
 // NewSymbolTable creates a new SymbolTable for an EBNF parser.
 func NewSymbolTable() *SymbolTable {
@@ -167,7 +176,8 @@ func (t *SymbolTable) Verify() error {
 	return errs.ErrorOrNil()
 }
 
-// ensureSingleDefs ensures every terminal has one and only one definition.
+// ensureSingleDefs verifies that each terminal has exactly one definition.
+// It reports an error if a terminal is missing a definition or has multiple definitions.
 func (t *SymbolTable) ensureSingleDefs() error {
 	var errs error
 
@@ -188,7 +198,8 @@ func (t *SymbolTable) ensureSingleDefs() error {
 	return errs
 }
 
-// ensureDistinctDefs ensures every terminal definition has a distinct value.
+// ensureDistinctDefs verifies that terminal definitions use distinct values.
+// It reports an error when more than one terminal is defined with the same value.
 func (t *SymbolTable) ensureDistinctDefs() error {
 	var errs error
 
@@ -249,12 +260,11 @@ func (t *SymbolTable) Definitions() []*TerminalDef {
 		}
 	}
 
-	// Sort terminals, placing string-based terminals before regex-based ones
-	// and shorter terminals before longer ones.
+	// Sort terminals, placing string-based terminals before regex-based ones and shorter terminals before longer ones.
 	sort.Quick(defs, func(lhs, rhs *TerminalDef) int {
-		if !lhs.IsRegex && rhs.IsRegex {
+		if lhs.Kind == StringDef && rhs.Kind == RegexDef {
 			return -1
-		} else if lhs.IsRegex && !rhs.IsRegex {
+		} else if lhs.Kind == RegexDef && rhs.Kind == StringDef {
 			return 1
 		}
 
@@ -317,7 +327,7 @@ func (t *SymbolTable) AddPrecedence(p *lr.PrecedenceLevel) {
 	t.precedences.list = append(t.precedences.list, p)
 }
 
-// AddStringTokenDef adds a new token definition based on a string value to the symbol table.
+// AddStringTokenDef adds a token definition with a string value to the symbol table.
 func (t *SymbolTable) AddStringTokenDef(token grammar.Terminal, value string, pos *lexer.Position) {
 	t.Lock()
 	defer t.Unlock()
@@ -337,14 +347,13 @@ func (t *SymbolTable) AddStringTokenDef(token grammar.Terminal, value string, po
 
 	e.definitions = append(e.definitions, &TerminalDef{
 		Terminal: token,
+		Kind:     StringDef,
 		Value:    value,
-		IsRegex:  false,
 		Pos:      pos,
 	})
 }
 
-// AddRegexTokenDef adds a new token definition based on a regex value to the symbol table.
-// It returns an error if any DFA construction fails.
+// AddRegexTokenDef adds a token definition with a regex value to the symbol table.
 func (t *SymbolTable) AddRegexTokenDef(token grammar.Terminal, regex string, pos *lexer.Position) {
 	t.Lock()
 	defer t.Unlock()
@@ -364,14 +373,18 @@ func (t *SymbolTable) AddRegexTokenDef(token grammar.Terminal, regex string, pos
 
 	e.definitions = append(e.definitions, &TerminalDef{
 		Terminal: token,
+		Kind:     RegexDef,
 		Value:    regex,
-		IsRegex:  true,
 		Pos:      pos,
 	})
 }
 
-// AddStringTerminal adds a terminal symbol, defined by its string value, to the symbol table.
-// If the terminal symbol already exists, the position is added to its occurrences.
+// AddStringTerminal records an occurrence of a terminal symbol referenced by its string value in the symbol table.
+//
+// Because the terminal is referenced by its string value,
+// if the terminal does not yet have a definition in the table, a new terminal definition is created.
+// If the terminal already have a definition in the table,
+// the position of the new occurrence is appended to its occurrences.
 func (t *SymbolTable) AddStringTerminal(a grammar.Terminal, pos *lexer.Position) {
 	t.Lock()
 	defer t.Unlock()
@@ -384,8 +397,10 @@ func (t *SymbolTable) AddStringTerminal(a grammar.Terminal, pos *lexer.Position)
 	t.terminals.counter++
 	def := &TerminalDef{
 		Terminal: a,
+		Kind:     StringDef,
 		Value:    string(a),
-		IsRegex:  false,
+		// Pos will not be set because the same terminal can be referenced by its string in multiple places,
+		// so there is no single position to associate with the definition.
 	}
 
 	t.terminals.table.Put(a, &terminalEntry{
@@ -395,8 +410,13 @@ func (t *SymbolTable) AddStringTerminal(a grammar.Terminal, pos *lexer.Position)
 	})
 }
 
-// AddTokenTerminal adds a terminal symbol, referenced by its token name, to the symbol table.
-// If the terminal symbol already exists, the position is added to its occurrences.
+// AddTokenTerminal records an occurrence of a terminal symbol referenced by its token name in the symbol table.
+//
+// If the terminal already have a definition in the table,
+// the position of the new occurrence is appended to its occurrences.
+// If the terminal does not yet have a definition in the table,
+// a new entry is created with an empty list of definitions and the occurrence position;
+// the terminal's actual definition will be added later when it is encountered during parsing.
 func (t *SymbolTable) AddTokenTerminal(a grammar.Terminal, pos *lexer.Position) {
 	t.Lock()
 	defer t.Unlock()
@@ -410,7 +430,7 @@ func (t *SymbolTable) AddTokenTerminal(a grammar.Terminal, pos *lexer.Position) 
 
 	t.terminals.table.Put(a, &terminalEntry{
 		index:       t.terminals.counter,
-		definitions: []*TerminalDef{},
+		definitions: []*TerminalDef{}, // The actual definition will be added later, when it is encountered during parsing.
 		occurrences: []*lexer.Position{pos},
 	})
 }
