@@ -15,7 +15,7 @@ func TestSpec_DFA(t *testing.T) {
 		name                   string
 		s                      *Spec
 		expectedDFA            *automata.DFA
-		expectedTerminalFinals []TerminalFinal
+		expectedTerminalFinals []FinalTerminalAssociation
 		expectedErrorStrings   []string
 	}{
 		{
@@ -87,26 +87,30 @@ func TestSpec_DFA(t *testing.T) {
 				AddTransition(5, '_', '_', 3).
 				AddTransition(5, 'a', 'z', 3).
 				Build(),
-			expectedTerminalFinals: []TerminalFinal{
+			expectedTerminalFinals: []FinalTerminalAssociation{
 				{
-					Kind:     RegexDef,
-					Terminal: "NUM",
 					Final:    automata.NewStates(1),
-				},
-				{
-					Kind:     StringDef,
-					Terminal: ";",
-					Final:    automata.NewStates(2),
-				},
-				{
+					Terminal: "NUM",
 					Kind:     RegexDef,
-					Terminal: "ID",
-					Final:    automata.NewStates(3, 4),
+					Value:    "[0-9]+",
 				},
 				{
+					Final:    automata.NewStates(2),
+					Terminal: ";",
 					Kind:     StringDef,
-					Terminal: "if",
+					Value:    ";",
+				},
+				{
+					Final:    automata.NewStates(3, 4),
+					Terminal: "ID",
+					Kind:     RegexDef,
+					Value:    "[A-Za-z_][0-9A-Za-z_]*",
+				},
+				{
 					Final:    automata.NewStates(5),
+					Terminal: "if",
+					Kind:     StringDef,
+					Value:    "if",
 				},
 			},
 			expectedErrorStrings: nil,
@@ -123,9 +127,10 @@ func TestSpec_DFA(t *testing.T) {
 
 				assert.Len(t, termMap, len(tc.expectedTerminalFinals))
 				for i, expectedTerminalFinal := range tc.expectedTerminalFinals {
-					assert.Equal(t, expectedTerminalFinal.Kind, termMap[i].Kind)
-					assert.Equal(t, expectedTerminalFinal.Terminal, termMap[i].Terminal)
 					assert.True(t, termMap[i].Final.Equal(expectedTerminalFinal.Final))
+					assert.Equal(t, expectedTerminalFinal.Terminal, termMap[i].Terminal)
+					assert.Equal(t, expectedTerminalFinal.Kind, termMap[i].Kind)
+					assert.Equal(t, expectedTerminalFinal.Value, termMap[i].Value)
 				}
 			} else {
 				assert.Nil(t, dfa)

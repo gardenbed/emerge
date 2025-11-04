@@ -31,7 +31,7 @@ type Spec struct {
 // for recognizing all terminal symbols (tokens) in the grammar of the spec.
 //
 // The second return value associates each terminal to its set of final states in the DFA.
-func (s *Spec) DFA() (*automata.DFA, []TerminalFinal, error) {
+func (s *Spec) DFA() (*automata.DFA, []FinalTerminalAssociation, error) {
 	errs := &errors.MultiError{
 		Format: errors.BulletErrorFormat,
 	}
@@ -107,16 +107,17 @@ func (s *Spec) DFA() (*automata.DFA, []TerminalFinal, error) {
 	}
 
 	// Associate final states back to a single terminal.
-	termFinals := make([]TerminalFinal, 0, defToFinals.Size())
+	assocs := make([]FinalTerminalAssociation, 0, defToFinals.Size())
 	for def, finals := range defToFinals.All() {
-		termFinals = append(termFinals, TerminalFinal{
-			Kind:     def.Kind,
-			Terminal: def.Terminal,
+		assocs = append(assocs, FinalTerminalAssociation{
 			Final:    automata.NewStates(finals...),
+			Terminal: def.Terminal,
+			Kind:     def.Kind,
+			Value:    def.Value,
 		})
 	}
 
-	sort.Quick(termFinals, func(lhs, rhs TerminalFinal) int {
+	sort.Quick(assocs, func(lhs, rhs FinalTerminalAssociation) int {
 		return automata.CmpStates(lhs.Final, rhs.Final)
 	})
 
@@ -124,14 +125,15 @@ func (s *Spec) DFA() (*automata.DFA, []TerminalFinal, error) {
 		return nil, nil, err
 	}
 
-	return dfa, termFinals, nil
+	return dfa, assocs, nil
 }
 
-// TerminalFinal associates a terminal with its set of final states in a DFA.
-type TerminalFinal struct {
-	Kind     TerminalDefKind
-	Terminal grammar.Terminal
+// FinalTerminalAssociation associates a terminal with its set of final states in a DFA.
+type FinalTerminalAssociation struct {
 	Final    automata.States
+	Terminal grammar.Terminal
+	Kind     TerminalDefKind
+	Value    string
 }
 
 func stringToDFA(value string) *automata.DFA {
