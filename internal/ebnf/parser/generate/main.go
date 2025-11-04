@@ -1,3 +1,5 @@
+// Generates the parsing table used by the EBNF parser.
+// Temporary bootstrap: once Emerge can generate this itself, this program can be removed.
 package main
 
 import (
