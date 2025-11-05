@@ -19,6 +19,44 @@ import (
 	"github.com/gardenbed/emerge/internal/regex/parser/nfa"
 )
 
+var (
+	// whitespaces defines the set of Unicode whitespace characters.
+	whitespaces = []automata.Symbol{
+		'\t',   // Horizontal Tab
+		'\n',   // Line Feed (LF)
+		'\r',   // Carriage Return (CR)
+		' ',    // Standard Space
+		0x0085, // Next Line (NEL)
+		0x00A0, // No-Break Space (NBSP)
+		0x1680, // Ogham Space Mark
+		0x2000, // En Quad
+		0x2001, // Em Quad
+		0x2002, // En Space
+		0x2003, // Em Space
+		0x2004, // Three-Per-Em Space
+		0x2005, // Four-Per-Em Space
+		0x2006, // Six-Per-Em Space
+		0x2007, // Figure Space
+		0x2008, // Punctuation Space
+		0x2009, // Thin Space
+		0x200A, // Hair Space
+		0x2028, // Line Separator (LS)
+		0x2029, // Paragraph Separator (PS)
+		0x202F, // Narrow No-Break Space (NNBSP)
+		0x205F, // Medium Mathematical Space
+		0x3000, // Ideographic Space
+	}
+
+	// wsTerminalDef defines the terminal for whitespace characters.
+	// This is a special Terminal used by the lexer.
+	// Pos is not set as this definition is synthetic.
+	wsTerminalDef = &TerminalDef{
+		Terminal: grammar.Terminal("WS"),
+		Kind:     StringDef,
+		Value:    "",
+	}
+)
+
 // Spec contains the result of a successful input parsing.
 type Spec struct {
 	Name        string
@@ -27,11 +65,11 @@ type Spec struct {
 	Precedences lr.PrecedenceLevels
 }
 
-// DFA constructs a deterministic finite automaton (DFA)
+// BuildLexerDFA constructs a single deterministic finite automaton (DFA)
 // for recognizing all terminal symbols (tokens) in the grammar of the spec.
 //
 // The second return value associates each terminal to its set of final states in the DFA.
-func (s *Spec) DFA() (*automata.DFA, []FinalTerminalAssociation, error) {
+func (s *Spec) BuildLexerDFA() (*automata.DFA, []FinalTerminalAssociation, error) {
 	errs := &errors.MultiError{
 		Format: errors.BulletErrorFormat,
 	}
@@ -54,6 +92,30 @@ func (s *Spec) DFA() (*automata.DFA, []FinalTerminalAssociation, error) {
 	if err := errs.ErrorOrNil(); err != nil {
 		return nil, nil, err
 	}
+
+	// Get runners for all DFAs.
+	runners := generic.Transform(ds, func(d *automata.DFA) *automata.DFARunner {
+		return d.Runner()
+	})
+
+	// Find whitespace characters that are not accepted by any terminal DFA.
+	// This effectively excludes whitespace characters that are explicitly handled by the grammar.
+	unusedWS := generic.SelectMatch(whitespaces, func(ws automata.Symbol) bool {
+		return !generic.AnyMatch(runners, func(r *automata.DFARunner) bool {
+			return r.Accept(automata.String{ws})
+		})
+	})
+
+	// Build a DFA for the unused whitespace characters.
+	b := automata.NewDFABuilder().SetStart(0).SetFinal([]automata.State{1})
+	for _, ws := range unusedWS {
+		b.AddTransition(0, ws, ws, 1)
+		b.AddTransition(1, ws, ws, 1)
+	}
+
+	// Prepend the terminal definition and whitespace DFA to the appropriate lists.
+	s.Definitions = append([]*TerminalDef{wsTerminalDef}, s.Definitions...)
+	ds = append([]*automata.DFA{b.Build()}, ds...)
 
 	// Combine multiple DFAs into one, preserving state mappings.
 	dfa, finalMap := automata.UnionDFA(ds...)

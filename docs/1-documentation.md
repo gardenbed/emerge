@@ -48,9 +48,10 @@ the lexer automaton may recognize more than one token in a final state.
 Tokens defined by string values take precedence over those defined by regular expressions.
 If multiple tokens share the same string value, lexer generation fails.
 
-**Whitespaces** (*space*, *tab*, *newline*, *carriage return*) is automatically discarded unless matched by a token.
-If any token explicitly matches a whitespace, the lexer does not handle it automatically.
-Unmatched whitespaces is always discarded.
+**Whitespaces** (space, tab, newline, carriage return, and all Unicode spacing and breaking characters)
+are skipped by the lexer by default — you do not need to handle them in your grammar.
+If you define a token that matches whitespace, only the characters matched by that token are emitted;
+any remaining whitespace is still ignored.
 
 ### Non-Terminals
 

@@ -17,6 +17,10 @@ import (
 // start is always the start symbol of an EBNF grammar by convention.
 const start = grammar.NonTerminal("start")
 
+// reservedTerminals lists terminal names that are reserved and cannot be used in the grammar.
+// These names should match those defined and used in "internal/generator/golang/templates/lexer.go.tmpl".
+var reservedTerminals = []grammar.Terminal{"ERR", "WS"}
+
 // TerminalDefKind indicates whether a terminal definition is based on a string or a regex.
 type TerminalDefKind int
 
@@ -161,6 +165,10 @@ func (t *SymbolTable) Verify() error {
 		Format: errors.BulletErrorFormat,
 	}
 
+	if err := t.ensureValidTerminals(); err != nil {
+		errs = errors.Append(errs, err)
+	}
+
 	if err := t.ensureSingleDefs(); err != nil {
 		errs = errors.Append(errs, err)
 	}
@@ -174,6 +182,22 @@ func (t *SymbolTable) Verify() error {
 	}
 
 	return errs.ErrorOrNil()
+}
+
+// ensureValidTerminals verifies that no terminal uses a reserved name.
+// It reports an error if a reserved terminal name is found.
+func (t *SymbolTable) ensureValidTerminals() error {
+	var errs error
+
+	for a := range t.terminals.table.All() {
+		if generic.Contains(reservedTerminals, grammar.EqTerminal, a) {
+			errs = errors.Append(errs,
+				fmt.Errorf("terminal name %s is reserved", a),
+			)
+		}
+	}
+
+	return errs
 }
 
 // ensureSingleDefs verifies that each terminal has exactly one definition.
@@ -547,6 +571,9 @@ func (t *SymbolTable) GetPlus(s Strings) grammar.NonTerminal {
 	return plus
 }
 
+// mapStringToNoneTerminal generates a non-terminal name based on the provided list of grammar strings and a suffix.
+// If the list contains a single grammar symbol, its name is used as part of the generated name.
+// Otherwise, a generic name with a unique index is created.
 func (t *SymbolTable) mapStringToNoneTerminal(s Strings, suffix string) grammar.NonTerminal {
 	var name string
 
@@ -554,9 +581,8 @@ func (t *SymbolTable) mapStringToNoneTerminal(s Strings, suffix string) grammar.
 		switch v := s[0][0].(type) {
 		case grammar.NonTerminal:
 			name = string(v)
-
 		case grammar.Terminal:
-			name = terminalNames[v]
+			name = terminalAliases[v]
 		}
 	}
 
@@ -570,7 +596,10 @@ func (t *SymbolTable) mapStringToNoneTerminal(s Strings, suffix string) grammar.
 	return grammar.NonTerminal(name)
 }
 
-var terminalNames = map[grammar.Terminal]string{
+// terminalAliases maps common terminal symbols to short, human-readable aliases.
+// These aliases are used when auto-generating names for synthetic non-terminal symbols that
+// represent a grouping, an optional string, a Kleene star (zero or more), or a Kleene plus (one or more).
+var terminalAliases = map[grammar.Terminal]string{
 	"\t": "tab",
 	"\n": "newline",
 	" ":  "space",
