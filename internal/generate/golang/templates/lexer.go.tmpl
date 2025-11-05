@@ -4,10 +4,8 @@ const (
 )
 
 const (
-	ERR     = Terminal("ERR")     // ERR is the error token.
-	WS      = Terminal("WS")      // WS is the token for whitespace characters.
-	EOL     = Terminal("EOL")     // EOL is the token for newline characters.
-	COMMENT = Terminal("COMMENT") // COMMENT is the token for single-line and multi-line comments.
+	ERR = Terminal("ERR") // ERR is the error token.
+	WS  = Terminal("WS")  // WS is the token for Unicode whitespace characters.
 )
 
 // Lexer is the lexical analyzer, a.k.a. scanner.
@@ -50,8 +48,8 @@ func (l *Lexer) NextToken() (Token, error) {
 			switch token.Terminal {
 			case ERR:
 				return Token{}, errors.New(token.Lexeme)
-			case WS, EOL, COMMENT:
-				// Skip whitespaces, newlines, and comments.
+			case WS:
+				// Skip whitespaces
 				return l.NextToken()
 			default:
 				return token, nil

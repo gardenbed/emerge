@@ -168,8 +168,8 @@ type coreData struct {
 func (g *generator) generateLexer() error {
 	g.Infof(hotPink, "     Generating the lexer ...")
 
-	g.Infof(hotPink, "       Constructing Automaton ...")
-	dfa, assocs, err := g.Spec.DFA()
+	g.Infof(hotPink, "       Constructing finite automaton ...")
+	dfa, assocs, err := g.Spec.BuildLexerDFA()
 	if err != nil {
 		return err
 	}

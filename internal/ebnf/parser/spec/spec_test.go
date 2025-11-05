@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSpec_DFA(t *testing.T) {
+func TestSpec_BuildLexerDFA(t *testing.T) {
 	tests := []struct {
 		name                   string
 		s                      *Spec
@@ -63,51 +63,79 @@ func TestSpec_DFA(t *testing.T) {
 			},
 			expectedDFA: automata.NewDFABuilder().
 				SetStart(0).
-				SetFinal([]automata.State{1, 2, 3, 4, 5}).
-				AddTransition(0, '0', '9', 1).
-				AddTransition(1, '0', '9', 1).
-				AddTransition(0, ';', ';', 2).
-				AddTransition(0, 'A', 'Z', 3).
-				AddTransition(0, '_', '_', 3).
-				AddTransition(0, 'a', 'h', 3).
-				AddTransition(0, 'j', 'z', 3).
-				AddTransition(0, 'i', 'i', 4).
-				AddTransition(3, '0', '9', 3).
-				AddTransition(3, 'A', 'Z', 3).
-				AddTransition(3, '_', '_', 3).
-				AddTransition(3, 'a', 'z', 3).
-				AddTransition(4, '0', '9', 3).
-				AddTransition(4, 'A', 'Z', 3).
-				AddTransition(4, '_', '_', 3).
-				AddTransition(4, 'a', 'e', 3).
-				AddTransition(4, 'g', 'z', 3).
-				AddTransition(4, 'f', 'f', 5).
-				AddTransition(5, '0', '9', 3).
-				AddTransition(5, 'A', 'Z', 3).
-				AddTransition(5, '_', '_', 3).
-				AddTransition(5, 'a', 'z', 3).
+				SetFinal([]automata.State{1, 2, 3, 4, 5, 6}).
+				AddTransition(0, '\t', '\n', 1).
+				AddTransition(0, '\r', '\r', 1).
+				AddTransition(0, ' ', ' ', 1).
+				AddTransition(0, 0x0085, 0x0085, 1).
+				AddTransition(0, 0x00A0, 0x00A0, 1).
+				AddTransition(0, 0x1680, 0x1680, 1).
+				AddTransition(0, 0x2000, 0x200A, 1).
+				AddTransition(0, 0x2028, 0x2029, 1).
+				AddTransition(0, 0x202F, 0x202F, 1).
+				AddTransition(0, 0x205F, 0x205F, 1).
+				AddTransition(0, 0x3000, 0x3000, 1).
+				AddTransition(1, '\t', '\n', 1).
+				AddTransition(1, '\r', '\r', 1).
+				AddTransition(1, ' ', ' ', 1).
+				AddTransition(1, 0x0085, 0x0085, 1).
+				AddTransition(1, 0x00A0, 0x00A0, 1).
+				AddTransition(1, 0x1680, 0x1680, 1).
+				AddTransition(1, 0x2000, 0x200A, 1).
+				AddTransition(1, 0x2028, 0x2029, 1).
+				AddTransition(1, 0x202F, 0x202F, 1).
+				AddTransition(1, 0x205F, 0x205F, 1).
+				AddTransition(1, 0x3000, 0x3000, 1).
+				AddTransition(0, '0', '9', 2).
+				AddTransition(2, '0', '9', 2).
+				AddTransition(0, ';', ';', 3).
+				AddTransition(0, 'A', 'Z', 4).
+				AddTransition(0, '_', '_', 4).
+				AddTransition(0, 'a', 'h', 4).
+				AddTransition(0, 'j', 'z', 4).
+				AddTransition(0, 'i', 'i', 5).
+				AddTransition(4, '0', '9', 4).
+				AddTransition(4, 'A', 'Z', 4).
+				AddTransition(4, '_', '_', 4).
+				AddTransition(4, 'a', 'z', 4).
+				AddTransition(5, '0', '9', 4).
+				AddTransition(5, 'A', 'Z', 4).
+				AddTransition(5, '_', '_', 4).
+				AddTransition(5, 'a', 'e', 4).
+				AddTransition(5, 'g', 'z', 4).
+				AddTransition(5, 'f', 'f', 6).
+				AddTransition(6, '0', '9', 4).
+				AddTransition(6, 'A', 'Z', 4).
+				AddTransition(6, '_', '_', 4).
+				AddTransition(6, 'a', 'z', 4).
 				Build(),
 			expectedTerminalFinals: []FinalTerminalAssociation{
 				{
 					Final:    automata.NewStates(1),
+					Terminal: "WS",
+					Kind:     StringDef,
+					Value:    "",
+				},
+				{
+					Final:    automata.NewStates(2),
 					Terminal: "NUM",
 					Kind:     RegexDef,
 					Value:    "[0-9]+",
 				},
 				{
-					Final:    automata.NewStates(2),
+					Final:    automata.NewStates(3),
 					Terminal: ";",
 					Kind:     StringDef,
 					Value:    ";",
 				},
 				{
-					Final:    automata.NewStates(3, 4),
+					Final:    automata.NewStates(4, 5),
 					Terminal: "ID",
 					Kind:     RegexDef,
 					Value:    "[A-Za-z_][0-9A-Za-z_]*",
 				},
 				{
-					Final:    automata.NewStates(5),
+					Final:    automata.NewStates(6),
 					Terminal: "if",
 					Kind:     StringDef,
 					Value:    "if",
@@ -119,7 +147,7 @@ func TestSpec_DFA(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			dfa, termMap, err := tc.s.DFA()
+			dfa, termMap, err := tc.s.BuildLexerDFA()
 
 			if len(tc.expectedErrorStrings) == 0 {
 				assert.NoError(t, err)

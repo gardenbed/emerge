@@ -38,41 +38,49 @@ func TestSymbolTable_Reset(t *testing.T) {
 
 func TestSymbolTable_Verify(t *testing.T) {
 	st0 := NewSymbolTable()
-	st0.AddTokenTerminal("QUOT", &lexer.Position{Filename: "test", Offset: 30, Line: 4, Column: 10})
+	st0.AddStringTokenDef("ERR", "error", &lexer.Position{Filename: "test", Offset: 10, Line: 2, Column: 1})
+	st0.AddRegexTokenDef("WS", "\\t", &lexer.Position{Filename: "test", Offset: 20, Line: 3, Column: 1})
 	st0.AddProduction(
 		&grammar.Production{Head: "start", Body: grammar.String[grammar.Symbol]{grammar.NonTerminal("QUOT")}},
 		&lexer.Position{Filename: "test", Offset: 60, Line: 6, Column: 1},
 	)
 
 	st1 := NewSymbolTable()
-	st1.AddStringTokenDef("QUOT", "'", &lexer.Position{Filename: "test", Offset: 10, Line: 2, Column: 1})
-	st1.AddStringTokenDef("QUOT", "\"", &lexer.Position{Filename: "test", Offset: 20, Line: 3, Column: 1})
+	st1.AddTokenTerminal("QUOT", &lexer.Position{Filename: "test", Offset: 30, Line: 4, Column: 10})
 	st1.AddProduction(
 		&grammar.Production{Head: "start", Body: grammar.String[grammar.Symbol]{grammar.NonTerminal("QUOT")}},
 		&lexer.Position{Filename: "test", Offset: 60, Line: 6, Column: 1},
 	)
 
 	st2 := NewSymbolTable()
-	st2.AddStringTokenDef("INT", "[0-9]+", &lexer.Position{Filename: "test", Offset: 10, Line: 2, Column: 1})
-	st2.AddRegexTokenDef("NUM", "[0-9]+", &lexer.Position{Filename: "test", Offset: 20, Line: 3, Column: 1})
-	st2.AddTokenTerminal("NUM", &lexer.Position{Filename: "test", Offset: 40, Line: 5, Column: 12})
+	st2.AddStringTokenDef("QUOT", "'", &lexer.Position{Filename: "test", Offset: 10, Line: 2, Column: 1})
+	st2.AddStringTokenDef("QUOT", "\"", &lexer.Position{Filename: "test", Offset: 20, Line: 3, Column: 1})
 	st2.AddProduction(
 		&grammar.Production{Head: "start", Body: grammar.String[grammar.Symbol]{grammar.NonTerminal("QUOT")}},
 		&lexer.Position{Filename: "test", Offset: 60, Line: 6, Column: 1},
 	)
 
 	st3 := NewSymbolTable()
-	st3.AddStringTokenDef("QUOT", "\"", &lexer.Position{Filename: "test", Offset: 10, Line: 2, Column: 1})
+	st3.AddStringTokenDef("INT", "[0-9]+", &lexer.Position{Filename: "test", Offset: 10, Line: 2, Column: 1})
 	st3.AddRegexTokenDef("NUM", "[0-9]+", &lexer.Position{Filename: "test", Offset: 20, Line: 3, Column: 1})
-	st3.AddTokenTerminal("QUOT", &lexer.Position{Filename: "test", Offset: 30, Line: 4, Column: 10})
 	st3.AddTokenTerminal("NUM", &lexer.Position{Filename: "test", Offset: 40, Line: 5, Column: 12})
+	st3.AddProduction(
+		&grammar.Production{Head: "start", Body: grammar.String[grammar.Symbol]{grammar.NonTerminal("QUOT")}},
+		&lexer.Position{Filename: "test", Offset: 60, Line: 6, Column: 1},
+	)
 
 	st4 := NewSymbolTable()
 	st4.AddStringTokenDef("QUOT", "\"", &lexer.Position{Filename: "test", Offset: 10, Line: 2, Column: 1})
 	st4.AddRegexTokenDef("NUM", "[0-9]+", &lexer.Position{Filename: "test", Offset: 20, Line: 3, Column: 1})
 	st4.AddTokenTerminal("QUOT", &lexer.Position{Filename: "test", Offset: 30, Line: 4, Column: 10})
 	st4.AddTokenTerminal("NUM", &lexer.Position{Filename: "test", Offset: 40, Line: 5, Column: 12})
-	st4.AddProduction(
+
+	st5 := NewSymbolTable()
+	st5.AddStringTokenDef("QUOT", "\"", &lexer.Position{Filename: "test", Offset: 10, Line: 2, Column: 1})
+	st5.AddRegexTokenDef("NUM", "[0-9]+", &lexer.Position{Filename: "test", Offset: 20, Line: 3, Column: 1})
+	st5.AddTokenTerminal("QUOT", &lexer.Position{Filename: "test", Offset: 30, Line: 4, Column: 10})
+	st5.AddTokenTerminal("NUM", &lexer.Position{Filename: "test", Offset: 40, Line: 5, Column: 12})
+	st5.AddProduction(
 		&grammar.Production{Head: "start", Body: grammar.String[grammar.Symbol]{grammar.NonTerminal("QUOT")}},
 		&lexer.Position{Filename: "test", Offset: 60, Line: 6, Column: 1},
 	)
@@ -83,8 +91,17 @@ func TestSymbolTable_Verify(t *testing.T) {
 		expectedErrorStrings []string
 	}{
 		{
-			name: "NoDefinition",
+			name: "TerminalReserved",
 			st:   st0,
+			expectedErrorStrings: []string{
+				`2 errors occurred:`,
+				`terminal name "ERR" is reserved`,
+				`terminal name "WS" is reserved`,
+			},
+		},
+		{
+			name: "NoDefinition",
+			st:   st1,
 			expectedErrorStrings: []string{
 				`1 error occurred:`,
 				`no definition for terminal "QUOT"`,
@@ -92,7 +109,7 @@ func TestSymbolTable_Verify(t *testing.T) {
 		},
 		{
 			name: "MultipleDefinitions",
-			st:   st1,
+			st:   st2,
 			expectedErrorStrings: []string{
 				`1 error occurred:`,
 				`multiple definitions for terminal "QUOT":`,
@@ -102,7 +119,7 @@ func TestSymbolTable_Verify(t *testing.T) {
 		},
 		{
 			name: "DuplicateDefinitions",
-			st:   st2,
+			st:   st3,
 			expectedErrorStrings: []string{
 				`1 error occurred:`,
 				`multiple definitions with the same value: "[0-9]+"`,
@@ -112,7 +129,7 @@ func TestSymbolTable_Verify(t *testing.T) {
 		},
 		{
 			name: "NoStartSymbol",
-			st:   st3,
+			st:   st4,
 			expectedErrorStrings: []string{
 				`1 error occurred:`,
 				`missing production rule with the start symbol: start`,
@@ -120,7 +137,7 @@ func TestSymbolTable_Verify(t *testing.T) {
 		},
 		{
 			name:                 "OK",
-			st:                   st4,
+			st:                   st5,
 			expectedErrorStrings: nil,
 		},
 	}
