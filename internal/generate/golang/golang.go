@@ -230,11 +230,11 @@ func (g *generator) renderTemplate(filename string, data any) error {
 		return err
 	}
 
-	if err := tmpl.Execute(f, data); err != nil {
-		return err
-	}
+	defer func() {
+		_ = f.Close()
+	}()
 
-	if err := f.Close(); err != nil {
+	if err := tmpl.Execute(f, data); err != nil {
 		return err
 	}
 
@@ -290,6 +290,10 @@ func (g *generator) generateLexerGraph(dfa *automata.DFA, assocs []spec.FinalTer
 		return err
 	}
 
+	defer func() {
+		_ = f.Close()
+	}()
+
 	// Generate the DOT code for the DFA.
 	dot := dfa.DOT()
 
@@ -317,10 +321,6 @@ func (g *generator) generateLexerGraph(dfa *automata.DFA, assocs []spec.FinalTer
 	})
 
 	if _, err := f.WriteString(dot); err != nil {
-		return err
-	}
-
-	if err := f.Close(); err != nil {
 		return err
 	}
 
