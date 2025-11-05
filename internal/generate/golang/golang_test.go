@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/gardenbed/charm/ui"
+	"github.com/moorara/algo/automata"
 
 	"github.com/gardenbed/emerge/internal/ebnf/parser/spec"
 )
@@ -213,6 +214,19 @@ func TestGenerator_generateCore(t *testing.T) {
 				`open .+/foo/foo.go: no such file or directory`,
 			},
 		},
+		{
+			name: "Success",
+			g: &generator{
+				UI: ui.NewNop(),
+				Params: &Params{
+					Path: tempDir,
+					Spec: &spec.Spec{
+						Name: "",
+					},
+				},
+			},
+			expectedErrorRegexes: nil,
+		},
 	}
 
 	for _, tc := range tests {
@@ -253,7 +267,7 @@ func TestGenerator_generateLexer(t *testing.T) {
 				Params: &Params{
 					Path: tempDir,
 					Spec: &spec.Spec{
-						Name: "expr",
+						Name: "foo",
 						Definitions: []*spec.TerminalDef{
 							{Terminal: "ID", Kind: spec.RegexDef, Value: "[A-Z"},
 							{Terminal: "NUM", Kind: spec.RegexDef, Value: "[0-9"},
@@ -274,14 +288,28 @@ func TestGenerator_generateLexer(t *testing.T) {
 				Params: &Params{
 					Path: tempDir,
 					Spec: &spec.Spec{
-						Name:        "expr",
+						Name:        "foo",
 						Definitions: definitions,
 					},
 				},
 			},
 			expectedErrorRegexes: []string{
-				`open .+/expr/expr.go: no such file or directory`,
+				`open .+/foo/foo.go: no such file or directory`,
 			},
+		},
+		{
+			name: "Success",
+			g: &generator{
+				UI: ui.NewNop(),
+				Params: &Params{
+					Path: tempDir,
+					Spec: &spec.Spec{
+						Name:        "",
+						Definitions: definitions,
+					},
+				},
+			},
+			expectedErrorRegexes: nil,
 		},
 	}
 
@@ -342,11 +370,115 @@ func TestGenerator_renderTemplate(t *testing.T) {
 			data:               nil,
 			expectedErrorRegex: `open .+/foo/foo.go: no such file or directory`,
 		},
+		{
+			name: "Success",
+			g: &generator{
+				UI: ui.NewNop(),
+				Params: &Params{
+					Path: tempDir,
+					Spec: &spec.Spec{
+						Name: "",
+					},
+				},
+			},
+			filename:           "core.go.tmpl",
+			data:               nil,
+			expectedErrorRegex: ``,
+		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			err := tc.g.renderTemplate(tc.filename, tc.data)
+
+			if tc.expectedErrorRegex == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.Error(t, err)
+
+				re := regexp.MustCompile(tc.expectedErrorRegex)
+				assert.True(t, re.MatchString(err.Error()), "%q DOES NOT INCLUDE %q", err, tc.expectedErrorRegex)
+			}
+		})
+	}
+}
+
+func TestGenerator_generateLexerGraph(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "emerge-test-")
+	assert.NoError(t, err)
+
+	defer func() {
+		assert.NoError(t, os.RemoveAll(tempDir))
+	}()
+
+	tests := []struct {
+		name               string
+		g                  *generator
+		dfa                *automata.DFA
+		assocs             []spec.FinalTerminalAssociation
+		expectedErrorRegex string
+	}{
+		{
+			name: "DebugFalse",
+			g: &generator{
+				UI: ui.NewNop(),
+				Params: &Params{
+					Debug: false,
+				},
+			},
+			dfa:                nil,
+			assocs:             nil,
+			expectedErrorRegex: ``,
+		},
+		{
+			name: "PackageDirNotExist",
+			g: &generator{
+				UI: ui.NewNop(),
+				Params: &Params{
+					Debug: true,
+					Path:  tempDir,
+					Spec: &spec.Spec{
+						Name: "foo",
+					},
+				},
+			},
+			dfa:                nil,
+			assocs:             nil,
+			expectedErrorRegex: `open .+/foo/lexer.dot: no such file or directory`,
+		},
+		{
+			name: "Success",
+			g: &generator{
+				UI: ui.NewNop(),
+				Params: &Params{
+					Debug: true,
+					Path:  tempDir,
+					Spec: &spec.Spec{
+						Name: "",
+					},
+				},
+			},
+			dfa: automata.NewDFABuilder().
+				SetStart(0).
+				SetFinal([]automata.State{1}).
+				AddTransition(0, '1', '9', 1).
+				AddTransition(1, '0', '9', 1).
+				Build(),
+			assocs: []spec.FinalTerminalAssociation{
+				{
+					Final:    automata.NewStates(1),
+					Terminal: "NUM",
+					Kind:     spec.RegexDef,
+					Value:    "[1-9][0-9]+",
+				},
+			},
+			expectedErrorRegex: ``,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			err := tc.g.generateLexerGraph(tc.dfa, tc.assocs)
 
 			if tc.expectedErrorRegex == "" {
 				assert.NoError(t, err)
