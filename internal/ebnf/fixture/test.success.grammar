@@ -2,8 +2,8 @@
 grammar test;
 
 SEMI   = ";"
-ID     = $ID
-NUMBER = /[0-9]+(\.[0-9]+)?/
+ID     = /[A-Za-z_][0-9A-Za-z_]*/
+NUMBER = $FLOAT
 
 @left  "*" "/"
 @left  "+" "-"

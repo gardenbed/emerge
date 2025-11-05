@@ -19,13 +19,13 @@ import (
 // Predefs defines the acceptable values for the PREDEF token in the EBNF specification.
 // Each value is a predefined regular expression for defining a token.
 var Predefs = map[string]string{
-	"$WS":      `[\x09\x0A\x0D\x20]`,
 	"$DIGIT":   `[0-9]`,
+	"$HEX":     `[0-9A-Fa-f]`,
 	"$LETTER":  `[A-Za-z]`,
-	"$ID":      `[A-Za-z_][0-9A-Za-z_]*`,
-	"$NUMBER":  `-?[0-9]+(\.[0-9]+)?`,
-	"$STRING":  `"([\x21\x23-\x5B\x5D-\x7E]|\\[\x21-\x7E])+"`,
-	"$COMMENT": `(#|//)[\x09\x20-\x7E]*|/\*[\x09\x0A\x0D\x20-\x7E]*?\*/`,
+	"$INT":     `-?[0-9]+`,
+	"$FLOAT":   `-?[0-9]+(\.[0-9]+)?`,
+	"$STRING":  `"([^\\"]|\\[\\"'tnr])*"`,
+	"$COMMENT": `(#|//)[^\n\r]*|/\*.*?\*/`,
 }
 
 // ProductionFunc is similar to parser.ProductionFunc but passes

@@ -6,7 +6,7 @@ In this document, we go over some of the design decisions and rationals behind *
 
 ### Language Design
 
-The following features are NOT included in the Emerge's Regular Expression language.
+The following features are NOT included in Emerge's Regular Expression language.
 They seem unnecessary for the purpose of designing and defining tokens of a language.
 
   - Backreference
@@ -19,6 +19,10 @@ They seem unnecessary for the purpose of designing and defining tokens of a lang
       - End of string only `\Z`
       - End of string only (not newline) `\z`
       - Previous match end `\G`
+
+The following features are implemented slightly different in Emerge's Regular Expression language.
+
+  - The `.` (dot) matches any Unicode character in the range `0x00–0x10FFFF`, including the newlines.
 
 ### Parser Design
 
@@ -44,13 +48,13 @@ We will later use regular expression ASTs to construct DFAs needed for generatin
 
 ### Language Design
 
-The following terminal symbols are removed from the Emerge's EBNF language for simplicity and brevity.
+The following terminal symbols are removed from Emerge's EBNF language for simplicity and brevity.
 
   - Concatenation (`,`)
   - Termination (`;`)
   - Single quotation (`'`)
 
-The Solidus (Slash) character (`/`) is added to the Emerge's EBNF language for defining regex patterns.
+The Solidus (Slash) character (`/`) is added to Emerge's EBNF language for defining regex patterns.
 
 ### Lexer Design
 
@@ -288,7 +292,7 @@ To implement an LR parser, the grammar must be in `LR(1)` form.
 LR(1) grammars require minimal transformations, often closely resembling natural language structures.
 [Ambiguous grammars](./4-parser_theory.md#ambiguous-grammars) can also be handled using precedence rules.
 
-The Emerge parser generator also produces `LALR` parsers for the same reasons mentioned above,
+Emerge parser generator also produces `LALR` parsers for the same reasons mentioned above,
 balancing efficiency and expressiveness.
 
 For error handling, the [panic-mode](./4-parser_theory.md#panic-mode-recovery) error recovery method is used

@@ -35,11 +35,11 @@ Internally, implicit terminal definitions are converted into token definitions u
 
 The following predefined regular expressions can be referenced when explicitly defining a token.
 
-  - `$WS`
   - `$DIGIT`
+  - `$HEX`
   - `$LETTER`
-  - `$ID`
-  - `$NUMBER`
+  - `$INT`
+  - `$FLOAT`
   - `$STRING`
   - `$COMMENT`
 
