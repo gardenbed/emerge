@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"text/template"
 
@@ -147,8 +148,9 @@ func (g *generator) generateCore() error {
 	g.Infof(darkOrange, "     Generating core types ...")
 
 	data := &coreData{
-		GenerateCommand: strings.Join(os.Args, " "),
+		Debug:           g.Debug,
 		Package:         g.Spec.Name,
+		GenerateCommand: strings.Join(os.Args, " "),
 	}
 
 	var errs error
@@ -160,8 +162,9 @@ func (g *generator) generateCore() error {
 }
 
 type coreData struct {
-	GenerateCommand string
+	Debug           bool
 	Package         string
+	GenerateCommand string
 }
 
 // generateLexer generates the lexer code based on the provided terminal (token) definitions for the input language.
@@ -175,6 +178,7 @@ func (g *generator) generateLexer() error {
 	}
 
 	data := &lexerData{
+		Debug:          g.Debug,
 		Package:        g.Spec.Name,
 		Assocs:         assocs,
 		DFATransitions: dfa.Transitions(),
@@ -185,10 +189,16 @@ func (g *generator) generateLexer() error {
 		errs = errors.Append(errs, err)
 	}
 
+	// Generate the lexer graph in DOT format if debugging is enabled.
+	if err := g.generateLexerGraph(dfa, assocs); err != nil {
+		errs = errors.Append(errs, err)
+	}
+
 	return errs
 }
 
 type lexerData struct {
+	Debug          bool
 	Package        string
 	Assocs         []spec.FinalTerminalAssociation
 	DFATransitions iter.Seq2[automata.State, iter.Seq2[[]disc.Range[automata.Symbol], automata.State]]
@@ -220,7 +230,15 @@ func (g *generator) renderTemplate(filename string, data any) error {
 		return err
 	}
 
-	return tmpl.Execute(f, data)
+	defer func() {
+		_ = f.Close()
+	}()
+
+	if err := tmpl.Execute(f, data); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func formatStates(states automata.States) string {
@@ -255,4 +273,56 @@ func formatRanges(ranges []disc.Range[automata.Symbol]) string {
 	}
 
 	return b.String()
+}
+
+// generateLexerGraph generates a DOT format graph of the lexer's DFA if debugging is enabled.
+func (g *generator) generateLexerGraph(dfa *automata.DFA, assocs []spec.FinalTerminalAssociation) error {
+	if !g.Params.Debug {
+		return nil
+	}
+
+	g.Debugf(navajoWhite, "       Generating the lexer graph ...")
+
+	// Write the DOT code to the file.
+	filepath := filepath.Join(g.Path, g.Spec.Name, "lexer.dot")
+	f, err := os.OpenFile(filepath, os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0666)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		_ = f.Close()
+	}()
+
+	// Generate the DOT code for the DFA.
+	dot := dfa.DOT()
+
+	// Modify the DOT code: colorize edges and their labels.
+	nodeRE := regexp.MustCompile(`  node \[shape=circle\];`)
+	dot = nodeRE.ReplaceAllString(dot, "  node [shape=circle];\n  edge [color=darkblue fontcolor=red];")
+
+	// Modify the DOT code: annotate final states with terminal names.
+	numRE := regexp.MustCompile(`\d+`)
+	nodeStmtRE := regexp.MustCompile(`  \d+ \[label="\d+", shape=doublecircle\];`)
+
+	dot = nodeStmtRE.ReplaceAllStringFunc(dot, func(m string) string {
+		if i, err := strconv.Atoi(numRE.FindString(m)); err == nil {
+			// Find the association with this final state.
+			assoc, ok := generic.FirstMatch(assocs, func(assoc spec.FinalTerminalAssociation) bool {
+				return assoc.Final.Contains(automata.State(i))
+			})
+
+			if ok {
+				return fmt.Sprintf(`  %d [label="%d", shape=doublecircle style=filled color=skyblue xlabel=%q];`, i, i, assoc.Terminal)
+			}
+		}
+
+		return m
+	})
+
+	if _, err := f.WriteString(dot); err != nil {
+		return err
+	}
+
+	return nil
 }

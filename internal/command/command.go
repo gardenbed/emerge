@@ -183,6 +183,10 @@ func (c *Command) Run(args []string) error {
 		return err
 	}
 
+	defer func() {
+		_ = f.Close()
+	}()
+
 	spec, err := c.funcs.Parse(filename, f)
 	if err != nil {
 		return err
@@ -202,10 +206,6 @@ func (c *Command) Run(args []string) error {
 	})
 
 	if err != nil {
-		return err
-	}
-
-	if err := f.Close(); err != nil {
 		return err
 	}
 
