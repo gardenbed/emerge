@@ -1,0 +1,137 @@
+
+// ActionType enumerates the possible types of actions in an LR parser.
+type ActionType int
+
+const (
+	SHIFT  ActionType = 1 + iota // Advance to the next state by consuming input.
+	REDUCE                       // Apply a production to reduce symbols on the stack.
+	ACCEPT                       // Accept the input as successfully parsed.
+	ERROR                        // Signal an error in parsing.
+)
+
+// TokenFunc is a function that is invoked each time a token
+// is matched and removed from an input string during parsing.
+//
+// It executes the actions associated with the matched token,
+// such as semantic processing, constructing abstract syntax trees (AST),
+// or performing other custom logic required for the parsing process.
+//
+// The function may return an error, indicating an issue during token processing.
+// The parser may stop immediately or continue parsing and accumulate more errors.
+type TokenFunc func(*Token) error
+
+// ProductionFunc is a function that is invoked each time a production rule
+// is matched or applied during the parsing process of an input string.
+// It passes the index of a production rule instead of the production itself.
+//
+// It executes the actions associated with the matched production rule,
+// such as semantic processing, constructing abstract syntax trees (AST),
+// or performing other custom logic required for the parsing process.
+//
+// The function may return an error, indicating an issue during production rule processing.
+// The parser may stop immediately or continue parsing and accumulate more errors.
+type ProductionFunc func(int) error
+
+// EvaluateFunc is a function invoked every time a production rule
+// is matched or applied during the parsing of an input string.
+// It passes the index of a production rule instead of the production itself.
+//
+// It receives a list of values corresponding to the right-hand side of the matched production
+// and expects a value to be returned representing the left-hand side of the production.
+//
+// The returned value will be subsequently used as an input in the evaluation of other production rules.
+// Both the input and output values are of the generic type any.
+//
+// The caller is responsible for ensuring that each value is converted to the appropriate type based on
+// the production rule and the position of the symbol corresponding to the value in the production's right-hand side.
+// The input values must retain the same type they were originally evaluated as when returned.
+//
+// The function may return an error if there are issues with the input values,
+// such as mismatched types or unexpected inputs.
+type EvaluateFunc func(int, []*Value) (any, error)
+
+// Value represents a value used during the evaluation process,
+// along with its corresponding positional information in the input.
+type Value struct {
+	Val any
+	Pos *Position
+}
+
+// String returns a string representation of a value.
+func (v *Value) String() string {
+	if v.Pos == nil || v.Pos.IsZero() {
+		return fmt.Sprintf("%v", v.Val)
+	}
+
+	return fmt.Sprintf("%v <%s>", v.Val, v.Pos)
+}
+
+// ParseError represents an error encountered when parsing an input string.
+type ParseError struct {
+	Description string
+	Cause       error
+	Pos         Position
+}
+
+// Error implements the error interface.
+// It returns a formatted string describing the error in detail.
+func (e *ParseError) Error() string {
+	var b bytes.Buffer
+
+	if !e.Pos.IsZero() {
+		fmt.Fprintf(&b, "%s", e.Pos)
+	}
+
+	if len(e.Description) != 0 {
+		if b.Len() > 0 {
+			fmt.Fprint(&b, ": ")
+		}
+		fmt.Fprintf(&b, "%s", e.Description)
+	}
+
+	if e.Cause != nil {
+		if b.Len() > 0 {
+			fmt.Fprint(&b, ": ")
+		}
+		fmt.Fprintf(&b, "%s", e.Cause)
+	}
+
+	return b.String()
+}
+
+// Unwrap implements the unwrap interface.
+func (e *ParseError) Unwrap() error {
+	return e.Cause
+}
+
+/* ------------------------------------------------------------------------------------------------------------------------ */
+
+// Parser is the parser, a.k.a. syntax analyzer.
+type Parser struct {
+	L *Lexer
+}
+
+// NewParser creates a new parser, a.k.a. syntax analyzer.
+func NewParser(filename string, src io.Reader) (*Parser, error) {
+	L, err := NewLexer(filename, src)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Parser{
+		L: L,
+	}, nil
+}
+
+// nextToken wraps the Lexer.NextToken method and ensures an endmarker token is returned when the end of input is reached.
+func (p *Parser) nextToken() (Token, error) {
+	token, err := p.L.NextToken()
+	if err != nil && errors.Is(err, io.EOF) {
+		token.Terminal, token.Lexeme = endmarker, ""
+		return token, nil
+	}
+
+	return token, err
+}
+
+/* ------------------------------------------------------------------------------------------------------------------------ */

@@ -17,6 +17,7 @@ import (
 	"github.com/moorara/algo/automata"
 	"github.com/moorara/algo/errors"
 	"github.com/moorara/algo/generic"
+	"github.com/moorara/algo/parser/lr"
 	"github.com/moorara/algo/range/disc"
 
 	"github.com/gardenbed/emerge/internal/ebnf/parser/spec"
@@ -29,7 +30,7 @@ var (
 	navajoWhite = ui.Fg256Color(223)
 	darkOrange  = ui.Fg256Color(166)
 	hotPink     = ui.Fg256Color(168)
-	// orchid      = ui.Fg256Color(170)
+	orchid      = ui.Fg256Color(170)
 )
 
 var (
@@ -99,9 +100,9 @@ func Generate(u ui.UI, params *Params) error {
 		errs = errors.Append(errs, err)
 	}
 
-	/* if err := g.generateParser(); err != nil {
+	if err := g.generateParser(); err != nil {
 		errs = errors.Append(errs, err)
-	} */
+	}
 
 	return errs
 }
@@ -189,7 +190,7 @@ func (g *generator) generateLexer() error {
 		errs = errors.Append(errs, err)
 	}
 
-	// Generate the lexer graph in DOT format if debugging is enabled.
+	// Generate the lexer graph if debugging is enabled.
 	if err := g.generateLexerGraph(dfa, assocs); err != nil {
 		errs = errors.Append(errs, err)
 	}
@@ -202,6 +203,41 @@ type lexerData struct {
 	Package        string
 	Assocs         []spec.FinalTerminalAssociation
 	DFATransitions iter.Seq2[automata.State, iter.Seq2[[]disc.Range[automata.Symbol], automata.State]]
+}
+
+// generateParser generates the parser code based on the provided grammar and precedence levels for the input language.
+func (g *generator) generateParser() error {
+	g.Infof(orchid, "     Generating the parser ...")
+
+	g.Infof(orchid, "       Constructing LALR(1) Parsing Table ...")
+	T, err := g.Spec.LALRParsingTable()
+	if err != nil {
+		return err
+	}
+
+	data := &parserData{
+		Debug:   g.Debug,
+		Package: g.Spec.Name,
+	}
+
+	var errs error
+	for _, filename := range []string{"ast.go.tmpl", "parser.lalr.go.tmpl"} {
+		if err := g.renderTemplate(filename, data); err != nil {
+			errs = errors.Append(errs, err)
+		}
+	}
+
+	// Generate the parsing table if debugging is enabled.
+	if err := g.generateParsingTable(T); err != nil {
+		errs = errors.Append(errs, err)
+	}
+
+	return errs
+}
+
+type parserData struct {
+	Debug   bool
+	Package string
 }
 
 // renderTemplate renders an embedded template by name and
@@ -321,6 +357,35 @@ func (g *generator) generateLexerGraph(dfa *automata.DFA, assocs []spec.FinalTer
 	})
 
 	if _, err := f.WriteString(dot); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// generateParsingTable generates a text file containing the parsing table if debugging is enabled.
+func (g *generator) generateParsingTable(T *lr.ParsingTable) error {
+	if !g.Params.Debug {
+		return nil
+	}
+
+	g.Debugf(navajoWhite, "       Generating the parsing table ...")
+
+	// Write the DOT code to the file.
+	filepath := filepath.Join(g.Path, g.Spec.Name, "parser.txt")
+	f, err := os.OpenFile(filepath, os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0666)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		_ = f.Close()
+	}()
+
+	// Generate the content for the parsing table.
+	content := T.String()
+
+	if _, err := f.WriteString(content); err != nil {
 		return err
 	}
 

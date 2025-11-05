@@ -28,12 +28,34 @@ var Predefs = map[string]string{
 	"$COMMENT": `(#|//)[^\n\r]*|/\*.*?\*/`,
 }
 
-// ProductionFunc is similar to parser.ProductionFunc but passes
-// the index of a production rule instead of the production itself.
+// ProductionFunc is a function that is invoked each time a production rule
+// is matched or applied during the parsing process of an input string.
+// It passes the index of a production rule instead of the production itself.
+//
+// It executes the actions associated with the matched production rule,
+// such as semantic processing, constructing abstract syntax trees (AST),
+// or performing other custom logic required for the parsing process.
+//
+// The function may return an error, indicating an issue during production rule processing.
+// The parser may stop immediately or continue parsing and accumulate more errors.
 type ProductionFunc func(int) error
 
-// EvaluateFunc is similar to parser.EvaluateFunc but passes
-// the index of a production rule instead of the production itself.
+// EvaluateFunc is a function invoked every time a production rule
+// is matched or applied during the parsing of an input string.
+// It passes the index of a production rule instead of the production itself.
+//
+// It receives a list of values corresponding to the right-hand side of the matched production
+// and expects a value to be returned representing the left-hand side of the production.
+//
+// The returned value will be subsequently used as an input in the evaluation of other production rules.
+// Both the input and output values are of the generic type any.
+//
+// The caller is responsible for ensuring that each value is converted to the appropriate type based on
+// the production rule and the position of the symbol corresponding to the value in the production's right-hand side.
+// The input values must retain the same type they were originally evaluated as when returned.
+//
+// The function may return an error if there are issues with the input values,
+// such as mismatched types or unexpected inputs.
 type EvaluateFunc func(int, []*lr.Value) (any, error)
 
 // Parser is a parser (a.k.a. syntax analyzer) for the EBNF language.
@@ -55,8 +77,7 @@ func New(filename string, src io.Reader) (*Parser, error) {
 	}, nil
 }
 
-// nextToken wraps the Lexer.NextToken method and ensures
-// an Endmarker token is returned when the end of input is reached.
+// nextToken wraps the Lexer.NextToken method and ensures an Endmarker token is returned when the end of input is reached.
 func (p *Parser) nextToken() (lexer.Token, error) {
 	token, err := p.L.NextToken()
 	if err != nil && errors.Is(err, io.EOF) {

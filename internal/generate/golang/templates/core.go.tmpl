@@ -552,7 +552,7 @@ func (s *arrayStack[T]) Push(val T) {
 	if s.topNode == nil {
 		s.topNode = newArrayNode[T](s.nodeSize, nil)
 	} else if s.topIndex == s.nodeSize {
-		s.topNode = newArrayNode[T](s.nodeSize, s.topNode)
+		s.topNode = newArrayNode(s.nodeSize, s.topNode)
 		s.topIndex = 0
 	}
 
