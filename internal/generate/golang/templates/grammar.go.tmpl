@@ -11,7 +11,7 @@ const endmarker = Terminal("\uEEEE")
 type Symbol interface {
 	fmt.Stringer
 
-  Equal(Symbol) bool
+	Equal(Symbol) bool
 	Name() string
 	IsTerminal() bool
 }

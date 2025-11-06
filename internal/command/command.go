@@ -80,7 +80,7 @@ const helpTemplate = `
 
     -help        Show the help text
     -version     Print the version number
-    -verbose     Show the vervbosity logs (default: {{.Verbose}})
+    -verbose     Show the verbosity logs (default: {{.Verbose}})
 
     -out=path    Generate the parser in the specified directory.
     -name=foo    Generate the parser with the specified name and ignore the name in the grammar specification.
