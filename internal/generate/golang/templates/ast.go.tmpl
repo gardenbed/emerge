@@ -48,6 +48,47 @@ type InternalNode struct {
 	annotation  any
 }
 
+// String returns a string representation of an internal node.
+func (n *InternalNode) String() string {
+	var b bytes.Buffer
+
+	// Find the leftmost leaf of the current node.
+	var ll *LeafNode
+	var ok bool
+	Traverse(n, LRV, func(n Node) bool {
+		ll, ok = n.(*LeafNode)
+		return false
+	})
+
+	if ok {
+		fmt.Fprintf(&b, "%s <%s, %s>", n.Production, ll.Lexeme, ll.Position)
+	} else {
+		fmt.Fprintf(&b, "%s", n.Production)
+	}
+
+	return b.String()
+}
+
+// Equal determines whether or not two internal nodes are the same.
+// Annotations are excluded from the equality check.
+func (n *InternalNode) Equal(rhs Node) bool {
+	nn, ok := rhs.(*InternalNode)
+	if !ok ||
+		!n.NonTerminal.Equal(nn.NonTerminal) ||
+		!n.Production.Equal(nn.Production) ||
+		len(n.Children) != len(nn.Children) {
+		return false
+	}
+
+	for i := range len(n.Children) {
+		if !n.Children[i].Equal(nn.Children[i]) {
+			return false
+		}
+	}
+
+	return true
+}
+
 // Symbol returns the non-terminal symbol associated with this internal node
 // (the left-hand side of the production rule represented by the node).
 func (n *InternalNode) Symbol() Symbol {
@@ -93,6 +134,25 @@ type LeafNode struct {
 	annotation any
 }
 
+// String returns a string representation of a leaf node.
+func (n *LeafNode) String() string {
+	if n.Position.IsZero() {
+		return fmt.Sprintf("%s <%s>", n.Terminal, n.Lexeme)
+	}
+
+	return fmt.Sprintf("%s <%s, %s>", n.Terminal, n.Lexeme, n.Position)
+}
+
+// Equal determines whether or not two leaf nodes are the same.
+// Annotations are excluded from the equality check.
+func (n *LeafNode) Equal(rhs Node) bool {
+	nn, ok := rhs.(*LeafNode)
+	return ok &&
+		n.Terminal == nn.Terminal &&
+		n.Lexeme == nn.Lexeme &&
+		n.Position.Equal(nn.Position)
+}
+
 // Symbol returns the terminal symbol associated with this leaf node.
 func (n *LeafNode) Symbol() Symbol {
 	return n.Terminal
@@ -121,6 +181,74 @@ func (n *LeafNode) Annotate(val any) {
 // The caller should cast the returned value to the original type used when annotating.
 func (n *LeafNode) Annotation() any {
 	return n.annotation
+}
+
+/* ------------------------------------------------------------------------------------------------------------------------ */
+
+// TraverseOrder represents the order in which nodes are traversed in an abstract syntax tree (AST).
+type TraverseOrder int
+
+const (
+	// VLR is a pre-order traversal from left to right.
+	VLR TraverseOrder = iota
+	// VLR is a pre-order traversal from right to left.
+	VRL
+	// LRV is a post-order traversal from left to right.
+	LRV
+	// LRV is a post-order traversal from right to left.
+	RLV
+)
+
+// VisitFunc is a function type used during abstract syntax tree (AST) traversal for processing nodes.
+type VisitFunc func(Node) bool
+
+// Traverse performs a depth-first traversal of an abstract syntax tree (AST), starting from the given root node.
+// It visits each node according to the specified traversal order and passes each node to the provided visit function.
+// If the visit function returns false, the traversal is stopped early.
+//
+// Valid traversal orders for an AST are VLR, VRL, LRV, and RLV.
+func Traverse(n Node, order TraverseOrder, visit VisitFunc) bool {
+	if leaf, ok := n.(*LeafNode); ok {
+		return visit(leaf)
+	}
+
+	in, ok := n.(*InternalNode)
+	if !ok {
+		return false
+	}
+
+	switch order {
+	case VLR:
+		res := visit(in)
+		for i := range len(in.Children) {
+			res = res && Traverse(in.Children[i], order, visit)
+		}
+		return res
+
+	case VRL:
+		res := visit(in)
+		for i := len(in.Children) - 1; i >= 0; i-- {
+			res = res && Traverse(in.Children[i], order, visit)
+		}
+		return res
+
+	case LRV:
+		res := true
+		for i := range len(in.Children) {
+			res = res && Traverse(in.Children[i], order, visit)
+		}
+		return res && visit(in)
+
+	case RLV:
+		res := true
+		for i := len(in.Children) - 1; i >= 0; i-- {
+			res = res && Traverse(in.Children[i], order, visit)
+		}
+		return res && visit(in)
+
+	default:
+		return false
+	}
 }
 
 /* ------------------------------------------------------------------------------------------------------------------------ */

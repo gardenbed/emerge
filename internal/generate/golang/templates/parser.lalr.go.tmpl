@@ -218,8 +218,59 @@ func (p *Parser) parse(tokenF tokenFunc, prodF productionFunc) error {
 	}
 }
 
+// ParseAndBuildAST implements the LR parsing algorithm.
+// It analyzes a sequence of input tokens (terminal symbols) provided by the lexical analyzer.
+// It attempts to parse the input according to the production rules of the grammar.
+//
+// If the input string is valid, the root node of the BNF AST is returned,
+// representing the syntactic structure of the input string.
+//
+// An error is returned if the input fails to conform to the grammar rules, indicating a syntax issue.
+func (p *Parser) ParseAndBuildAST() (Node, error) {
+	// Stack for constructing the abstract syntax tree.
+	nodes := newStack[Node](1024)
+
+	err := p.parse(
+		func(token *Token) error {
+			nodes.Push(&LeafNode{
+				Terminal: token.Terminal,
+				Lexeme:   token.Lexeme,
+				Position: token.Pos,
+			})
+
+			return nil
+		},
+		func(i int) error {
+			prod := Grammar.Productions[i]
+
+			in := &InternalNode{
+				NonTerminal: prod.Head,
+				Production:  prod,
+			}
+
+			for range len(prod.Body) {
+				child, _ := nodes.Pop()
+				in.Children = append([]Node{child}, in.Children...) // Maintain correct production body order
+			}
+
+			nodes.Push(in)
+
+			return nil
+		},
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// The nodes stack only contains the root of AST at this point.
+	root, _ := nodes.Pop()
+
+	return root, nil
+}
+
 // ParseAndEvaluate implements the LR parsing algorithm.
-// It analyzes a sequence of input tokens (terminal symbols) provided by a lexical analyzer.
+// It analyzes a sequence of input tokens (terminal symbols) provided by the lexical analyzer.
 // It attempts to parse the input according to the production rules of the grammar.
 //
 // During the parsing process, the provided EvaluateFunc is invoked each time a production rule is matched.

@@ -11,6 +11,7 @@ const endmarker = Terminal("\uEEEE")
 type Symbol interface {
 	fmt.Stringer
 
+  Equal(Symbol) bool
 	Name() string
 	IsTerminal() bool
 }
@@ -25,6 +26,12 @@ func (t Terminal) String() string {
 	}
 
 	return fmt.Sprintf("%q", t.Name())
+}
+
+// Equal determines whether or not two terminal symbols are the same.
+func (t Terminal) Equal(rhs Symbol) bool {
+	v, ok := rhs.(Terminal)
+	return ok && t == v
 }
 
 // Name returns the name of terminal symbol.
@@ -47,6 +54,12 @@ type NonTerminal string
 // String returns a string representation of a non-terminal symbol.
 func (n NonTerminal) String() string {
 	return n.Name()
+}
+
+// Equal determines whether or not two non-terminal symbols are the same.
+func (n NonTerminal) Equal(rhs Symbol) bool {
+	v, ok := rhs.(NonTerminal)
+	return ok && n == v
 }
 
 // Name returns the name of non-terminal symbol.
@@ -76,6 +89,21 @@ func (s String[T]) String() string {
 	return strings.Join(names, " ")
 }
 
+// Equal determines whether or not two strings are the same.
+func (s String[T]) Equal(rhs String[T]) bool {
+	if len(s) != len(rhs) {
+		return false
+	}
+
+	for i := range s {
+		if !s[i].Equal(rhs[i]) {
+			return false
+		}
+	}
+
+	return true
+}
+
 // Production represents a context-free production rule.
 // The productions of a context-free grammar determine how the terminals and non-terminals can be combined to form strings.
 type Production struct {
@@ -88,6 +116,17 @@ type Production struct {
 // String returns a string representation of a production rule.
 func (p *Production) String() string {
 	return fmt.Sprintf("%s → %s", p.Head, p.Body)
+}
+
+// Equal determines whether or not two production rules are the same.
+func (p *Production) Equal(rhs *Production) bool {
+	if p == nil && rhs == nil {
+		return true
+	} else if p == nil || rhs == nil {
+		return false
+	}
+
+	return p.Head == rhs.Head && p.Body.Equal(rhs.Body)
 }
 
 /* ------------------------------------------------------------------------------------------------------------------------ */
