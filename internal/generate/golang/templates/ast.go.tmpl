@@ -1,4 +1,126 @@
 
+// Node represents a node in an abstract syntax tree (AST)
+// derived from an input string allowed based on a context-free grammar.
+//
+// Each node can be either:
+//
+//   - An internal node: representing a non-terminal symbol and its associated production rule.
+//   - A leaf node: representing a terminal symbol.
+type Node interface {
+	fmt.Stringer
 
+	// Equal returns true if this node is equal to the given node.
+	Equal(Node) bool
+
+	// Symbol returns the grammar symbol associated with this node.
+	// For internal nodes, this is a non-terminal symbol (the left-hand side of the production rule represented by the node).
+	// For leaf nodes, this is a terminal symbol.
+	Symbol() Symbol
+
+	// Pos returns the leftmost position in the input string that this node represent.
+	Pos() Position
+
+	// Annotate associates an annotation with this node.
+	// An annotation often represents the node in a different context or type.
+	//
+	// Common use cases include:
+	//
+	//   - Storing the result of a type conversion (e.g., converting a string to a number).
+	//   - Capturing the outcome of evaluating the right-hand side of a production rule
+	//     (e.g., performing an arithmetic operation like addition).
+	//   - Associating a reference to a symbol table entry for an identifier.
+	//   - Adding metadata or auxiliary information related to the node.
+	Annotate(any)
+
+	// Annotation returns the annotation associated with this node.
+	// An annotation is a context-specific value of any type, set using the Annotate method.
+	//
+	// The caller should cast the returned value to the original type used when annotating.
+	Annotation() any
+}
+
+// InternalNode represents an internal node in an abstract syntax tree (AST).
+// An InternalNode represents a non-terminal symbol and its associated production rule.
+type InternalNode struct {
+	NonTerminal NonTerminal
+	Production  *Production
+	Children    []Node
+	annotation  any
+}
+
+// Symbol returns the non-terminal symbol associated with this internal node
+// (the left-hand side of the production rule represented by the node).
+func (n *InternalNode) Symbol() Symbol {
+	return n.NonTerminal
+}
+
+// Pos returns the position of the first child of this internal node.
+func (n *InternalNode) Pos() Position {
+	if len(n.Children) > 0 {
+		return n.Children[0].Pos()
+	}
+
+	return Position{}
+}
+
+// Annotate associates an annotation with this internal node.
+// An annotation often represents the node in a different context or type.
+//
+// Common use cases include:
+//
+//   - Storing the result of a type conversion (e.g., converting a string to a number).
+//   - Capturing the outcome of evaluating the right-hand side of a production rule
+//     (e.g., performing an arithmetic operation like addition).
+//   - Adding metadata or auxiliary information related to the node.
+func (n *InternalNode) Annotate(val any) {
+	n.annotation = val
+}
+
+// Annotation returns the annotation associated with this internal node.
+// An annotation is a context-specific value of any type, set using the Annotate method.
+//
+// The caller should cast the returned value to the original type used when annotating.
+func (n *InternalNode) Annotation() any {
+	return n.annotation
+}
+
+// LeafNode represents a leaf node in an abstract syntax tree (AST).
+// A LeafNode represents a terminal symbol.
+type LeafNode struct {
+	Terminal   Terminal
+	Lexeme     string
+	Position   Position
+	annotation any
+}
+
+// Symbol returns the terminal symbol associated with this leaf node.
+func (n *LeafNode) Symbol() Symbol {
+	return n.Terminal
+}
+
+// Pos returns the position of the substring represented by this leaf node in the input string.
+func (n *LeafNode) Pos() Position {
+	return n.Position
+}
+
+// Annotate associates an annotation with this leaf node.
+// An annotation often represents the node in a different context or type.
+//
+// Common use cases include:
+//
+//   - Storing the result of a type conversion (e.g., converting a string to a number).
+//   - Associating a reference to a symbol table entry for an identifier.
+//   - Adding metadata or auxiliary information related to the node.
+func (n *LeafNode) Annotate(val any) {
+	n.annotation = val
+}
+
+// Annotation returns the annotation associated with this leaf node.
+// An annotation is a context-specific value of any type, set using the Annotate method.
+//
+// The caller should cast the returned value to the original type used when annotating.
+func (n *LeafNode) Annotation() any {
+	return n.annotation
+}
 
 /* ------------------------------------------------------------------------------------------------------------------------ */
