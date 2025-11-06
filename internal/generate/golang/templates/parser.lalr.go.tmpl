@@ -134,4 +134,137 @@ func (p *Parser) nextToken() (Token, error) {
 	return token, err
 }
 
+// parse implements the LR parsing algorithm.
+// It analyzes a sequence of input tokens (terminal symbols) provided by the lexical analyzer.
+// It attempts to parse the input according to the production rules of the grammar.
+//
+// The parse method invokes the provided functions each time a token or a production rule is matched.
+// This allows the caller to process or react to each step of the parsing process.
+//
+// An error is returned if the input fails to conform to the grammar rules, indicating a syntax issue,
+// or if any of the provided functions return an error, indicating a semantic issue.
+func (p *Parser) parse(tokenF TokenFunc, prodF ProductionFunc) error {
+	stack := newStack[int](1024)
+	stack.Push(0)
+
+	// Read the first input token.
+	token, err := p.nextToken()
+	if err != nil {
+		return &ParseError{Cause: err}
+	}
+
+	for {
+		s, _ := stack.Peek()
+		a := token.Terminal
+
+		action, param, err := ACTION(s, a)
+		if err != nil {
+			return &ParseError{
+				Description: fmt.Sprintf("unexpected string %q", token.Lexeme),
+				Cause:       err,
+				Pos:         token.Pos,
+			}
+		}
+
+		switch action {
+		case SHIFT:
+			stack.Push(param)
+
+			// Yield the token.
+			if tokenF != nil {
+				if err := tokenF(&token); err != nil {
+					return &ParseError{
+						Cause: err,
+						Pos:   token.Pos,
+					}
+				}
+			}
+
+			// Read the next input token.
+			token, err = p.nextToken()
+			if err != nil {
+				return &ParseError{Cause: err}
+			}
+
+		case REDUCE:
+			A, β := Grammar.Productions[param].Head, Grammar.Productions[param].Body
+
+			for range len(β) {
+				stack.Pop()
+			}
+
+			// An LR parser detects an error when it consults the ACTION table.
+			// Errors are never identified by consulting the GOTO table.
+			// If ACTION(s, a) is not an error entry, GOTO(t, A) will also not be an error entry.
+
+			t, _ := stack.Peek()
+			next := GOTO(t, A)
+			stack.Push(next)
+
+			// Yield the production.
+			if prodF != nil {
+				if err := prodF(param); err != nil {
+					return &ParseError{Cause: err}
+				}
+			}
+
+		case ACCEPT:
+			// Accept the input string.
+			return nil
+
+		case ERROR:
+			// This is unreachable currently, since ACTION handles the error.
+		}
+	}
+}
+
+/* ------------------------------------------------------------------------------------------------------------------------ */
+
+// ACTION looks up and returns the action for state s and terminal a.
+func ACTION(s int, a Terminal) (ActionType, int, error) {
+	switch s {
+
+	}
+
+	return ERROR, -1, fmt.Errorf("no action exists in the parsing table for ACTION[%d, %s]", s, a)
+}
+
+// GOTO looks up and returns the next state for state s and non-terminal A.
+func GOTO(s int, A NonTerminal) int {
+	switch s {
+
+	}
+
+	return -1
+}
+
+/* ------------------------------------------------------------------------------------------------------------------------ */
+
+var Grammar = struct {
+  Terminals    []Terminal
+  NonTerminals []NonTerminal
+  Productions  []*Production
+}{
+	// terminals is an ordered list of terminal symbols for the grammar.
+	Terminals: []Terminal{
+{{- range .Terminals }}
+		{{ . }},
+{{- end }}
+	},
+
+	// nonTerminals is an ordered list of non-terminal symbols for the grammar.
+	NonTerminals: []NonTerminal{
+{{- range .NonTerminals }}
+		{{ printf "%q" . }},
+{{- end }}
+	},
+
+	// productions is an ordered list of productions rules for the grammar.
+	Productions: []*Production{
+{{- range $i, $prod := .Productions }}
+    /* {{ printf "%3d" $i}}: {{ printf "%s" $prod }} */ {Head: {{ printf "%q" $prod.Head }}, Body: String[Symbol]{ {{- formatSymbolString $prod.Body -}} }},
+{{- end }}
+	},
+}
+
 /* ------------------------------------------------------------------------------------------------------------------------ */

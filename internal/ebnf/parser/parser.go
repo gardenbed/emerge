@@ -89,7 +89,7 @@ func (p *Parser) nextToken() (lexer.Token, error) {
 }
 
 // Parse implements the LR parsing algorithm.
-// It analyzes a sequence of input tokens (terminal symbols) provided by a lexical analyzer.
+// It analyzes a sequence of input tokens (terminal symbols) provided by the lexical analyzer.
 // It attempts to parse the input according to the production rules of the EBNF grammar.
 //
 // The Parse method invokes the provided functions each time a token or a production rule is matched.
@@ -167,7 +167,7 @@ func (p *Parser) Parse(tokenF parser.TokenFunc, prodF ProductionFunc) error {
 			return nil
 
 		case lr.ERROR:
-			// TODO: This is unreachable currently, since T.ACTION handles the error.
+			// TODO: This is unreachable currently, since ACTION handles the error.
 		}
 	}
 }

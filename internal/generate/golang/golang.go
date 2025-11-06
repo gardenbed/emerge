@@ -17,6 +17,7 @@ import (
 	"github.com/moorara/algo/automata"
 	"github.com/moorara/algo/errors"
 	"github.com/moorara/algo/generic"
+	"github.com/moorara/algo/grammar"
 	"github.com/moorara/algo/parser/lr"
 	"github.com/moorara/algo/range/disc"
 
@@ -155,7 +156,7 @@ func (g *generator) generateCore() error {
 	}
 
 	var errs error
-	for _, filename := range []string{"core.go.tmpl", "grammar.go.tmpl", "input.go.tmpl"} {
+	for _, filename := range []string{"core.go.tmpl", "grammar.go.tmpl"} {
 		if err := g.renderTemplate(filename, data); err != nil {
 			errs = errors.Append(errs, err)
 		}
@@ -188,7 +189,7 @@ func (g *generator) generateLexer() error {
 	}
 
 	var errs error
-	for _, filename := range []string{"lexer.go.tmpl"} {
+	for _, filename := range []string{"input.go.tmpl", "lexer.go.tmpl"} {
 		if err := g.renderTemplate(filename, data); err != nil {
 			errs = errors.Append(errs, err)
 		}
@@ -219,9 +220,16 @@ func (g *generator) generateParser() error {
 		return err
 	}
 
+	terminals := g.Spec.Grammar.OrderTerminals()
+	_, _, nonTerminals := g.Spec.Grammar.OrderNonTerminals()
+	productions := g.Spec.Grammar.OrderProductions()
+
 	data := &parserData{
-		Debug:   g.Debug,
-		Package: g.Spec.Name,
+		Debug:        g.Debug,
+		Package:      g.Spec.Name,
+		Terminals:    terminals,
+		NonTerminals: nonTerminals,
+		Productions:  productions,
 	}
 
 	var errs error
@@ -240,8 +248,11 @@ func (g *generator) generateParser() error {
 }
 
 type parserData struct {
-	Debug   bool
-	Package string
+	Debug        bool
+	Package      string
+	Terminals    []grammar.Terminal
+	NonTerminals []grammar.NonTerminal
+	Productions  []*grammar.Production
 }
 
 // renderTemplate renders an embedded template by name and
@@ -255,8 +266,9 @@ func (g *generator) renderTemplate(filename string, data any) error {
 	}
 
 	tmpl := template.New(filename).Funcs(template.FuncMap{
-		"formatStates": formatStates,
-		"formatRanges": formatRanges,
+		"formatStates":       formatStates,
+		"formatRanges":       formatRanges,
+		"formatSymbolString": formatSymbolString,
 	})
 
 	tmpl, err = tmpl.Parse(string(content))
@@ -304,6 +316,26 @@ func formatRanges(ranges []disc.Range[automata.Symbol]) string {
 			fmt.Fprintf(&b, "r == %q, ", r.Lo)
 		} else {
 			fmt.Fprintf(&b, "%q <= r && r <= %q, ", r.Lo, r.Hi)
+		}
+	}
+
+	// Remove trailing comma and space
+	if b.Len() >= 2 {
+		b.Truncate(b.Len() - 2)
+	}
+
+	return b.String()
+}
+
+func formatSymbolString(s grammar.String[grammar.Symbol]) string {
+	var b bytes.Buffer
+
+	for _, sym := range s {
+		switch v := sym.(type) {
+		case grammar.Terminal:
+			fmt.Fprintf(&b, "Terminal(%s), ", v)
+		case grammar.NonTerminal:
+			fmt.Fprintf(&b, "NonTerminal(%q), ", v)
 		}
 	}
 

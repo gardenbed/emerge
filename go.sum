@@ -11,6 +11,8 @@ github.com/mattn/go-isatty v0.0.20 h1:xfD0iDuEKnDkl03q4limB+vH+GxLEtL/jb4xVJSWWE
 github.com/mattn/go-isatty v0.0.20/go.mod h1:W+V8PltTTMOvKvAeJH7IuucS94S2C6jfK/D7dTCTo3Y=
 github.com/moorara/algo v0.12.4 h1:Dlz5Rsxm1az0oO6sVLSI4KW8yPQFSPCeJuCxQl0WhMA=
 github.com/moorara/algo v0.12.4/go.mod h1:+MXoj4YYAcB6xb8SbQkSPlGSalv7kTDzlB1zd4BJRnQ=
+github.com/moorara/algo v0.12.5 h1:EG8B7okJZOehvZfgM0myzm6fPr4jlo5pKHo8bsDpt04=
+github.com/moorara/algo v0.12.5/go.mod h1:+MXoj4YYAcB6xb8SbQkSPlGSalv7kTDzlB1zd4BJRnQ=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu7U=

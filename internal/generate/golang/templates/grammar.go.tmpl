@@ -7,6 +7,14 @@
 // For more information and details, see "Compilers: Principles, Techniques, and Tools (2nd Edition)".
 const endmarker = Terminal("\uEEEE")
 
+// Symbol represents a grammar symbol (terminal or non-terminal).
+type Symbol interface {
+	fmt.Stringer
+
+	Name() string
+	IsTerminal() bool
+}
+
 // Terminal represents a terminal symbol.
 type Terminal string
 
@@ -28,6 +36,11 @@ func (t Terminal) Name() string {
 	return string(t)
 }
 
+// IsTerminal always returns true for terminal symbols.
+func (t Terminal) IsTerminal() bool {
+	return true
+}
+
 // NonTerminal represents a non-terminal symbol.
 type NonTerminal string
 
@@ -39,6 +52,42 @@ func (n NonTerminal) String() string {
 // Name returns the name of non-terminal symbol.
 func (n NonTerminal) Name() string {
 	return string(n)
+}
+
+// IsTerminal always returns false for non-terminal symbols.
+func (n NonTerminal) IsTerminal() bool {
+	return false
+}
+
+// String represent a string of grammar symbols.
+type String[T Symbol] []T
+
+// String returns a string representation of a string of symbols.
+func (s String[T]) String() string {
+	if len(s) == 0 {
+		return "ε"
+	}
+
+	names := make([]string, len(s))
+	for i, sym := range s {
+		names[i] = sym.String()
+	}
+
+	return strings.Join(names, " ")
+}
+
+// Production represents a context-free production rule.
+// The productions of a context-free grammar determine how the terminals and non-terminals can be combined to form strings.
+type Production struct {
+	// Head or left side defines some of the strings denoted by the non-terminal symbol.
+	Head NonTerminal
+	// Body or right side describes one way in which strings of the non-terminal at the head can be constructed.
+	Body String[Symbol]
+}
+
+// String returns a string representation of a production rule.
+func (p *Production) String() string {
+	return fmt.Sprintf("%s → %s", p.Head, p.Body)
 }
 
 /* ------------------------------------------------------------------------------------------------------------------------ */
