@@ -1,0 +1,438 @@
+
+const eof byte = 0x00
+
+const (
+	// The default lowest and highest continuation byte.
+	locb = 0b10000000
+	hicb = 0b10111111
+)
+
+const (
+	maskx = 0b00111111
+	mask2 = 0b00011111
+	mask3 = 0b00001111
+	mask4 = 0b00000111
+)
+
+const (
+	// The names of these constants are chosen to give nice alignment in the table below.
+	// The first nibble is an index into acceptRanges or F for special one-byte cases.
+	// The second nibble is the Rune length or the status for the special one-byte case.
+	xx = 0xF1 // Invalid:  size 1
+	as = 0xF0 // ASCII:    size 1
+	s1 = 0x02 // accept 0, size 2
+	s2 = 0x13 // accept 1, size 3
+	s3 = 0x03 // accept 0, size 3
+	s4 = 0x23 // accept 2, size 3
+	s5 = 0x34 // accept 3, size 4
+	s6 = 0x04 // accept 0, size 4
+	s7 = 0x44 // accept 4, size 4
+)
+
+// first is information about the first byte in a UTF-8 sequence.
+var first = [256]uint8{
+	//   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F
+	as, as, as, as, as, as, as, as, as, as, as, as, as, as, as, as, // 0x00-0x0F
+	as, as, as, as, as, as, as, as, as, as, as, as, as, as, as, as, // 0x10-0x1F
+	as, as, as, as, as, as, as, as, as, as, as, as, as, as, as, as, // 0x20-0x2F
+	as, as, as, as, as, as, as, as, as, as, as, as, as, as, as, as, // 0x30-0x3F
+	as, as, as, as, as, as, as, as, as, as, as, as, as, as, as, as, // 0x40-0x4F
+	as, as, as, as, as, as, as, as, as, as, as, as, as, as, as, as, // 0x50-0x5F
+	as, as, as, as, as, as, as, as, as, as, as, as, as, as, as, as, // 0x60-0x6F
+	as, as, as, as, as, as, as, as, as, as, as, as, as, as, as, as, // 0x70-0x7F
+	//   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F
+	xx, xx, xx, xx, xx, xx, xx, xx, xx, xx, xx, xx, xx, xx, xx, xx, // 0x80-0x8F
+	xx, xx, xx, xx, xx, xx, xx, xx, xx, xx, xx, xx, xx, xx, xx, xx, // 0x90-0x9F
+	xx, xx, xx, xx, xx, xx, xx, xx, xx, xx, xx, xx, xx, xx, xx, xx, // 0xA0-0xAF
+	xx, xx, xx, xx, xx, xx, xx, xx, xx, xx, xx, xx, xx, xx, xx, xx, // 0xB0-0xBF
+	xx, xx, s1, s1, s1, s1, s1, s1, s1, s1, s1, s1, s1, s1, s1, s1, // 0xC0-0xCF
+	s1, s1, s1, s1, s1, s1, s1, s1, s1, s1, s1, s1, s1, s1, s1, s1, // 0xD0-0xDF
+	s2, s3, s3, s3, s3, s3, s3, s3, s3, s3, s3, s3, s3, s4, s3, s3, // 0xE0-0xEF
+	s5, s6, s6, s6, s7, xx, xx, xx, xx, xx, xx, xx, xx, xx, xx, xx, // 0xF0-0xFF
+}
+
+// acceptRange gives the range of valid values for the second byte in a UTF-8 sequence.
+type acceptRange struct {
+	lo uint8 // lowest value for second byte.
+	hi uint8 // highest value for second byte.
+}
+
+// acceptRanges has size 16 to avoid bounds checks in the code that uses it.
+var acceptRanges = [16]acceptRange{
+	0: {locb, hicb},
+	1: {0xA0, hicb},
+	2: {locb, 0x9F},
+	3: {0x90, hicb},
+	4: {locb, 0x8F},
+}
+
+/* ------------------------------------------------------------------------------------------------------------------------ */
+
+// Position represents a specific location in an input source.
+type Position struct {
+	Filename string // The name of the input source file (optional).
+	Offset   int    // The byte offset from the beginning of the file.
+	Line     int    // The line number (1-based).
+	Column   int    // The column number on the line (1-based).
+}
+
+// String implements the fmt.Stringer interface.
+//
+// It returns a formatted string representation of the position.
+func (p Position) String() string {
+	var b bytes.Buffer
+
+	if len(p.Filename) > 0 {
+		fmt.Fprintf(&b, "%s:", p.Filename)
+	}
+
+	if p.Line > 0 && p.Column > 0 {
+		fmt.Fprintf(&b, "%d:%d", p.Line, p.Column)
+	} else {
+		fmt.Fprintf(&b, "%d", p.Offset)
+	}
+
+	return b.String()
+}
+
+// Equal determines whether or not two positions are the same.
+func (p Position) Equal(rhs Position) bool {
+	return p.Filename == rhs.Filename &&
+		p.Offset == rhs.Offset &&
+		p.Line == rhs.Line &&
+		p.Column == rhs.Column
+}
+
+// IsZero checks if a position is a zero (empty) value.
+func (p Position) IsZero() bool {
+	var zero Position
+	return p == zero
+}
+
+// Token represents a unit of the input language.
+//
+// A token consists of a terminal symbol, along with additional information such as
+// the lexeme (the actual value of the token in the input) and its position in the input stream.
+type Token struct {
+	Terminal
+	Lexeme string
+	Pos    Position
+}
+
+// String implements the fmt.Stringer interface.
+//
+// It returns a formatted string representation of the token.
+func (t Token) String() string {
+	return fmt.Sprintf("%s <%s, %s>", t.Terminal, t.Lexeme, t.Pos)
+}
+
+// Equal determines whether or not two tokens are the same.
+func (t Token) Equal(rhs Token) bool {
+	return t.Terminal == rhs.Terminal &&
+		t.Lexeme == rhs.Lexeme &&
+		t.Pos.Equal(rhs.Pos)
+}
+
+// InputError represents an error encountered when reading from an input source.
+type InputError struct {
+	Description string
+	Pos         Position
+}
+
+// Error implements the error interface.
+// It returns a formatted string describing the error in detail.
+func (e *InputError) Error() string {
+	var b bytes.Buffer
+	fmt.Fprintf(&b, "%s: %s", e.Pos, e.Description)
+	return b.String()
+}
+
+/* ------------------------------------------------------------------------------------------------------------------------ */
+
+// input implements the two-buffer scheme for reading the input characters.
+type input struct {
+	filename string
+	src      io.Reader
+
+	// The first and second halves of the buff are alternatively reloaded.
+	// Each half is of the same size N. Usually, N should be the size of a disk block.
+	buff []byte
+
+	lexemeBegin int // Pointer lexemeBegin marks the beginning of the current lexeme.
+	forward     int // Pointer forward scans ahead until a pattern match is found.
+
+	offset     int // Tracks the offset (0-based), total number of runes, before lexemeBegin.
+	line       int // Tracks the line number (1-based) before lexemeBegin.
+	column     int // Tracks the column number (1-based) before lexemeBegin.
+	nextColumn int // Tracks the column number (1-based) of the next rune to be read by forward.
+
+	runeSizes   stack[int] // Tracks the size of runes read between lexemeBegin and forward.
+	lastColumns stack[int] // Tracks the last column numbers for each line between lexemeBegin and forward.
+
+	err error // Last error encountered.
+}
+
+// newInput creates a new input buffer of size N.
+// N usually should be the size of a disk block.
+func newInput(filename string, src io.Reader, n int) (*input, error) {
+	// buff is divided into two sub-buffers (first half and second half).
+	buff := make([]byte, 2*n)
+
+	in := &input{
+		filename:    filename,
+		src:         src,
+		buff:        buff,
+		lexemeBegin: 0,
+		forward:     0,
+		offset:      0,
+		line:        1,
+		column:      1,
+		nextColumn:  1,
+		runeSizes:   newStack[int](n),
+		lastColumns: newStack[int](n),
+	}
+
+	if err := in.loadFirst(); err != nil {
+		return nil, err
+	}
+
+	return in, nil
+}
+
+// loadFirst reads the input and loads the first sub-buffer.
+func (i *input) loadFirst() error {
+	high := len(i.buff) / 2
+
+	n, err := i.src.Read(i.buff[:high])
+	if err != nil {
+		return err
+	}
+
+	if n < high {
+		i.buff[n] = eof
+	}
+
+	return nil
+}
+
+// loadSecond reads the input and loads the second sub-buffer.
+func (i *input) loadSecond() error {
+	low, high := len(i.buff)/2, len(i.buff)
+
+	n, err := i.src.Read(i.buff[low:high])
+	if err != nil {
+		return err
+	}
+
+	if n < high-low {
+		i.buff[low+n] = eof
+	}
+
+	return nil
+}
+
+// next returns the current byte at the forward pointer and advances the forward pointer to the next byte.
+func (i *input) next() (byte, error) {
+	if i.err != nil {
+		return 0, i.err
+	}
+
+	b := i.buff[i.forward]
+	i.forward++
+
+	// Determine whether or not the forward pointer has reached the end of any halves.
+	// If so, it loads the other half and set the forward pointer to the beginning of it.
+	// If the forward pointer has reached to the end of input, an io.EOF error will be returned.
+	if i.forward == len(i.buff)/2 { // Is forward at the end of first half?
+		i.err = i.loadSecond()
+	} else if i.forward == len(i.buff) { // Is forward at the end of second half?
+		if i.err = i.loadFirst(); i.err == nil {
+			i.forward = 0 // beginning of the first half
+		}
+	} else if i.buff[i.forward] == eof {
+		i.err = io.EOF
+	}
+
+	// The current read is fine, but the next one may return an error
+	return b, nil
+}
+
+// pos returns the position before lexemeBegin.
+func (i *input) pos() Position {
+	return Position{
+		Filename: i.filename,
+		Offset:   i.offset,
+		Line:     i.line,
+		Column:   i.column,
+	}
+}
+
+// forwardPos returns the position of forward.
+func (i *input) forwardPos() Position {
+	return Position{
+		Filename: i.filename,
+		Offset:   i.offset + i.runeSizes.Size(),
+		Line:     i.line + i.lastColumns.Size(),
+		Column:   i.nextColumn,
+	}
+}
+
+// Next advances to the next rune in the input and returns it.
+// If the end of the input is reached, it returns the io.EOF error.
+func (i *input) Next() (rune, error) {
+	// First byte
+	b0, err := i.next()
+	if err != nil {
+		return 0, err
+	}
+
+	x := first[b0]
+
+	if x >= as {
+		if x == xx {
+			return 0, &InputError{
+				Description: "invalid utf-8 character",
+				Pos:         i.forwardPos(),
+			}
+		}
+
+		// Check for new line
+		if b0 == '\n' {
+			i.lastColumns.Push(i.nextColumn)
+			i.nextColumn = 1
+		} else {
+			i.nextColumn++
+		}
+
+		i.runeSizes.Push(1)
+		return rune(b0), nil
+	}
+
+	size := int(x & 0b0111)
+
+	// Second byte
+	b1, err := i.next()
+	if err != nil {
+		return 0, err
+	}
+
+	accept := acceptRanges[x>>4]
+	if b1 < accept.lo || accept.hi < b1 {
+		return 0, &InputError{
+			Description: "invalid utf-8 character",
+			Pos:         i.forwardPos(),
+		}
+	}
+
+	if size == 2 {
+		i.runeSizes.Push(size)
+		i.nextColumn++
+		return rune(b0&mask2)<<6 | rune(b1&maskx), nil
+	}
+
+	// Third byte
+	b2, err := i.next()
+	if err != nil {
+		return 0, err
+	}
+
+	if b2 < locb || hicb < b2 {
+		return 0, &InputError{
+			Description: "invalid utf-8 character",
+			Pos:         i.forwardPos(),
+		}
+	}
+
+	if size == 3 {
+		i.runeSizes.Push(size)
+		i.nextColumn++
+		return rune(b0&mask3)<<12 | rune(b1&maskx)<<6 | rune(b2&maskx), nil
+	}
+
+	// Fourth byte
+	b3, err := i.next()
+	if err != nil {
+		return 0, err
+	}
+
+	if b3 < locb || hicb < b3 {
+		return 0, &InputError{
+			Description: "invalid utf-8 character",
+			Pos:         i.forwardPos(),
+		}
+	}
+
+	i.runeSizes.Push(size)
+	i.nextColumn++
+	return rune(b0&mask4)<<18 | rune(b1&maskx)<<12 | rune(b2&maskx)<<6 | rune(b3&maskx), nil
+}
+
+// Retract recedes to the last rune in the input.
+func (i *input) Retract() {
+	if size, ok := i.runeSizes.Pop(); ok {
+		i.forward -= size
+		if i.forward < 0 { // adjust the forward pointer if needed
+			i.forward += len(i.buff)
+		}
+
+		// Check for new line
+		if i.buff[i.forward] == '\n' {
+			if lastColumn, ok := i.lastColumns.Pop(); ok {
+				i.nextColumn = lastColumn
+			}
+		} else {
+			i.nextColumn--
+		}
+	}
+}
+
+// Lexeme returns the current lexeme alongside its position.
+func (i *input) Lexeme() (string, Position) {
+	pos := i.pos()
+
+	var lexeme bytes.Buffer
+	for i.lexemeBegin != i.forward {
+		lexeme.WriteByte(i.buff[i.lexemeBegin])
+		i.lexemeBegin++
+		if i.lexemeBegin == len(i.buff) { // Is lexemeBegin at the end of second half?
+			i.lexemeBegin = 0 // beginning of the first half
+		}
+	}
+
+	for !i.runeSizes.IsEmpty() {
+		i.runeSizes.Pop()
+		i.offset++
+	}
+
+	for !i.lastColumns.IsEmpty() {
+		i.lastColumns.Pop()
+		i.line++
+	}
+
+	i.column = i.nextColumn
+
+	return lexeme.String(), pos
+}
+
+// Skip skips over the pending lexeme in the input.
+func (i *input) Skip() Position {
+	pos := i.pos()
+
+	i.lexemeBegin = i.forward
+
+	for !i.runeSizes.IsEmpty() {
+		i.runeSizes.Pop()
+		i.offset++
+	}
+
+	for !i.lastColumns.IsEmpty() {
+		i.lastColumns.Pop()
+		i.line++
+	}
+
+	i.column = i.nextColumn
+
+	return pos
+}
+
+/* ------------------------------------------------------------------------------------------------------------------------ */

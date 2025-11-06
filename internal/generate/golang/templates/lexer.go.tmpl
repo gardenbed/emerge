@@ -1,3 +1,4 @@
+
 const (
 	errorState = -1
 	bufferSize = 4096
@@ -68,7 +69,7 @@ func (l *Lexer) evalDFA(state int) Token {
 	{{- if eq .Kind 0 }} {{/* StringDef */}}
 		pos := l.in.Skip()
 		return Token{Terminal: {{ .Terminal }}, Lexeme: {{ printf "%q" .Value }}, Pos: pos}
-	{{- else if eq .Kind 1 }}  {{/* RegexDef */}}
+	{{- else if eq .Kind 1 }} {{/* RegexDef */}}
 		lexeme, pos := l.in.Lexeme()
 		return Token{Terminal: {{ .Terminal }}, Lexeme: lexeme, Pos: pos}
 	{{- end }}

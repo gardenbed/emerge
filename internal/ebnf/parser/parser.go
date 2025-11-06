@@ -28,12 +28,34 @@ var Predefs = map[string]string{
 	"$COMMENT": `(#|//)[^\n\r]*|/\*.*?\*/`,
 }
 
-// ProductionFunc is similar to parser.ProductionFunc but passes
-// the index of a production rule instead of the production itself.
+// ProductionFunc is a function that is invoked each time a production rule
+// is matched or applied during the parsing process of an input string.
+// It passes the index of a production rule instead of the production itself.
+//
+// It executes the actions associated with the matched production rule,
+// such as semantic processing, constructing abstract syntax trees (AST),
+// or performing other custom logic required for the parsing process.
+//
+// The function may return an error, indicating an issue during production rule processing.
+// The parser may stop immediately or continue parsing and accumulate more errors.
 type ProductionFunc func(int) error
 
-// EvaluateFunc is similar to parser.EvaluateFunc but passes
-// the index of a production rule instead of the production itself.
+// EvaluateFunc is a function invoked every time a production rule
+// is matched or applied during the parsing of an input string.
+// It passes the index of a production rule instead of the production itself.
+//
+// It receives a list of values corresponding to the right-hand side of the matched production
+// and expects a value to be returned representing the left-hand side of the production.
+//
+// The returned value will be subsequently used as an input in the evaluation of other production rules.
+// Both the input and output values are of the generic type any.
+//
+// The caller is responsible for ensuring that each value is converted to the appropriate type based on
+// the production rule and the position of the symbol corresponding to the value in the production's right-hand side.
+// The input values must retain the same type they were originally evaluated as when returned.
+//
+// The function may return an error if there are issues with the input values,
+// such as mismatched types or unexpected inputs.
 type EvaluateFunc func(int, []*lr.Value) (any, error)
 
 // Parser is a parser (a.k.a. syntax analyzer) for the EBNF language.
@@ -55,8 +77,7 @@ func New(filename string, src io.Reader) (*Parser, error) {
 	}, nil
 }
 
-// nextToken wraps the Lexer.NextToken method and ensures
-// an Endmarker token is returned when the end of input is reached.
+// nextToken wraps the Lexer.NextToken method and ensures an Endmarker token is returned when the end of input is reached.
 func (p *Parser) nextToken() (lexer.Token, error) {
 	token, err := p.L.NextToken()
 	if err != nil && errors.Is(err, io.EOF) {
@@ -68,7 +89,7 @@ func (p *Parser) nextToken() (lexer.Token, error) {
 }
 
 // Parse implements the LR parsing algorithm.
-// It analyzes a sequence of input tokens (terminal symbols) provided by a lexical analyzer.
+// It analyzes a sequence of input tokens (terminal symbols) provided by the lexical analyzer.
 // It attempts to parse the input according to the production rules of the EBNF grammar.
 //
 // The Parse method invokes the provided functions each time a token or a production rule is matched.
@@ -146,7 +167,7 @@ func (p *Parser) Parse(tokenF parser.TokenFunc, prodF ProductionFunc) error {
 			return nil
 
 		case lr.ERROR:
-			// TODO: This is unreachable currently, since T.ACTION handles the error.
+			// TODO: This is unreachable currently, since ACTION handles the error.
 		}
 	}
 }
@@ -213,13 +234,13 @@ func (p *Parser) ParseAndBuildAST() (parser.Node, error) {
 // An error is returned if the input fails to conform to the grammar rules, indicating a syntax issue,
 // or if the evaluation function returns an error, indicating a semantic issue.
 func (p *Parser) ParseAndEvaluate(eval EvaluateFunc) (*lr.Value, error) {
-	// Stack for constructing the abstract syntax tree.
-	nodes := list.NewStack[*lr.Value](1024, nil)
+	// Stack for constructing the evaluation hierarchy.
+	values := list.NewStack[*lr.Value](1024, nil)
 
 	err := p.Parse(
 		func(token *lexer.Token) error {
 			copy := token.Pos
-			nodes.Push(&lr.Value{
+			values.Push(&lr.Value{
 				Val: token.Lexeme,
 				Pos: &copy,
 			})
@@ -232,7 +253,7 @@ func (p *Parser) ParseAndEvaluate(eval EvaluateFunc) (*lr.Value, error) {
 
 			// Maintain correct production body order
 			for i := l - 1; i >= 0; i-- {
-				v, _ := nodes.Pop()
+				v, _ := values.Pop()
 				rhs[i] = v
 			}
 
@@ -246,7 +267,7 @@ func (p *Parser) ParseAndEvaluate(eval EvaluateFunc) (*lr.Value, error) {
 				v.Pos = rhs[0].Pos
 			}
 
-			nodes.Push(v)
+			values.Push(v)
 
 			return nil
 		},
@@ -256,8 +277,8 @@ func (p *Parser) ParseAndEvaluate(eval EvaluateFunc) (*lr.Value, error) {
 		return nil, err
 	}
 
-	// The nodes stack only contains the root of AST at this point.
-	root, _ := nodes.Pop()
+	// The values stack only contains the root of AST at this point.
+	root, _ := values.Pop()
 
 	return root, nil
 }

@@ -17,6 +17,8 @@ import (
 	"github.com/moorara/algo/automata"
 	"github.com/moorara/algo/errors"
 	"github.com/moorara/algo/generic"
+	"github.com/moorara/algo/grammar"
+	"github.com/moorara/algo/parser/lr"
 	"github.com/moorara/algo/range/disc"
 
 	"github.com/gardenbed/emerge/internal/ebnf/parser/spec"
@@ -29,7 +31,7 @@ var (
 	navajoWhite = ui.Fg256Color(223)
 	darkOrange  = ui.Fg256Color(166)
 	hotPink     = ui.Fg256Color(168)
-	// orchid      = ui.Fg256Color(170)
+	orchid      = ui.Fg256Color(170)
 )
 
 var (
@@ -99,9 +101,9 @@ func Generate(u ui.UI, params *Params) error {
 		errs = errors.Append(errs, err)
 	}
 
-	/* if err := g.generateParser(); err != nil {
+	if err := g.generateParser(); err != nil {
 		errs = errors.Append(errs, err)
-	} */
+	}
 
 	return errs
 }
@@ -142,6 +144,12 @@ func (g *generator) prepare() error {
 	return nil
 }
 
+type coreData struct {
+	Debug           bool
+	Package         string
+	GenerateCommand string
+}
+
 // generateCore generates essential data types and structures for the lexer and parser,
 // ensuring no dependencies on third-party, non-built-in packages.
 func (g *generator) generateCore() error {
@@ -154,17 +162,20 @@ func (g *generator) generateCore() error {
 	}
 
 	var errs error
-	if err := g.renderTemplate("core.go.tmpl", data); err != nil {
-		errs = errors.Append(errs, err)
+	for _, filename := range []string{"core.go.tmpl", "grammar.go.tmpl"} {
+		if err := g.renderTemplate(filename, data); err != nil {
+			errs = errors.Append(errs, err)
+		}
 	}
 
 	return errs
 }
 
-type coreData struct {
-	Debug           bool
-	Package         string
-	GenerateCommand string
+type lexerData struct {
+	Debug          bool
+	Package        string
+	Assocs         []spec.FinalTerminalAssociation
+	DFATransitions iter.Seq2[automata.State, iter.Seq2[[]disc.Range[automata.Symbol], automata.State]]
 }
 
 // generateLexer generates the lexer code based on the provided terminal (token) definitions for the input language.
@@ -185,11 +196,13 @@ func (g *generator) generateLexer() error {
 	}
 
 	var errs error
-	if err := g.renderTemplate("lexer.go.tmpl", data); err != nil {
-		errs = errors.Append(errs, err)
+	for _, filename := range []string{"input.go.tmpl", "lexer.go.tmpl"} {
+		if err := g.renderTemplate(filename, data); err != nil {
+			errs = errors.Append(errs, err)
+		}
 	}
 
-	// Generate the lexer graph in DOT format if debugging is enabled.
+	// Generate the lexer graph if debugging is enabled.
 	if err := g.generateLexerGraph(dfa, assocs); err != nil {
 		errs = errors.Append(errs, err)
 	}
@@ -197,11 +210,132 @@ func (g *generator) generateLexer() error {
 	return errs
 }
 
-type lexerData struct {
-	Debug          bool
-	Package        string
-	Assocs         []spec.FinalTerminalAssociation
-	DFATransitions iter.Seq2[automata.State, iter.Seq2[[]disc.Range[automata.Symbol], automata.State]]
+// generateLexerGraph generates a DOT format graph of the lexer's DFA if debugging is enabled.
+func (g *generator) generateLexerGraph(dfa *automata.DFA, assocs []spec.FinalTerminalAssociation) error {
+	if !g.Params.Debug {
+		return nil
+	}
+
+	g.Debugf(navajoWhite, "       Generating the lexer graph ...")
+
+	// Write the DOT code to the file.
+	filepath := filepath.Join(g.Path, g.Spec.Name, "lexer.dot")
+	f, err := os.OpenFile(filepath, os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0666)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		_ = f.Close()
+	}()
+
+	// Generate the DOT code for the DFA.
+	dot := dfa.DOT()
+
+	// Modify the DOT code: colorize edges and their labels.
+	nodeRE := regexp.MustCompile(`  node \[shape=circle\];`)
+	dot = nodeRE.ReplaceAllString(dot, "  node [shape=circle];\n  edge [color=darkblue fontcolor=red];")
+
+	// Modify the DOT code: annotate final states with terminal names.
+	numRE := regexp.MustCompile(`\d+`)
+	nodeStmtRE := regexp.MustCompile(`  \d+ \[label="\d+", shape=doublecircle\];`)
+
+	dot = nodeStmtRE.ReplaceAllStringFunc(dot, func(m string) string {
+		if i, err := strconv.Atoi(numRE.FindString(m)); err == nil {
+			// Find the association with this final state.
+			assoc, ok := generic.FirstMatch(assocs, func(assoc spec.FinalTerminalAssociation) bool {
+				return assoc.Final.Contains(automata.State(i))
+			})
+
+			if ok {
+				return fmt.Sprintf(`  %d [label="%d", shape=doublecircle style=filled color=skyblue xlabel=%q];`, i, i, assoc.Terminal)
+			}
+		}
+
+		return m
+	})
+
+	if _, err := f.WriteString(dot); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type parserData struct {
+	Debug        bool
+	Package      string
+	Terminals    []grammar.Terminal
+	NonTerminals []grammar.NonTerminal
+	Productions  []*grammar.Production
+	ParsingTable *lr.ParsingTable
+}
+
+// generateParser generates the parser code based on the provided grammar and precedence levels for the input language.
+func (g *generator) generateParser() error {
+	g.Infof(orchid, "     Generating the parser ...")
+
+	g.Infof(orchid, "       Constructing LALR(1) Parsing Table ...")
+	T, err := g.Spec.LALRParsingTable()
+	if err != nil {
+		return err
+	}
+
+	terminals := g.Spec.Grammar.OrderTerminals()
+	_, _, nonTerminals := g.Spec.Grammar.OrderNonTerminals()
+	productions := g.Spec.Grammar.OrderProductions()
+
+	data := &parserData{
+		Debug:        g.Debug,
+		Package:      g.Spec.Name,
+		Terminals:    terminals,
+		NonTerminals: nonTerminals,
+		Productions:  productions,
+		ParsingTable: T,
+	}
+
+	var errs error
+	for _, filename := range []string{"ast.go.tmpl", "parser.lalr.go.tmpl"} {
+		if err := g.renderTemplate(filename, data); err != nil {
+			errs = errors.Append(errs, err)
+		}
+	}
+
+	// Generate the parsing table if debugging is enabled.
+	if err := g.generateParsingTable(T); err != nil {
+		errs = errors.Append(errs, err)
+	}
+
+	return errs
+}
+
+// generateParsingTable generates a text file containing the parsing table if debugging is enabled.
+func (g *generator) generateParsingTable(T *lr.ParsingTable) error {
+	if !g.Params.Debug {
+		return nil
+	}
+
+	g.Debugf(navajoWhite, "       Generating the parsing table ...")
+
+	// Write the DOT code to the file.
+	filepath := filepath.Join(g.Path, g.Spec.Name, "parser.txt")
+	f, err := os.OpenFile(filepath, os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0666)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		_ = f.Close()
+	}()
+
+	// Generate the content for the parsing table.
+	content := T.String()
+
+	if _, err := f.WriteString(content); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // renderTemplate renders an embedded template by name and
@@ -215,8 +349,16 @@ func (g *generator) renderTemplate(filename string, data any) error {
 	}
 
 	tmpl := template.New(filename).Funcs(template.FuncMap{
-		"formatStates": formatStates,
-		"formatRanges": formatRanges,
+		"formatStates":        formatStates,
+		"formatRanges":        formatRanges,
+		"formatSymbolString":  formatSymbolString,
+		"equalEndmarker":      equalEndmarker,
+		"appendEndmarker":     appendEndmarker,
+		"hasAnyACTION":        hasAnyACTION,
+		"lookupACTION":        lookupACTION,
+		"hasAnyGOTO":          hasAnyGOTO,
+		"lookupGOTO":          lookupGOTO,
+		"findProductionIndex": findProductionIndex,
 	})
 
 	tmpl, err = tmpl.Parse(string(content))
@@ -275,54 +417,76 @@ func formatRanges(ranges []disc.Range[automata.Symbol]) string {
 	return b.String()
 }
 
-// generateLexerGraph generates a DOT format graph of the lexer's DFA if debugging is enabled.
-func (g *generator) generateLexerGraph(dfa *automata.DFA, assocs []spec.FinalTerminalAssociation) error {
-	if !g.Params.Debug {
-		return nil
-	}
+func formatSymbolString(s grammar.String[grammar.Symbol]) string {
+	var b bytes.Buffer
 
-	g.Debugf(navajoWhite, "       Generating the lexer graph ...")
-
-	// Write the DOT code to the file.
-	filepath := filepath.Join(g.Path, g.Spec.Name, "lexer.dot")
-	f, err := os.OpenFile(filepath, os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0666)
-	if err != nil {
-		return err
-	}
-
-	defer func() {
-		_ = f.Close()
-	}()
-
-	// Generate the DOT code for the DFA.
-	dot := dfa.DOT()
-
-	// Modify the DOT code: colorize edges and their labels.
-	nodeRE := regexp.MustCompile(`  node \[shape=circle\];`)
-	dot = nodeRE.ReplaceAllString(dot, "  node [shape=circle];\n  edge [color=darkblue fontcolor=red];")
-
-	// Modify the DOT code: annotate final states with terminal names.
-	numRE := regexp.MustCompile(`\d+`)
-	nodeStmtRE := regexp.MustCompile(`  \d+ \[label="\d+", shape=doublecircle\];`)
-
-	dot = nodeStmtRE.ReplaceAllStringFunc(dot, func(m string) string {
-		if i, err := strconv.Atoi(numRE.FindString(m)); err == nil {
-			// Find the association with this final state.
-			assoc, ok := generic.FirstMatch(assocs, func(assoc spec.FinalTerminalAssociation) bool {
-				return assoc.Final.Contains(automata.State(i))
-			})
-
-			if ok {
-				return fmt.Sprintf(`  %d [label="%d", shape=doublecircle style=filled color=skyblue xlabel=%q];`, i, i, assoc.Terminal)
-			}
+	for _, sym := range s {
+		switch v := sym.(type) {
+		case grammar.Terminal:
+			fmt.Fprintf(&b, "Terminal(%s), ", v)
+		case grammar.NonTerminal:
+			fmt.Fprintf(&b, "NonTerminal(%q), ", v)
 		}
+	}
 
-		return m
-	})
+	// Remove trailing comma and space
+	if b.Len() >= 2 {
+		b.Truncate(b.Len() - 2)
+	}
 
-	if _, err := f.WriteString(dot); err != nil {
-		return err
+	return b.String()
+}
+
+func equalEndmarker(a grammar.Terminal) bool {
+	return a == grammar.Endmarker
+}
+
+func appendEndmarker(terminals []grammar.Terminal) []grammar.Terminal {
+	return append(terminals, grammar.Endmarker)
+}
+
+func hasAnyACTION(T *lr.ParsingTable, s lr.State, terminals []grammar.Terminal) bool {
+	for _, a := range terminals {
+		if _, err := T.ACTION(s, a); err == nil {
+			return true
+		}
+	}
+
+	return false
+}
+
+func lookupACTION(T *lr.ParsingTable, s lr.State, a grammar.Terminal) *lr.Action {
+	if action, err := T.ACTION(s, a); err == nil {
+		return action
 	}
 
 	return nil
+}
+
+func hasAnyGOTO(T *lr.ParsingTable, s lr.State, nonTerminals []grammar.NonTerminal) bool {
+	for _, A := range nonTerminals {
+		if _, err := T.GOTO(s, A); err == nil {
+			return true
+		}
+	}
+
+	return false
+}
+
+func lookupGOTO(T *lr.ParsingTable, s lr.State, A grammar.NonTerminal) string {
+	if next, err := T.GOTO(s, A); err == nil {
+		return fmt.Sprintf("%d", next)
+	}
+
+	return ""
+}
+
+func findProductionIndex(prods []*grammar.Production, prod *grammar.Production) int {
+	for i, p := range prods {
+		if p.Equal(prod) {
+			return i
+		}
+	}
+
+	return -1
 }

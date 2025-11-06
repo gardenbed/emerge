@@ -10,6 +10,8 @@ import (
 
 	"github.com/gardenbed/charm/ui"
 	"github.com/moorara/algo/automata"
+	"github.com/moorara/algo/parser/lr"
+	"github.com/moorara/algo/parser/lr/lookahead"
 
 	"github.com/gardenbed/emerge/internal/ebnf/parser/spec"
 )
@@ -127,7 +129,8 @@ func TestGenerator_prepare(t *testing.T) {
 			g: &generator{
 				UI: ui.NewNop(),
 				Params: &Params{
-					Path: filepath.Join(tempDir, "missing"),
+					Debug: false,
+					Path:  filepath.Join(tempDir, "missing"),
 				},
 			},
 			expectedErrorRegex: `output path does not exist: ".+/emerge-test-.+/missing"`,
@@ -137,7 +140,8 @@ func TestGenerator_prepare(t *testing.T) {
 			g: &generator{
 				UI: ui.NewNop(),
 				Params: &Params{
-					Path: tempFile.Name(),
+					Debug: false,
+					Path:  tempFile.Name(),
 				},
 			},
 			expectedErrorRegex: `output path is not a directory: ".+/emerge-test-file-.+"`,
@@ -147,7 +151,8 @@ func TestGenerator_prepare(t *testing.T) {
 			g: &generator{
 				UI: ui.NewNop(),
 				Params: &Params{
-					Path: tempDir,
+					Debug: false,
+					Path:  tempDir,
 					Spec: &spec.Spec{
 						Name: "\x00",
 					},
@@ -160,7 +165,8 @@ func TestGenerator_prepare(t *testing.T) {
 			g: &generator{
 				UI: ui.NewNop(),
 				Params: &Params{
-					Path: tempDir,
+					Debug: false,
+					Path:  tempDir,
 					Spec: &spec.Spec{
 						Name: "foo",
 					},
@@ -204,7 +210,8 @@ func TestGenerator_generateCore(t *testing.T) {
 			g: &generator{
 				UI: ui.NewNop(),
 				Params: &Params{
-					Path: tempDir,
+					Debug: false,
+					Path:  tempDir,
 					Spec: &spec.Spec{
 						Name: "foo",
 					},
@@ -219,7 +226,8 @@ func TestGenerator_generateCore(t *testing.T) {
 			g: &generator{
 				UI: ui.NewNop(),
 				Params: &Params{
-					Path: tempDir,
+					Debug: false,
+					Path:  tempDir,
 					Spec: &spec.Spec{
 						Name: "",
 					},
@@ -265,7 +273,8 @@ func TestGenerator_generateLexer(t *testing.T) {
 			g: &generator{
 				UI: ui.NewNop(),
 				Params: &Params{
-					Path: tempDir,
+					Debug: false,
+					Path:  tempDir,
 					Spec: &spec.Spec{
 						Name: "foo",
 						Definitions: []*spec.TerminalDef{
@@ -286,7 +295,8 @@ func TestGenerator_generateLexer(t *testing.T) {
 			g: &generator{
 				UI: ui.NewNop(),
 				Params: &Params{
-					Path: tempDir,
+					Debug: false,
+					Path:  tempDir,
 					Spec: &spec.Spec{
 						Name:        "foo",
 						Definitions: definitions,
@@ -302,7 +312,8 @@ func TestGenerator_generateLexer(t *testing.T) {
 			g: &generator{
 				UI: ui.NewNop(),
 				Params: &Params{
-					Path: tempDir,
+					Debug: false,
+					Path:  tempDir,
 					Spec: &spec.Spec{
 						Name:        "",
 						Definitions: definitions,
@@ -326,78 +337,6 @@ func TestGenerator_generateLexer(t *testing.T) {
 					re := regexp.MustCompile(expectedErrorRegex)
 					assert.True(t, re.MatchString(err.Error()), "%q DOES NOT INCLUDE %q", err, expectedErrorRegex)
 				}
-			}
-		})
-	}
-}
-
-func TestGenerator_renderTemplate(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "emerge-test-")
-	assert.NoError(t, err)
-
-	defer func() {
-		assert.NoError(t, os.RemoveAll(tempDir))
-	}()
-
-	tests := []struct {
-		name               string
-		g                  *generator
-		filename           string
-		data               any
-		expectedErrorRegex string
-	}{
-		{
-			name: "InvalidFilename",
-			g: &generator{
-				UI: ui.NewNop(),
-			},
-			filename:           "missing.go.tmpl",
-			data:               nil,
-			expectedErrorRegex: `open templates/missing.go.tmpl: file does not exist`,
-		},
-		{
-			name: "PackageDirNotExist",
-			g: &generator{
-				UI: ui.NewNop(),
-				Params: &Params{
-					Path: tempDir,
-					Spec: &spec.Spec{
-						Name: "foo",
-					},
-				},
-			},
-			filename:           "core.go.tmpl",
-			data:               nil,
-			expectedErrorRegex: `open .+/foo/foo.go: no such file or directory`,
-		},
-		{
-			name: "Success",
-			g: &generator{
-				UI: ui.NewNop(),
-				Params: &Params{
-					Path: tempDir,
-					Spec: &spec.Spec{
-						Name: "",
-					},
-				},
-			},
-			filename:           "core.go.tmpl",
-			data:               nil,
-			expectedErrorRegex: ``,
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			err := tc.g.renderTemplate(tc.filename, tc.data)
-
-			if tc.expectedErrorRegex == "" {
-				assert.NoError(t, err)
-			} else {
-				assert.Error(t, err)
-
-				re := regexp.MustCompile(tc.expectedErrorRegex)
-				assert.True(t, re.MatchString(err.Error()), "%q DOES NOT INCLUDE %q", err, tc.expectedErrorRegex)
 			}
 		})
 	}
@@ -479,6 +418,243 @@ func TestGenerator_generateLexerGraph(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			err := tc.g.generateLexerGraph(tc.dfa, tc.assocs)
+
+			if tc.expectedErrorRegex == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.Error(t, err)
+
+				re := regexp.MustCompile(tc.expectedErrorRegex)
+				assert.True(t, re.MatchString(err.Error()), "%q DOES NOT INCLUDE %q", err, tc.expectedErrorRegex)
+			}
+		})
+	}
+}
+
+func TestGenerator_generateParser(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "emerge-test-")
+	assert.NoError(t, err)
+
+	defer func() {
+		assert.NoError(t, os.RemoveAll(tempDir))
+	}()
+
+	tests := []struct {
+		name                 string
+		g                    *generator
+		expectedErrorRegexes []string
+	}{
+		{
+			name: "ParsingTableFails",
+			g: &generator{
+				UI: ui.NewNop(),
+				Params: &Params{
+					Debug: false,
+					Spec: &spec.Spec{
+						Name:        "foo",
+						Grammar:     grammars[0],
+						Precedences: lr.PrecedenceLevels{},
+					},
+				},
+			},
+			expectedErrorRegexes: []string{
+				`error on building LALR\(1\) parsing table:`,
+				`Error:      Ambiguous Grammar`,
+				`Cause:      Multiple conflicts in the parsing table:`,
+				`Resolution: Specify associativity and precedence for these Terminals/Productions:`,
+			},
+		},
+		{
+			name: "PackageDirNotExist",
+			g: &generator{
+				UI: ui.NewNop(),
+				Params: &Params{
+					Debug: false,
+					Path:  tempDir,
+					Spec: &spec.Spec{
+						Name:        "foo",
+						Grammar:     grammars[0],
+						Precedences: precedences[0],
+					},
+				},
+			},
+			expectedErrorRegexes: []string{
+				`open .+/foo/foo.go: no such file or directory`,
+			},
+		},
+		{
+			name: "Success",
+			g: &generator{
+				UI: ui.NewNop(),
+				Params: &Params{
+					Debug: false,
+					Path:  tempDir,
+					Spec: &spec.Spec{
+						Name:        "",
+						Grammar:     grammars[0],
+						Precedences: precedences[0],
+					},
+				},
+			},
+			expectedErrorRegexes: nil,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			err := tc.g.generateParser()
+
+			if len(tc.expectedErrorRegexes) == 0 {
+				assert.NoError(t, err)
+			} else {
+				assert.Error(t, err)
+
+				for _, expectedErrorRegex := range tc.expectedErrorRegexes {
+					re := regexp.MustCompile(expectedErrorRegex)
+					assert.True(t, re.MatchString(err.Error()), "%q DOES NOT MATCH %q", expectedErrorRegex, err)
+				}
+			}
+		})
+	}
+}
+
+func TestGenerator_generateParsingTable(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "emerge-test-")
+	assert.NoError(t, err)
+
+	defer func() {
+		assert.NoError(t, os.RemoveAll(tempDir))
+	}()
+
+	T, err := lookahead.BuildParsingTable(grammars[0], precedences[0])
+	assert.NoError(t, err)
+
+	tests := []struct {
+		name               string
+		g                  *generator
+		T                  *lr.ParsingTable
+		expectedErrorRegex string
+	}{
+		{
+			name: "DebugFalse",
+			g: &generator{
+				UI: ui.NewNop(),
+				Params: &Params{
+					Debug: false,
+				},
+			},
+			T:                  nil,
+			expectedErrorRegex: ``,
+		},
+		{
+			name: "PackageDirNotExist",
+			g: &generator{
+				UI: ui.NewNop(),
+				Params: &Params{
+					Debug: true,
+					Path:  tempDir,
+					Spec: &spec.Spec{
+						Name: "foo",
+					},
+				},
+			},
+			T:                  nil,
+			expectedErrorRegex: `open .+/foo/parser.txt: no such file or directory`,
+		},
+		{
+			name: "Success",
+			g: &generator{
+				UI: ui.NewNop(),
+				Params: &Params{
+					Debug: true,
+					Path:  tempDir,
+					Spec: &spec.Spec{
+						Name: "",
+					},
+				},
+			},
+			T:                  T,
+			expectedErrorRegex: ``,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			err := tc.g.generateParsingTable(tc.T)
+
+			if tc.expectedErrorRegex == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.Error(t, err)
+
+				re := regexp.MustCompile(tc.expectedErrorRegex)
+				assert.True(t, re.MatchString(err.Error()), "%q DOES NOT INCLUDE %q", err, tc.expectedErrorRegex)
+			}
+		})
+	}
+}
+
+func TestGenerator_renderTemplate(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "emerge-test-")
+	assert.NoError(t, err)
+
+	defer func() {
+		assert.NoError(t, os.RemoveAll(tempDir))
+	}()
+
+	tests := []struct {
+		name               string
+		g                  *generator
+		filename           string
+		data               any
+		expectedErrorRegex string
+	}{
+		{
+			name: "InvalidFilename",
+			g: &generator{
+				UI: ui.NewNop(),
+			},
+			filename:           "missing.go.tmpl",
+			data:               nil,
+			expectedErrorRegex: `open templates/missing.go.tmpl: file does not exist`,
+		},
+		{
+			name: "PackageDirNotExist",
+			g: &generator{
+				UI: ui.NewNop(),
+				Params: &Params{
+					Debug: false,
+					Path:  tempDir,
+					Spec: &spec.Spec{
+						Name: "foo",
+					},
+				},
+			},
+			filename:           "core.go.tmpl",
+			data:               nil,
+			expectedErrorRegex: `open .+/foo/foo.go: no such file or directory`,
+		},
+		{
+			name: "Success",
+			g: &generator{
+				UI: ui.NewNop(),
+				Params: &Params{
+					Debug: false,
+					Path:  tempDir,
+					Spec: &spec.Spec{
+						Name: "",
+					},
+				},
+			},
+			filename:           "core.go.tmpl",
+			data:               nil,
+			expectedErrorRegex: ``,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			err := tc.g.renderTemplate(tc.filename, tc.data)
 
 			if tc.expectedErrorRegex == "" {
 				assert.NoError(t, err)

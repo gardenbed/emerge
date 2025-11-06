@@ -78,13 +78,13 @@ const helpTemplate = `
 
   {{yellow "Flags:"}}
 
+    -help        Show the help text
+    -version     Print the version number
+    -verbose     Show the verbosity logs (default: {{.Verbose}})
+
     -out=path    Generate the parser in the specified directory.
     -name=foo    Generate the parser with the specified name and ignore the name in the grammar specification.
     -debug       Generate the parser with extra types and methods for debugging and troubleshooting purposes.
-
-    -help        Show the help text
-    -version     Print the version number
-    -verbose     Show the vervbosity logs (default: {{.Verbose}})
 
   {{yellow "Examples:"}}
 
@@ -192,7 +192,7 @@ func (c *Command) Run(args []string) error {
 		return err
 	}
 
-	// Override the grammar name if needed.
+	// Override the grammar name if specified via command-line flag.
 	if c.Name != "" {
 		spec.Name = c.Name
 	}

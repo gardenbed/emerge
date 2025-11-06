@@ -1,0 +1,132 @@
+
+// Endmarker is a special symbol that is used to indicate the end of a string.
+// The endmarker special symbol is assumed not to be a symbol of any grammar.
+// It is taken from the Unicode Private Use Area (BMP PUA) and
+// must be a valid string since the underlying type of Terminal is string.
+//
+// For more information and details, see "Compilers: Principles, Techniques, and Tools (2nd Edition)".
+const endmarker = Terminal("\uEEEE")
+
+// Symbol represents a grammar symbol (terminal or non-terminal).
+type Symbol interface {
+	fmt.Stringer
+
+	Equal(Symbol) bool
+	Name() string
+	IsTerminal() bool
+}
+
+// Terminal represents a terminal symbol.
+type Terminal string
+
+// String returns a string representation of a terminal symbol.
+func (t Terminal) String() string {
+	if t == endmarker {
+		return "$"
+	}
+
+	return fmt.Sprintf("%q", t.Name())
+}
+
+// Equal determines whether or not two terminal symbols are the same.
+func (t Terminal) Equal(rhs Symbol) bool {
+	v, ok := rhs.(Terminal)
+	return ok && t == v
+}
+
+// Name returns the name of terminal symbol.
+func (t Terminal) Name() string {
+	if t == endmarker {
+		return "$"
+	}
+
+	return string(t)
+}
+
+// IsTerminal always returns true for terminal symbols.
+func (t Terminal) IsTerminal() bool {
+	return true
+}
+
+// NonTerminal represents a non-terminal symbol.
+type NonTerminal string
+
+// String returns a string representation of a non-terminal symbol.
+func (n NonTerminal) String() string {
+	return n.Name()
+}
+
+// Equal determines whether or not two non-terminal symbols are the same.
+func (n NonTerminal) Equal(rhs Symbol) bool {
+	v, ok := rhs.(NonTerminal)
+	return ok && n == v
+}
+
+// Name returns the name of non-terminal symbol.
+func (n NonTerminal) Name() string {
+	return string(n)
+}
+
+// IsTerminal always returns false for non-terminal symbols.
+func (n NonTerminal) IsTerminal() bool {
+	return false
+}
+
+// String represent a string of grammar symbols.
+type String[T Symbol] []T
+
+// String returns a string representation of a string of symbols.
+func (s String[T]) String() string {
+	if len(s) == 0 {
+		return "ε"
+	}
+
+	names := make([]string, len(s))
+	for i, sym := range s {
+		names[i] = sym.String()
+	}
+
+	return strings.Join(names, " ")
+}
+
+// Equal determines whether or not two strings are the same.
+func (s String[T]) Equal(rhs String[T]) bool {
+	if len(s) != len(rhs) {
+		return false
+	}
+
+	for i := range s {
+		if !s[i].Equal(rhs[i]) {
+			return false
+		}
+	}
+
+	return true
+}
+
+// Production represents a context-free production rule.
+// The productions of a context-free grammar determine how the terminals and non-terminals can be combined to form strings.
+type Production struct {
+	// Head or left side defines some of the strings denoted by the non-terminal symbol.
+	Head NonTerminal
+	// Body or right side describes one way in which strings of the non-terminal at the head can be constructed.
+	Body String[Symbol]
+}
+
+// String returns a string representation of a production rule.
+func (p *Production) String() string {
+	return fmt.Sprintf("%s → %s", p.Head, p.Body)
+}
+
+// Equal determines whether or not two production rules are the same.
+func (p *Production) Equal(rhs *Production) bool {
+	if p == nil && rhs == nil {
+		return true
+	} else if p == nil || rhs == nil {
+		return false
+	}
+
+	return p.Head == rhs.Head && p.Body.Equal(rhs.Body)
+}
+
+/* ------------------------------------------------------------------------------------------------------------------------ */

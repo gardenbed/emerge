@@ -1,0 +1,254 @@
+
+// Node represents a node in an abstract syntax tree (AST)
+// derived from an input string allowed based on a context-free grammar.
+//
+// Each node can be either:
+//
+//   - An internal node: representing a non-terminal symbol and its associated production rule.
+//   - A leaf node: representing a terminal symbol.
+type Node interface {
+	fmt.Stringer
+
+	// Equal returns true if this node is equal to the given node.
+	Equal(Node) bool
+
+	// Symbol returns the grammar symbol associated with this node.
+	// For internal nodes, this is a non-terminal symbol (the left-hand side of the production rule represented by the node).
+	// For leaf nodes, this is a terminal symbol.
+	Symbol() Symbol
+
+	// Pos returns the leftmost position in the input string that this node represent.
+	Pos() Position
+
+	// Annotate associates an annotation with this node.
+	// An annotation often represents the node in a different context or type.
+	//
+	// Common use cases include:
+	//
+	//   - Storing the result of a type conversion (e.g., converting a string to a number).
+	//   - Capturing the outcome of evaluating the right-hand side of a production rule
+	//     (e.g., performing an arithmetic operation like addition).
+	//   - Associating a reference to a symbol table entry for an identifier.
+	//   - Adding metadata or auxiliary information related to the node.
+	Annotate(any)
+
+	// Annotation returns the annotation associated with this node.
+	// An annotation is a context-specific value of any type, set using the Annotate method.
+	//
+	// The caller should cast the returned value to the original type used when annotating.
+	Annotation() any
+}
+
+// InternalNode represents an internal node in an abstract syntax tree (AST).
+// An InternalNode represents a non-terminal symbol and its associated production rule.
+type InternalNode struct {
+	NonTerminal NonTerminal
+	Production  *Production
+	Children    []Node
+	annotation  any
+}
+
+// String returns a string representation of an internal node.
+func (n *InternalNode) String() string {
+	var b bytes.Buffer
+
+	// Find the leftmost leaf of the current node.
+	var ll *LeafNode
+	var ok bool
+	Traverse(n, LRV, func(n Node) bool {
+		ll, ok = n.(*LeafNode)
+		return false
+	})
+
+	if ok {
+		fmt.Fprintf(&b, "%s <%s, %s>", n.Production, ll.Lexeme, ll.Position)
+	} else {
+		fmt.Fprintf(&b, "%s", n.Production)
+	}
+
+	return b.String()
+}
+
+// Equal determines whether or not two internal nodes are the same.
+// Annotations are excluded from the equality check.
+func (n *InternalNode) Equal(rhs Node) bool {
+	nn, ok := rhs.(*InternalNode)
+	if !ok ||
+		!n.NonTerminal.Equal(nn.NonTerminal) ||
+		!n.Production.Equal(nn.Production) ||
+		len(n.Children) != len(nn.Children) {
+		return false
+	}
+
+	for i := range len(n.Children) {
+		if !n.Children[i].Equal(nn.Children[i]) {
+			return false
+		}
+	}
+
+	return true
+}
+
+// Symbol returns the non-terminal symbol associated with this internal node
+// (the left-hand side of the production rule represented by the node).
+func (n *InternalNode) Symbol() Symbol {
+	return n.NonTerminal
+}
+
+// Pos returns the position of the first child of this internal node.
+func (n *InternalNode) Pos() Position {
+	if len(n.Children) > 0 {
+		return n.Children[0].Pos()
+	}
+
+	return Position{}
+}
+
+// Annotate associates an annotation with this internal node.
+// An annotation often represents the node in a different context or type.
+//
+// Common use cases include:
+//
+//   - Storing the result of a type conversion (e.g., converting a string to a number).
+//   - Capturing the outcome of evaluating the right-hand side of a production rule
+//     (e.g., performing an arithmetic operation like addition).
+//   - Adding metadata or auxiliary information related to the node.
+func (n *InternalNode) Annotate(val any) {
+	n.annotation = val
+}
+
+// Annotation returns the annotation associated with this internal node.
+// An annotation is a context-specific value of any type, set using the Annotate method.
+//
+// The caller should cast the returned value to the original type used when annotating.
+func (n *InternalNode) Annotation() any {
+	return n.annotation
+}
+
+// LeafNode represents a leaf node in an abstract syntax tree (AST).
+// A LeafNode represents a terminal symbol.
+type LeafNode struct {
+	Terminal   Terminal
+	Lexeme     string
+	Position   Position
+	annotation any
+}
+
+// String returns a string representation of a leaf node.
+func (n *LeafNode) String() string {
+	if n.Position.IsZero() {
+		return fmt.Sprintf("%s <%s>", n.Terminal, n.Lexeme)
+	}
+
+	return fmt.Sprintf("%s <%s, %s>", n.Terminal, n.Lexeme, n.Position)
+}
+
+// Equal determines whether or not two leaf nodes are the same.
+// Annotations are excluded from the equality check.
+func (n *LeafNode) Equal(rhs Node) bool {
+	nn, ok := rhs.(*LeafNode)
+	return ok &&
+		n.Terminal == nn.Terminal &&
+		n.Lexeme == nn.Lexeme &&
+		n.Position.Equal(nn.Position)
+}
+
+// Symbol returns the terminal symbol associated with this leaf node.
+func (n *LeafNode) Symbol() Symbol {
+	return n.Terminal
+}
+
+// Pos returns the position of the substring represented by this leaf node in the input string.
+func (n *LeafNode) Pos() Position {
+	return n.Position
+}
+
+// Annotate associates an annotation with this leaf node.
+// An annotation often represents the node in a different context or type.
+//
+// Common use cases include:
+//
+//   - Storing the result of a type conversion (e.g., converting a string to a number).
+//   - Associating a reference to a symbol table entry for an identifier.
+//   - Adding metadata or auxiliary information related to the node.
+func (n *LeafNode) Annotate(val any) {
+	n.annotation = val
+}
+
+// Annotation returns the annotation associated with this leaf node.
+// An annotation is a context-specific value of any type, set using the Annotate method.
+//
+// The caller should cast the returned value to the original type used when annotating.
+func (n *LeafNode) Annotation() any {
+	return n.annotation
+}
+
+/* ------------------------------------------------------------------------------------------------------------------------ */
+
+// TraverseOrder represents the order in which nodes are traversed in an abstract syntax tree (AST).
+type TraverseOrder int
+
+const (
+	// VLR is a pre-order traversal from left to right.
+	VLR TraverseOrder = iota
+	// VRL is a pre-order traversal from right to left.
+	VRL
+	// LRV is a post-order traversal from left to right.
+	LRV
+	// RLV is a post-order traversal from right to left.
+	RLV
+)
+
+// VisitFunc is a function type used during abstract syntax tree (AST) traversal for processing nodes.
+type VisitFunc func(Node) bool
+
+// Traverse performs a depth-first traversal of an abstract syntax tree (AST), starting from the given root node.
+// It visits each node according to the specified traversal order and passes each node to the provided visit function.
+// If the visit function returns false, the traversal is stopped early.
+//
+// Valid traversal orders for an AST are VLR, VRL, LRV, and RLV.
+func Traverse(n Node, order TraverseOrder, visit VisitFunc) bool {
+	if leaf, ok := n.(*LeafNode); ok {
+		return visit(leaf)
+	}
+
+	in, ok := n.(*InternalNode)
+	if !ok {
+		return false
+	}
+
+	switch order {
+	case VLR:
+		res := visit(in)
+		for i := range len(in.Children) {
+			res = res && Traverse(in.Children[i], order, visit)
+		}
+		return res
+
+	case VRL:
+		res := visit(in)
+		for i := len(in.Children) - 1; i >= 0; i-- {
+			res = res && Traverse(in.Children[i], order, visit)
+		}
+		return res
+
+	case LRV:
+		res := true
+		for i := range len(in.Children) {
+			res = res && Traverse(in.Children[i], order, visit)
+		}
+		return res && visit(in)
+
+	case RLV:
+		res := true
+		for i := len(in.Children) - 1; i >= 0; i-- {
+			res = res && Traverse(in.Children[i], order, visit)
+		}
+		return res && visit(in)
+
+	default:
+		return false
+	}
+}
+
+/* ------------------------------------------------------------------------------------------------------------------------ */
