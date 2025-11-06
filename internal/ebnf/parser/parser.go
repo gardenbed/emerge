@@ -234,13 +234,13 @@ func (p *Parser) ParseAndBuildAST() (parser.Node, error) {
 // An error is returned if the input fails to conform to the grammar rules, indicating a syntax issue,
 // or if the evaluation function returns an error, indicating a semantic issue.
 func (p *Parser) ParseAndEvaluate(eval EvaluateFunc) (*lr.Value, error) {
-	// Stack for constructing the abstract syntax tree.
-	nodes := list.NewStack[*lr.Value](1024, nil)
+	// Stack for constructing the evaluation hierarchy.
+	values := list.NewStack[*lr.Value](1024, nil)
 
 	err := p.Parse(
 		func(token *lexer.Token) error {
 			copy := token.Pos
-			nodes.Push(&lr.Value{
+			values.Push(&lr.Value{
 				Val: token.Lexeme,
 				Pos: &copy,
 			})
@@ -253,7 +253,7 @@ func (p *Parser) ParseAndEvaluate(eval EvaluateFunc) (*lr.Value, error) {
 
 			// Maintain correct production body order
 			for i := l - 1; i >= 0; i-- {
-				v, _ := nodes.Pop()
+				v, _ := values.Pop()
 				rhs[i] = v
 			}
 
@@ -267,7 +267,7 @@ func (p *Parser) ParseAndEvaluate(eval EvaluateFunc) (*lr.Value, error) {
 				v.Pos = rhs[0].Pos
 			}
 
-			nodes.Push(v)
+			values.Push(v)
 
 			return nil
 		},
@@ -277,8 +277,8 @@ func (p *Parser) ParseAndEvaluate(eval EvaluateFunc) (*lr.Value, error) {
 		return nil, err
 	}
 
-	// The nodes stack only contains the root of AST at this point.
-	root, _ := nodes.Pop()
+	// The values stack only contains the root of AST at this point.
+	root, _ := values.Pop()
 
 	return root, nil
 }

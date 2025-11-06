@@ -20,7 +20,6 @@ type stack[T any] interface {
 	Push(T)
 	Pop() (T, bool)
 	Peek() (T, bool)
-	Contains(T) bool
 }
 
 type arrayNode[T any] struct {
@@ -35,14 +34,14 @@ func newArrayNode[T any](size int, next *arrayNode[T]) *arrayNode[T] {
 	}
 }
 
-type arrayStack[T comparable] struct {
+type arrayStack[T any] struct {
 	nodeSize int
 	listSize int
 	topIndex int
 	topNode  *arrayNode[T]
 }
 
-func newStack[T comparable](nodeSize int) stack[T] {
+func newStack[T any](nodeSize int) stack[T] {
 	return &arrayStack[T]{
 		nodeSize: nodeSize,
 		listSize: 0,
@@ -105,25 +104,6 @@ func (s *arrayStack[T]) Peek() (T, bool) {
 	}
 
 	return s.topNode.block[s.topIndex], true
-}
-
-// Contains returns true if a given value is already on the stack.
-func (s *arrayStack[T]) Contains(val T) bool {
-	n := s.topNode
-	i := s.topIndex
-
-	for n != nil {
-		if n.block[i] == val {
-			return true
-		}
-
-		if i--; i < 0 {
-			n = n.next
-			i = s.nodeSize - 1
-		}
-	}
-
-	return false
 }
 
 /* ------------------------------------------------------------------------------------------------------------------------ */
