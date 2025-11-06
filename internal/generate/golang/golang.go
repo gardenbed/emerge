@@ -230,6 +230,7 @@ func (g *generator) generateParser() error {
 		Terminals:    terminals,
 		NonTerminals: nonTerminals,
 		Productions:  productions,
+		ParsingTable: T,
 	}
 
 	var errs error
@@ -253,6 +254,7 @@ type parserData struct {
 	Terminals    []grammar.Terminal
 	NonTerminals []grammar.NonTerminal
 	Productions  []*grammar.Production
+	ParsingTable *lr.ParsingTable
 }
 
 // renderTemplate renders an embedded template by name and
@@ -266,9 +268,16 @@ func (g *generator) renderTemplate(filename string, data any) error {
 	}
 
 	tmpl := template.New(filename).Funcs(template.FuncMap{
-		"formatStates":       formatStates,
-		"formatRanges":       formatRanges,
-		"formatSymbolString": formatSymbolString,
+		"formatStates":        formatStates,
+		"formatRanges":        formatRanges,
+		"formatSymbolString":  formatSymbolString,
+		"equalEndmarker":      equalEndmarker,
+		"appendEndmarker":     appendEndmarker,
+		"hasAnyACTION":        hasAnyACTION,
+		"lookupACTION":        lookupACTION,
+		"hasAnyGOTO":          hasAnyGOTO,
+		"lookupGOTO":          lookupGOTO,
+		"findProductionIndex": findProductionIndex,
 	})
 
 	tmpl, err = tmpl.Parse(string(content))
@@ -345,6 +354,60 @@ func formatSymbolString(s grammar.String[grammar.Symbol]) string {
 	}
 
 	return b.String()
+}
+
+func equalEndmarker(a grammar.Terminal) bool {
+	return a == grammar.Endmarker
+}
+
+func appendEndmarker(terminals []grammar.Terminal) []grammar.Terminal {
+	return append(terminals, grammar.Endmarker)
+}
+
+func hasAnyACTION(T *lr.ParsingTable, s lr.State, terminals []grammar.Terminal) bool {
+	for _, a := range terminals {
+		if _, err := T.ACTION(s, a); err == nil {
+			return true
+		}
+	}
+
+	return false
+}
+
+func lookupACTION(T *lr.ParsingTable, s lr.State, a grammar.Terminal) *lr.Action {
+	if action, err := T.ACTION(s, a); err == nil {
+		return action
+	}
+
+	return nil
+}
+
+func hasAnyGOTO(T *lr.ParsingTable, s lr.State, nonTerminals []grammar.NonTerminal) bool {
+	for _, A := range nonTerminals {
+		if _, err := T.GOTO(s, A); err == nil {
+			return true
+		}
+	}
+
+	return false
+}
+
+func lookupGOTO(T *lr.ParsingTable, s lr.State, A grammar.NonTerminal) string {
+	if next, err := T.GOTO(s, A); err == nil {
+		return fmt.Sprintf("%d", next)
+	}
+
+	return ""
+}
+
+func findProductionIndex(prods []*grammar.Production, prod *grammar.Production) int {
+	for i, p := range prods {
+		if p.Equal(prod) {
+			return i
+		}
+	}
+
+	return -1
 }
 
 // generateLexerGraph generates a DOT format graph of the lexer's DFA if debugging is enabled.

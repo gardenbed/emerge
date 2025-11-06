@@ -9,7 +9,7 @@ const (
 	ERROR                        // Signal an error in parsing.
 )
 
-// TokenFunc is a function that is invoked each time a token
+// tokenFunc is a function that is invoked each time a token
 // is matched and removed from an input string during parsing.
 //
 // It executes the actions associated with the matched token,
@@ -18,9 +18,9 @@ const (
 //
 // The function may return an error, indicating an issue during token processing.
 // The parser may stop immediately or continue parsing and accumulate more errors.
-type TokenFunc func(*Token) error
+type tokenFunc func(*Token) error
 
-// ProductionFunc is a function that is invoked each time a production rule
+// productionFunc is a function that is invoked each time a production rule
 // is matched or applied during the parsing process of an input string.
 // It passes the index of a production rule instead of the production itself.
 //
@@ -30,7 +30,7 @@ type TokenFunc func(*Token) error
 //
 // The function may return an error, indicating an issue during production rule processing.
 // The parser may stop immediately or continue parsing and accumulate more errors.
-type ProductionFunc func(int) error
+type productionFunc func(int) error
 
 // EvaluateFunc is a function invoked every time a production rule
 // is matched or applied during the parsing of an input string.
@@ -143,7 +143,7 @@ func (p *Parser) nextToken() (Token, error) {
 //
 // An error is returned if the input fails to conform to the grammar rules, indicating a syntax issue,
 // or if any of the provided functions return an error, indicating a semantic issue.
-func (p *Parser) parse(tokenF TokenFunc, prodF ProductionFunc) error {
+func (p *Parser) parse(tokenF tokenFunc, prodF productionFunc) error {
 	stack := newStack[int](1024)
 	stack.Push(0)
 
@@ -223,7 +223,30 @@ func (p *Parser) parse(tokenF TokenFunc, prodF ProductionFunc) error {
 // ACTION looks up and returns the action for state s and terminal a.
 func ACTION(s int, a Terminal) (ActionType, int, error) {
 	switch s {
-
+{{- range $s := .ParsingTable.States }}{{ if hasAnyACTION $.ParsingTable $s (appendEndmarker $.Terminals) }}
+	case {{ $s }}:
+		switch a {
+		{{- range $a := (appendEndmarker $.Terminals) }}
+		{{- if $action := lookupACTION $.ParsingTable $s $a }}
+		{{- if equalEndmarker $a }} {{/* grammar.Endmarker */}}
+		case endmarker:
+		{{- else }}
+		case {{ printf "%s" $a }}:
+		{{- end }}
+		{{- if eq $action.Type 1 }} {{/* SHIFT */}}
+			return SHIFT, {{ printf "%d" $action.State }}, nil // {{ printf "%s" $action }}
+		{{- else if eq $action.Type 2 }} {{/* REDUCE */}}
+			{{- $i := findProductionIndex $.Productions $action.Production }}
+			{{- if ne $i -1 }}
+			return REDUCE, {{ printf "%d" $i }}, nil // {{ printf "%s" $action }}
+			{{- end }}
+		{{- else if eq $action.Type 3 }} {{/* ACCEPT */}}
+			return ACCEPT, 0, nil // ACCEPT
+		{{- end }}
+		{{- end }}
+		{{- end }}
+		}
+{{ end }}{{ end }}
 	}
 
 	return ERROR, -1, fmt.Errorf("no action exists in the parsing table for ACTION[%d, %s]", s, a)
@@ -232,7 +255,17 @@ func ACTION(s int, a Terminal) (ActionType, int, error) {
 // GOTO looks up and returns the next state for state s and non-terminal A.
 func GOTO(s int, A NonTerminal) int {
 	switch s {
-
+{{- range $s := .ParsingTable.States }}{{ if hasAnyGOTO $.ParsingTable $s $.NonTerminals }}
+	case {{ $s }}:
+		switch A {
+		{{- range $A := $.NonTerminals }}
+		{{- if $next := lookupGOTO $.ParsingTable $s $A }}
+		case {{ printf "%q" $A }}:
+			return {{ $next }}
+		{{- end }}
+		{{- end }}
+		}
+{{ end }}{{ end }}
 	}
 
 	return -1
@@ -241,28 +274,28 @@ func GOTO(s int, A NonTerminal) int {
 /* ------------------------------------------------------------------------------------------------------------------------ */
 
 var Grammar = struct {
-  Terminals    []Terminal
-  NonTerminals []NonTerminal
-  Productions  []*Production
+	Terminals    []Terminal
+	NonTerminals []NonTerminal
+	Productions  []*Production
 }{
-	// terminals is an ordered list of terminal symbols for the grammar.
+	// Terminals is an ordered list of terminal symbols for the grammar.
 	Terminals: []Terminal{
 {{- range .Terminals }}
 		{{ . }},
 {{- end }}
 	},
 
-	// nonTerminals is an ordered list of non-terminal symbols for the grammar.
+	// NonTerminals is an ordered list of non-terminal symbols for the grammar.
 	NonTerminals: []NonTerminal{
 {{- range .NonTerminals }}
 		{{ printf "%q" . }},
 {{- end }}
 	},
 
-	// productions is an ordered list of productions rules for the grammar.
+	// Productions is an ordered list of productions rules for the grammar.
 	Productions: []*Production{
 {{- range $i, $prod := .Productions }}
-    /* {{ printf "%3d" $i}}: {{ printf "%s" $prod }} */ {Head: {{ printf "%q" $prod.Head }}, Body: String[Symbol]{ {{- formatSymbolString $prod.Body -}} }},
+		/* {{ printf "%3d" $i}}: {{ printf "%s" $prod }} */ {Head: {{ printf "%q" $prod.Head }}, Body: String[Symbol]{ {{- formatSymbolString $prod.Body -}} }},
 {{- end }}
 	},
 }
