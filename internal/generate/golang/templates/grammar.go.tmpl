@@ -1,0 +1,44 @@
+
+// Endmarker is a special symbol that is used to indicate the end of a string.
+// The endmarker special symbol is assumed not to be a symbol of any grammar.
+// It is taken from the Unicode Private Use Area (BMP PUA) and
+// must be a valid string since the underlying type of Terminal is string.
+//
+// For more information and details, see "Compilers: Principles, Techniques, and Tools (2nd Edition)".
+const endmarker = Terminal("\uEEEE")
+
+// Terminal represents a terminal symbol.
+type Terminal string
+
+// String returns a string representation of a terminal symbol.
+func (t Terminal) String() string {
+	if t == endmarker {
+		return "$"
+	}
+
+	return fmt.Sprintf("%q", t.Name())
+}
+
+// Name returns the name of terminal symbol.
+func (t Terminal) Name() string {
+	if t == endmarker {
+		return "$"
+	}
+
+	return string(t)
+}
+
+// NonTerminal represents a non-terminal symbol.
+type NonTerminal string
+
+// String returns a string representation of a non-terminal symbol.
+func (n NonTerminal) String() string {
+	return n.Name()
+}
+
+// Name returns the name of non-terminal symbol.
+func (n NonTerminal) Name() string {
+	return string(n)
+}
+
+/* ------------------------------------------------------------------------------------------------------------------------ */

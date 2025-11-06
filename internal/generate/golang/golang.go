@@ -155,8 +155,10 @@ func (g *generator) generateCore() error {
 	}
 
 	var errs error
-	if err := g.renderTemplate("core.go.tmpl", data); err != nil {
-		errs = errors.Append(errs, err)
+	for _, filename := range []string{"core.go.tmpl", "grammar.go.tmpl", "input.go.tmpl"} {
+		if err := g.renderTemplate(filename, data); err != nil {
+			errs = errors.Append(errs, err)
+		}
 	}
 
 	return errs
@@ -186,8 +188,10 @@ func (g *generator) generateLexer() error {
 	}
 
 	var errs error
-	if err := g.renderTemplate("lexer.go.tmpl", data); err != nil {
-		errs = errors.Append(errs, err)
+	for _, filename := range []string{"lexer.go.tmpl"} {
+		if err := g.renderTemplate(filename, data); err != nil {
+			errs = errors.Append(errs, err)
+		}
 	}
 
 	// Generate the lexer graph if debugging is enabled.
