@@ -144,6 +144,12 @@ func (g *generator) prepare() error {
 	return nil
 }
 
+type coreData struct {
+	Debug           bool
+	Package         string
+	GenerateCommand string
+}
+
 // generateCore generates essential data types and structures for the lexer and parser,
 // ensuring no dependencies on third-party, non-built-in packages.
 func (g *generator) generateCore() error {
@@ -165,10 +171,11 @@ func (g *generator) generateCore() error {
 	return errs
 }
 
-type coreData struct {
-	Debug           bool
-	Package         string
-	GenerateCommand string
+type lexerData struct {
+	Debug          bool
+	Package        string
+	Assocs         []spec.FinalTerminalAssociation
+	DFATransitions iter.Seq2[automata.State, iter.Seq2[[]disc.Range[automata.Symbol], automata.State]]
 }
 
 // generateLexer generates the lexer code based on the provided terminal (token) definitions for the input language.
@@ -203,11 +210,65 @@ func (g *generator) generateLexer() error {
 	return errs
 }
 
-type lexerData struct {
-	Debug          bool
-	Package        string
-	Assocs         []spec.FinalTerminalAssociation
-	DFATransitions iter.Seq2[automata.State, iter.Seq2[[]disc.Range[automata.Symbol], automata.State]]
+// generateLexerGraph generates a DOT format graph of the lexer's DFA if debugging is enabled.
+func (g *generator) generateLexerGraph(dfa *automata.DFA, assocs []spec.FinalTerminalAssociation) error {
+	if !g.Params.Debug {
+		return nil
+	}
+
+	g.Debugf(navajoWhite, "       Generating the lexer graph ...")
+
+	// Write the DOT code to the file.
+	filepath := filepath.Join(g.Path, g.Spec.Name, "lexer.dot")
+	f, err := os.OpenFile(filepath, os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0666)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		_ = f.Close()
+	}()
+
+	// Generate the DOT code for the DFA.
+	dot := dfa.DOT()
+
+	// Modify the DOT code: colorize edges and their labels.
+	nodeRE := regexp.MustCompile(`  node \[shape=circle\];`)
+	dot = nodeRE.ReplaceAllString(dot, "  node [shape=circle];\n  edge [color=darkblue fontcolor=red];")
+
+	// Modify the DOT code: annotate final states with terminal names.
+	numRE := regexp.MustCompile(`\d+`)
+	nodeStmtRE := regexp.MustCompile(`  \d+ \[label="\d+", shape=doublecircle\];`)
+
+	dot = nodeStmtRE.ReplaceAllStringFunc(dot, func(m string) string {
+		if i, err := strconv.Atoi(numRE.FindString(m)); err == nil {
+			// Find the association with this final state.
+			assoc, ok := generic.FirstMatch(assocs, func(assoc spec.FinalTerminalAssociation) bool {
+				return assoc.Final.Contains(automata.State(i))
+			})
+
+			if ok {
+				return fmt.Sprintf(`  %d [label="%d", shape=doublecircle style=filled color=skyblue xlabel=%q];`, i, i, assoc.Terminal)
+			}
+		}
+
+		return m
+	})
+
+	if _, err := f.WriteString(dot); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type parserData struct {
+	Debug        bool
+	Package      string
+	Terminals    []grammar.Terminal
+	NonTerminals []grammar.NonTerminal
+	Productions  []*grammar.Production
+	ParsingTable *lr.ParsingTable
 }
 
 // generateParser generates the parser code based on the provided grammar and precedence levels for the input language.
@@ -248,13 +309,33 @@ func (g *generator) generateParser() error {
 	return errs
 }
 
-type parserData struct {
-	Debug        bool
-	Package      string
-	Terminals    []grammar.Terminal
-	NonTerminals []grammar.NonTerminal
-	Productions  []*grammar.Production
-	ParsingTable *lr.ParsingTable
+// generateParsingTable generates a text file containing the parsing table if debugging is enabled.
+func (g *generator) generateParsingTable(T *lr.ParsingTable) error {
+	if !g.Params.Debug {
+		return nil
+	}
+
+	g.Debugf(navajoWhite, "       Generating the parsing table ...")
+
+	// Write the DOT code to the file.
+	filepath := filepath.Join(g.Path, g.Spec.Name, "parser.txt")
+	f, err := os.OpenFile(filepath, os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0666)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		_ = f.Close()
+	}()
+
+	// Generate the content for the parsing table.
+	content := T.String()
+
+	if _, err := f.WriteString(content); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // renderTemplate renders an embedded template by name and
@@ -408,85 +489,4 @@ func findProductionIndex(prods []*grammar.Production, prod *grammar.Production) 
 	}
 
 	return -1
-}
-
-// generateLexerGraph generates a DOT format graph of the lexer's DFA if debugging is enabled.
-func (g *generator) generateLexerGraph(dfa *automata.DFA, assocs []spec.FinalTerminalAssociation) error {
-	if !g.Params.Debug {
-		return nil
-	}
-
-	g.Debugf(navajoWhite, "       Generating the lexer graph ...")
-
-	// Write the DOT code to the file.
-	filepath := filepath.Join(g.Path, g.Spec.Name, "lexer.dot")
-	f, err := os.OpenFile(filepath, os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0666)
-	if err != nil {
-		return err
-	}
-
-	defer func() {
-		_ = f.Close()
-	}()
-
-	// Generate the DOT code for the DFA.
-	dot := dfa.DOT()
-
-	// Modify the DOT code: colorize edges and their labels.
-	nodeRE := regexp.MustCompile(`  node \[shape=circle\];`)
-	dot = nodeRE.ReplaceAllString(dot, "  node [shape=circle];\n  edge [color=darkblue fontcolor=red];")
-
-	// Modify the DOT code: annotate final states with terminal names.
-	numRE := regexp.MustCompile(`\d+`)
-	nodeStmtRE := regexp.MustCompile(`  \d+ \[label="\d+", shape=doublecircle\];`)
-
-	dot = nodeStmtRE.ReplaceAllStringFunc(dot, func(m string) string {
-		if i, err := strconv.Atoi(numRE.FindString(m)); err == nil {
-			// Find the association with this final state.
-			assoc, ok := generic.FirstMatch(assocs, func(assoc spec.FinalTerminalAssociation) bool {
-				return assoc.Final.Contains(automata.State(i))
-			})
-
-			if ok {
-				return fmt.Sprintf(`  %d [label="%d", shape=doublecircle style=filled color=skyblue xlabel=%q];`, i, i, assoc.Terminal)
-			}
-		}
-
-		return m
-	})
-
-	if _, err := f.WriteString(dot); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// generateParsingTable generates a text file containing the parsing table if debugging is enabled.
-func (g *generator) generateParsingTable(T *lr.ParsingTable) error {
-	if !g.Params.Debug {
-		return nil
-	}
-
-	g.Debugf(navajoWhite, "       Generating the parsing table ...")
-
-	// Write the DOT code to the file.
-	filepath := filepath.Join(g.Path, g.Spec.Name, "parser.txt")
-	f, err := os.OpenFile(filepath, os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0666)
-	if err != nil {
-		return err
-	}
-
-	defer func() {
-		_ = f.Close()
-	}()
-
-	// Generate the content for the parsing table.
-	content := T.String()
-
-	if _, err := f.WriteString(content); err != nil {
-		return err
-	}
-
-	return nil
 }
