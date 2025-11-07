@@ -25,7 +25,7 @@ import (
 // This is useful for directly constructing a DFA for a regular expression.
 //
 // For more details, see Compilers: Principles, Techniques, and Tools (2nd Edition).
-const endMarker rune = 0xEEEE
+const endmarker rune = 0xEEEE
 
 // AST is the abstract syntax tree for a regular expression.
 type AST struct {
@@ -54,7 +54,7 @@ func Parse(regex string) (*AST, error) {
 	root := &Concat{
 		Exprs: []Node{
 			out.Result.Val.(Node),
-			&Char{Lo: endMarker, Hi: endMarker},
+			&Char{Lo: endmarker, Hi: endmarker},
 		},
 	}
 
@@ -156,7 +156,7 @@ func (a *AST) followPos(p Pos) Poses {
 //
 // For more details, see Compilers: Principles, Techniques, and Tools (2nd Edition).
 func (a *AST) ToDFA() *automata.DFA {
-	end := char.Range{endMarker, endMarker}
+	end := char.Range{endmarker, endmarker}
 
 	b := automata.NewDFABuilder().SetStart(0)
 
