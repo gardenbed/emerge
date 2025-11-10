@@ -1221,7 +1221,7 @@ func TestParser_anyChar(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.anyChar(tc.in)
+			_, _ = p.anyChar(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
 			if m := tc.m.ToAnyCharMocks; len(m) > 0 {
@@ -1279,7 +1279,7 @@ func TestParser_singleChar(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.singleChar(tc.in)
+			_, _ = p.singleChar(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
 			if m := tc.m.ToSingleCharMocks; len(m) > 0 {
@@ -1367,7 +1367,7 @@ func TestParser_charClass(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.charClass(tc.in)
+			_, _ = p.charClass(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
 			if m := tc.m.ToCharClassMocks; len(m) > 0 {
@@ -1495,7 +1495,7 @@ func TestParser_asciiCharClass(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.asciiCharClass(tc.in)
+			_, _ = p.asciiCharClass(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
 			if m := tc.m.ToASCIICharClassMocks; len(m) > 0 {
@@ -1963,7 +1963,7 @@ func TestParser_unicodeCategory(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.unicodeCategory(tc.in)
+			_, _ = p.unicodeCategory(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
 			if m := tc.m.ToUnicodeCategoryMocks; len(m) > 0 {
@@ -4103,7 +4103,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.unicodeCharClass(tc.in)
+			_, _ = p.unicodeCharClass(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
 			if m := tc.m.ToUnicodeCharClassMocks; len(m) > 0 {
@@ -4161,7 +4161,7 @@ func TestParser_repOp(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.repOp(tc.in)
+			_, _ = p.repOp(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
 			if m := tc.m.ToRepOpMocks; len(m) > 0 {
@@ -4221,7 +4221,7 @@ func TestParser_upperBound(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.upperBound(tc.in)
+			_, _ = p.upperBound(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
 			if m := tc.m.ToUpperBoundMocks; len(m) > 0 {
@@ -4288,7 +4288,7 @@ func TestParser_range(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.range_(tc.in)
+			_, _ = p.range_(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
 			if m := tc.m.ToRangeMocks; len(m) > 0 {
@@ -4345,7 +4345,7 @@ func TestParser_repetition(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.repetition(tc.in)
+			_, _ = p.repetition(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
 			if m := tc.m.ToRepetitionMocks; len(m) > 0 {
@@ -4415,7 +4415,7 @@ func TestParser_quantifier(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.quantifier(tc.in)
+			_, _ = p.quantifier(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
 			if m := tc.m.ToQuantifierMocks; len(m) > 0 {
@@ -4473,7 +4473,7 @@ func TestParser_charInGroup(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.charInGroup(tc.in)
+			_, _ = p.charInGroup(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
 			if m := tc.m.ToCharInGroupMocks; len(m) > 0 {
@@ -4589,7 +4589,7 @@ func TestParser_charRange(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.charRange(tc.in)
+			_, _ = p.charRange(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
 			if m := tc.m.ToCharRangeMocks; len(m) > 0 {
@@ -4690,7 +4690,7 @@ func TestParser_charGroupItem(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.charGroupItem(tc.in)
+			_, _ = p.charGroupItem(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
 			if m := tc.m.ToCharGroupItemMocks; len(m) > 0 {
@@ -4786,7 +4786,7 @@ func TestParser_charGroup(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.charGroup(tc.in)
+			_, _ = p.charGroup(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
 			if m := tc.m.ToCharGroupMocks; len(m) > 0 {
@@ -4906,7 +4906,7 @@ func TestParser_matchItem(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.matchItem(tc.in)
+			_, _ = p.matchItem(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
 			if m := tc.m.ToMatchItemMocks; len(m) > 0 {
@@ -4985,7 +4985,7 @@ func TestParser_match(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.match(tc.in)
+			_, _ = p.match(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
 			if m := tc.m.ToMatchMocks; len(m) > 0 {
@@ -5094,11 +5094,11 @@ func TestParser_group(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.group(tc.in)
+			_, _ = p.group(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
 			if m := tc.m.ToGroupMocks; len(m) > 0 {
-				assert.Equal(t, tc.expectedInResult, tc.m.ToGroupMocks[0].InResult)
+				assert.Equal(t, tc.expectedInResult, m[0].InResult)
 			}
 		})
 	}
@@ -5132,7 +5132,7 @@ func TestParser_anchor(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.anchor(tc.in)
+			_, _ = p.anchor(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
 			if m := tc.m.ToAnchorMocks; len(m) > 0 {
@@ -5221,7 +5221,7 @@ func TestParser_subexprItem(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.subexprItem(tc.in)
+			_, _ = p.subexprItem(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
 			if m := tc.m.ToSubexprItemMocks; len(m) > 0 {
@@ -5280,7 +5280,7 @@ func TestParser_subexpr(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.subexpr(tc.in)
+			_, _ = p.subexpr(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
 			if m := tc.m.ToSubexprMocks; len(m) > 0 {
@@ -5380,7 +5380,7 @@ func TestParser_expr(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.expr(tc.in)
+			_, _ = p.expr(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
 			if m := tc.m.ToExprMocks; len(m) > 0 {
@@ -5475,7 +5475,7 @@ func TestParser_regex(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.regex(tc.in)
+			_, _ = p.regex(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
 			if m := tc.m.ToRegexMocks; len(m) > 0 {
