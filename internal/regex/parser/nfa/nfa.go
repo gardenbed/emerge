@@ -5,7 +5,6 @@
 package nfa
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/moorara/algo/automata"
@@ -19,13 +18,9 @@ func Parse(regex string) (*automata.NFA, error) {
 	m := new(mappers)
 	p := parser.New(m)
 
-	out, ok := p.Parse(regex)
-	if !ok {
-		return nil, fmt.Errorf("invalid regular expression: %s", regex)
-	}
-
-	if m.errors != nil {
-		return nil, m.errors
+	out, err := p.Parse(regex)
+	if err != nil {
+		return nil, fmt.Errorf("invalid regular expression: %s: %w", regex, err)
 	}
 
 	nfa := out.Result.Val.(*automata.NFA)
@@ -48,20 +43,18 @@ const (
 )
 
 // mappers implements the parser.Mappers interface.
-type mappers struct {
-	errors error
-}
+type mappers struct{}
 
-func (m *mappers) ToAnyChar(r combinator.Result) (combinator.Result, bool) {
+func (m *mappers) ToAnyChar(r combinator.Result) (combinator.Result, error) {
 	nfa, _ := charRangesToNFA(false, char.Classes["UNICODE"])
 
 	return combinator.Result{
 		Val: nfa,
 		Pos: r.Pos,
-	}, true
+	}, nil
 }
 
-func (m *mappers) ToSingleChar(r combinator.Result) (combinator.Result, bool) {
+func (m *mappers) ToSingleChar(r combinator.Result) (combinator.Result, error) {
 	c := r.Val.(rune)
 	nfa, ranges := charRangesToNFA(false, char.RangeList{{c, c}})
 
@@ -71,10 +64,10 @@ func (m *mappers) ToSingleChar(r combinator.Result) (combinator.Result, bool) {
 		Bag: combinator.Bag{
 			bagKeyCharRanges: ranges,
 		},
-	}, true
+	}, nil
 }
 
-func (m *mappers) ToCharClass(r combinator.Result) (combinator.Result, bool) {
+func (m *mappers) ToCharClass(r combinator.Result) (combinator.Result, error) {
 	class := r.Val.(string)
 
 	var nfa *automata.NFA
@@ -94,7 +87,7 @@ func (m *mappers) ToCharClass(r combinator.Result) (combinator.Result, bool) {
 	case `\W`:
 		nfa, ranges = charRangesToNFA(true, char.Classes[`\w`])
 	default:
-		return combinator.Result{}, false
+		return combinator.Result{}, fmt.Errorf("invalid character class: %s", class)
 	}
 
 	return combinator.Result{
@@ -103,15 +96,15 @@ func (m *mappers) ToCharClass(r combinator.Result) (combinator.Result, bool) {
 		Bag: combinator.Bag{
 			bagKeyCharRanges: ranges,
 		},
-	}, true
+	}, nil
 }
 
-func (m *mappers) ToASCIICharClass(r combinator.Result) (combinator.Result, bool) {
+func (m *mappers) ToASCIICharClass(r combinator.Result) (combinator.Result, error) {
 	class := r.Val.(string)
 
 	ranges, ok := char.Classes[class]
 	if !ok {
-		return combinator.Result{}, false
+		return combinator.Result{}, fmt.Errorf("invalid ASCII character class: %s", class)
 	}
 
 	nfa, ranges := charRangesToNFA(false, ranges)
@@ -122,15 +115,15 @@ func (m *mappers) ToASCIICharClass(r combinator.Result) (combinator.Result, bool
 		Bag: combinator.Bag{
 			bagKeyCharRanges: ranges,
 		},
-	}, true
+	}, nil
 }
 
-func (m *mappers) ToUnicodeCategory(r combinator.Result) (combinator.Result, bool) {
+func (m *mappers) ToUnicodeCategory(r combinator.Result) (combinator.Result, error) {
 	// Passing the result up the parsing chain
-	return r, true
+	return r, nil
 }
 
-func (m *mappers) ToUnicodeCharClass(r combinator.Result) (combinator.Result, bool) {
+func (m *mappers) ToUnicodeCharClass(r combinator.Result) (combinator.Result, error) {
 	r0, _ := r.Get(0)
 	r2, _ := r.Get(2)
 
@@ -139,7 +132,7 @@ func (m *mappers) ToUnicodeCharClass(r combinator.Result) (combinator.Result, bo
 
 	ranges, ok := char.Classes[class]
 	if !ok {
-		return combinator.Result{}, false
+		return combinator.Result{}, fmt.Errorf("invalid Unicode character class: %s", class)
 	}
 
 	nfa, ranges := charRangesToNFA(prop == `\P`, ranges)
@@ -150,15 +143,15 @@ func (m *mappers) ToUnicodeCharClass(r combinator.Result) (combinator.Result, bo
 		Bag: combinator.Bag{
 			bagKeyCharRanges: ranges,
 		},
-	}, true
+	}, nil
 }
 
-func (m *mappers) ToRepOp(r combinator.Result) (combinator.Result, bool) {
+func (m *mappers) ToRepOp(r combinator.Result) (combinator.Result, error) {
 	// Passing the result up the parsing chain
-	return r, true
+	return r, nil
 }
 
-func (m *mappers) ToUpperBound(r combinator.Result) (combinator.Result, bool) {
+func (m *mappers) ToUpperBound(r combinator.Result) (combinator.Result, error) {
 	r0, _ := r.Get(0)
 	r1, _ := r.Get(1)
 
@@ -170,10 +163,10 @@ func (m *mappers) ToUpperBound(r combinator.Result) (combinator.Result, bool) {
 	return combinator.Result{
 		Val: num,
 		Pos: r0.Pos,
-	}, true
+	}, nil
 }
 
-func (m *mappers) ToRange(r combinator.Result) (combinator.Result, bool) {
+func (m *mappers) ToRange(r combinator.Result) (combinator.Result, error) {
 	r0, _ := r.Get(0)
 	r1, _ := r.Get(1)
 	r2, _ := r.Get(2)
@@ -188,9 +181,7 @@ func (m *mappers) ToRange(r combinator.Result) (combinator.Result, bool) {
 	}
 
 	if up != nil && low > *up {
-		// The input syntax is correct while its semantic is incorrect
-		// We continue parsing the rest of input to find more errors
-		m.errors = errors.Join(m.errors, fmt.Errorf("invalid repetition range {%d,%d}", low, *up))
+		return combinator.Result{}, fmt.Errorf("invalid repetition range {%d,%d}", low, *up)
 	}
 
 	return combinator.Result{
@@ -199,15 +190,15 @@ func (m *mappers) ToRange(r combinator.Result) (combinator.Result, bool) {
 			q: up,
 		},
 		Pos: r0.Pos,
-	}, true
+	}, nil
 }
 
-func (m *mappers) ToRepetition(r combinator.Result) (combinator.Result, bool) {
+func (m *mappers) ToRepetition(r combinator.Result) (combinator.Result, error) {
 	// Passing the result up the parsing chain
-	return r, true
+	return r, nil
 }
 
-func (m *mappers) ToQuantifier(r combinator.Result) (combinator.Result, bool) {
+func (m *mappers) ToQuantifier(r combinator.Result) (combinator.Result, error) {
 	r0, _ := r.Get(0)
 	r1, _ := r.Get(1)
 
@@ -220,26 +211,22 @@ func (m *mappers) ToQuantifier(r combinator.Result) (combinator.Result, bool) {
 			q: lazy,
 		},
 		Pos: r0.Pos,
-	}, true
+	}, nil
 }
 
-func (m *mappers) ToCharInRange(r combinator.Result) (combinator.Result, bool) {
+func (m *mappers) ToCharInRange(r combinator.Result) (combinator.Result, error) {
 	// Passing the result up the parsing chain
-	return r, true
+	return r, nil
 }
 
-func (m *mappers) ToCharRange(r combinator.Result) (combinator.Result, bool) {
+func (m *mappers) ToCharRange(r combinator.Result) (combinator.Result, error) {
 	r0, _ := r.Get(0)
 	r2, _ := r.Get(2)
 
 	lo, hi := r0.Val.(rune), r2.Val.(rune)
 
 	if lo > hi {
-		m.errors = errors.Join(m.errors, fmt.Errorf("invalid character range %s-%s", string(lo), string(hi)))
-
-		// The input syntax is correct while its semantic is incorrect.
-		// We continue parsing the rest of input to find more errors.
-		return combinator.Result{Pos: r0.Pos}, true
+		return combinator.Result{}, fmt.Errorf("invalid character range %c-%c", lo, hi)
 	}
 
 	nfa, ranges := charRangesToNFA(false, char.RangeList{{lo, hi}})
@@ -250,15 +237,15 @@ func (m *mappers) ToCharRange(r combinator.Result) (combinator.Result, bool) {
 		Bag: combinator.Bag{
 			bagKeyCharRanges: ranges,
 		},
-	}, true
+	}, nil
 }
 
-func (m *mappers) ToCharGroupItem(r combinator.Result) (combinator.Result, bool) {
+func (m *mappers) ToCharGroupItem(r combinator.Result) (combinator.Result, error) {
 	// Passing the result up the parsing chain
-	return r, true
+	return r, nil
 }
 
-func (m *mappers) ToCharGroup(r combinator.Result) (combinator.Result, bool) {
+func (m *mappers) ToCharGroup(r combinator.Result) (combinator.Result, error) {
 	r0, _ := r.Get(0)
 	r1, _ := r.Get(1)
 	r2, _ := r.Get(2)
@@ -279,15 +266,15 @@ func (m *mappers) ToCharGroup(r combinator.Result) (combinator.Result, bool) {
 	return combinator.Result{
 		Val: nfa,
 		Pos: r0.Pos,
-	}, true
+	}, nil
 }
 
-func (m *mappers) ToMatchItem(r combinator.Result) (combinator.Result, bool) {
+func (m *mappers) ToMatchItem(r combinator.Result) (combinator.Result, error) {
 	// Passing the result up the parsing chain
-	return r, true
+	return r, nil
 }
 
-func (m *mappers) ToMatch(r combinator.Result) (combinator.Result, bool) {
+func (m *mappers) ToMatch(r combinator.Result) (combinator.Result, error) {
 	r0, _ := r.Get(0)
 	r1, _ := r.Get(1)
 
@@ -307,10 +294,10 @@ func (m *mappers) ToMatch(r combinator.Result) (combinator.Result, bool) {
 		Val: nfa,
 		Pos: r0.Pos,
 		Bag: bag,
-	}, true
+	}, nil
 }
 
-func (m *mappers) ToGroup(r combinator.Result) (combinator.Result, bool) {
+func (m *mappers) ToGroup(r combinator.Result) (combinator.Result, error) {
 	r0, _ := r.Get(0)
 	r1, _ := r.Get(1)
 	r3, _ := r.Get(3)
@@ -331,10 +318,10 @@ func (m *mappers) ToGroup(r combinator.Result) (combinator.Result, bool) {
 		Val: nfa,
 		Pos: r0.Pos,
 		Bag: bag,
-	}, true
+	}, nil
 }
 
-func (m *mappers) ToAnchor(r combinator.Result) (combinator.Result, bool) {
+func (m *mappers) ToAnchor(r combinator.Result) (combinator.Result, error) {
 	c := r.Val.(rune)
 
 	var anchor Anchor
@@ -346,15 +333,15 @@ func (m *mappers) ToAnchor(r combinator.Result) (combinator.Result, bool) {
 	return combinator.Result{
 		Val: anchor,
 		Pos: r.Pos,
-	}, true
+	}, nil
 }
 
-func (m *mappers) ToSubexprItem(r combinator.Result) (combinator.Result, bool) {
+func (m *mappers) ToSubexprItem(r combinator.Result) (combinator.Result, error) {
 	// Passing the result up the parsing chain
-	return r, true
+	return r, nil
 }
 
-func (m *mappers) ToSubexpr(r combinator.Result) (combinator.Result, bool) {
+func (m *mappers) ToSubexpr(r combinator.Result) (combinator.Result, error) {
 	items := r.Val.(combinator.List)
 
 	ns := []*automata.NFA{}
@@ -370,10 +357,10 @@ func (m *mappers) ToSubexpr(r combinator.Result) (combinator.Result, bool) {
 	return combinator.Result{
 		Val: nfa,
 		Pos: r.Pos,
-	}, true
+	}, nil
 }
 
-func (m *mappers) ToExpr(r combinator.Result) (combinator.Result, bool) {
+func (m *mappers) ToExpr(r combinator.Result) (combinator.Result, error) {
 	r0, _ := r.Get(0)
 	r1, _ := r.Get(1)
 
@@ -388,10 +375,10 @@ func (m *mappers) ToExpr(r combinator.Result) (combinator.Result, bool) {
 	return combinator.Result{
 		Val: nfa,
 		Pos: r0.Pos,
-	}, true
+	}, nil
 }
 
-func (m *mappers) ToRegex(r combinator.Result) (combinator.Result, bool) {
+func (m *mappers) ToRegex(r combinator.Result) (combinator.Result, error) {
 	r0, _ := r.Get(0)
 	r1, _ := r.Get(1)
 
@@ -412,7 +399,7 @@ func (m *mappers) ToRegex(r combinator.Result) (combinator.Result, bool) {
 		Val: nfa,
 		Pos: pos,
 		Bag: bag,
-	}, true
+	}, nil
 }
 
 //==================================================< HELPERS >==================================================

@@ -24,17 +24,17 @@ func TestParse(t *testing.T) {
 		{
 			name:          "InvalidRegex",
 			regex:         "[",
-			expectedError: "invalid regular expression: [",
+			expectedError: "invalid regular expression: [: 0: unexpected rune '['",
 		},
 		{
 			name:          "InvalidCharRange",
 			regex:         "[9-0]",
-			expectedError: "invalid character range 9-0",
+			expectedError: "invalid regular expression: [9-0]: 1: invalid character range 9-0",
 		},
 		{
 			name:          "InvalidRepRange",
 			regex:         "[0-9]{4,2}",
-			expectedError: "invalid repetition range {4,2}",
+			expectedError: "invalid regular expression: [0-9]{4,2}: 5: invalid repetition range {4,2}",
 		},
 		{
 			name:  "Success_Simple",
@@ -1198,7 +1198,6 @@ type MapperTest struct {
 	name           string
 	r              combinator.Result
 	expectedResult combinator.Result
-	expectedOK     bool
 	expectedError  string
 }
 
@@ -1218,20 +1217,21 @@ func TestMappers_ToAnyChar(t *testing.T) {
 				Val: testNodes["Unicode"],
 				Pos: 2,
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			m := new(mappers)
-			res, ok := m.ToAnyChar(tc.r)
+			res, err := m.ToAnyChar(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
-			assert.Equal(t, tc.expectedOK, ok)
-
-			if tc.expectedError != "" {
-				assert.EqualError(t, m.errors, tc.expectedError)
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedResult, res)
+			} else {
+				assert.Empty(t, res)
+				assert.EqualError(t, err, tc.expectedError)
 			}
 		})
 	}
@@ -1254,20 +1254,21 @@ func TestMappers_ToSingleChar(t *testing.T) {
 					},
 				},
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			m := new(mappers)
-			res, ok := m.ToSingleChar(tc.r)
+			res, err := m.ToSingleChar(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
-			assert.Equal(t, tc.expectedOK, ok)
-
-			if tc.expectedError != "" {
-				assert.EqualError(t, m.errors, tc.expectedError)
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedResult, res)
+			} else {
+				assert.Empty(t, res)
+				assert.EqualError(t, err, tc.expectedError)
 			}
 		})
 	}
@@ -1288,7 +1289,7 @@ func TestMappers_ToCharClass(t *testing.T) {
 					bagKeyCharRanges: testRanges["ws"],
 				},
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 		{
 			name: "Success_NotWhitespace",
@@ -1303,7 +1304,7 @@ func TestMappers_ToCharClass(t *testing.T) {
 					bagKeyCharRanges: testRanges["not_ws"],
 				},
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 		{
 			name: "Success_Digit",
@@ -1318,7 +1319,7 @@ func TestMappers_ToCharClass(t *testing.T) {
 					bagKeyCharRanges: testRanges["digit"],
 				},
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 		{
 			name: "Success_NotDigit",
@@ -1333,7 +1334,7 @@ func TestMappers_ToCharClass(t *testing.T) {
 					bagKeyCharRanges: testRanges["not_digit"],
 				},
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 		{
 			name: "Success_Word",
@@ -1348,7 +1349,7 @@ func TestMappers_ToCharClass(t *testing.T) {
 					bagKeyCharRanges: testRanges["word"],
 				},
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 		{
 			name: "Success_NotWord",
@@ -1363,20 +1364,21 @@ func TestMappers_ToCharClass(t *testing.T) {
 					bagKeyCharRanges: testRanges["not_word"],
 				},
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			m := new(mappers)
-			res, ok := m.ToCharClass(tc.r)
+			res, err := m.ToCharClass(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
-			assert.Equal(t, tc.expectedOK, ok)
-
-			if tc.expectedError != "" {
-				assert.EqualError(t, m.errors, tc.expectedError)
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedResult, res)
+			} else {
+				assert.Empty(t, res)
+				assert.EqualError(t, err, tc.expectedError)
 			}
 		})
 	}
@@ -1397,7 +1399,7 @@ func TestMappers_ToASCIICharClass(t *testing.T) {
 					bagKeyCharRanges: testRanges["blank"],
 				},
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 		{
 			name: "Success_Space",
@@ -1412,7 +1414,7 @@ func TestMappers_ToASCIICharClass(t *testing.T) {
 					bagKeyCharRanges: testRanges["space"],
 				},
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 		{
 			name: "Success_Digit",
@@ -1427,7 +1429,7 @@ func TestMappers_ToASCIICharClass(t *testing.T) {
 					bagKeyCharRanges: testRanges["digit"],
 				},
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 		{
 			name: "Success_XDigit",
@@ -1442,7 +1444,7 @@ func TestMappers_ToASCIICharClass(t *testing.T) {
 					bagKeyCharRanges: testRanges["xdigit"],
 				},
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 		{
 			name: "Success_Upper",
@@ -1457,7 +1459,7 @@ func TestMappers_ToASCIICharClass(t *testing.T) {
 					bagKeyCharRanges: testRanges["upper"],
 				},
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 		{
 			name: "Success_Lower",
@@ -1472,7 +1474,7 @@ func TestMappers_ToASCIICharClass(t *testing.T) {
 					bagKeyCharRanges: testRanges["lower"],
 				},
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 		{
 			name: "Success_Alpha",
@@ -1487,7 +1489,7 @@ func TestMappers_ToASCIICharClass(t *testing.T) {
 					bagKeyCharRanges: testRanges["alpha"],
 				},
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 		{
 			name: "Success_Alnum",
@@ -1502,7 +1504,7 @@ func TestMappers_ToASCIICharClass(t *testing.T) {
 					bagKeyCharRanges: testRanges["alnum"],
 				},
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 		{
 			name: "Success_Word",
@@ -1517,7 +1519,7 @@ func TestMappers_ToASCIICharClass(t *testing.T) {
 					bagKeyCharRanges: testRanges["word"],
 				},
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 		{
 			name: "Success_ASCII",
@@ -1532,20 +1534,21 @@ func TestMappers_ToASCIICharClass(t *testing.T) {
 					bagKeyCharRanges: testRanges["ascii"],
 				},
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			m := new(mappers)
-			res, ok := m.ToASCIICharClass(tc.r)
+			res, err := m.ToASCIICharClass(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
-			assert.Equal(t, tc.expectedOK, ok)
-
-			if tc.expectedError != "" {
-				assert.EqualError(t, m.errors, tc.expectedError)
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedResult, res)
+			} else {
+				assert.Empty(t, res)
+				assert.EqualError(t, err, tc.expectedError)
 			}
 		})
 	}
@@ -1563,20 +1566,21 @@ func TestMappers_ToUnicodeCategory(t *testing.T) {
 				Val: "Letter",
 				Pos: 2,
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			m := new(mappers)
-			res, ok := m.ToUnicodeCategory(tc.r)
+			res, err := m.ToUnicodeCategory(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
-			assert.Equal(t, tc.expectedOK, ok)
-
-			if tc.expectedError != "" {
-				assert.EqualError(t, m.errors, tc.expectedError)
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedResult, res)
+			} else {
+				assert.Empty(t, res)
+				assert.EqualError(t, err, tc.expectedError)
 			}
 		})
 	}
@@ -1596,7 +1600,7 @@ func TestMappers_ToUnicodeCharClass(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: combinator.Result{},
-			expectedOK:     false,
+			expectedError:  "invalid Unicode character class: Runic",
 		},
 		{
 			name: "Success_Number",
@@ -1616,20 +1620,21 @@ func TestMappers_ToUnicodeCharClass(t *testing.T) {
 					bagKeyCharRanges: testRanges["Number"],
 				},
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			m := new(mappers)
-			res, ok := m.ToUnicodeCharClass(tc.r)
+			res, err := m.ToUnicodeCharClass(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
-			assert.Equal(t, tc.expectedOK, ok)
-
-			if tc.expectedError != "" {
-				assert.EqualError(t, m.errors, tc.expectedError)
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedResult, res)
+			} else {
+				assert.Empty(t, res)
+				assert.EqualError(t, err, tc.expectedError)
 			}
 		})
 	}
@@ -1647,20 +1652,21 @@ func TestMappers_ToRepOp(t *testing.T) {
 				Val: '*',
 				Pos: 2,
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			m := new(mappers)
-			res, ok := m.ToRepOp(tc.r)
+			res, err := m.ToRepOp(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
-			assert.Equal(t, tc.expectedOK, ok)
-
-			if tc.expectedError != "" {
-				assert.EqualError(t, m.errors, tc.expectedError)
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedResult, res)
+			} else {
+				assert.Empty(t, res)
+				assert.EqualError(t, err, tc.expectedError)
 			}
 		})
 	}
@@ -1681,7 +1687,7 @@ func TestMappers_ToUpperBound(t *testing.T) {
 				Val: (*int)(nil),
 				Pos: 2,
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 		{
 			name: "Success_Bounded",
@@ -1696,20 +1702,21 @@ func TestMappers_ToUpperBound(t *testing.T) {
 				Val: intPtr(4),
 				Pos: 2,
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			m := new(mappers)
-			res, ok := m.ToUpperBound(tc.r)
+			res, err := m.ToUpperBound(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
-			assert.Equal(t, tc.expectedOK, ok)
-
-			if tc.expectedError != "" {
-				assert.EqualError(t, m.errors, tc.expectedError)
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedResult, res)
+			} else {
+				assert.Empty(t, res)
+				assert.EqualError(t, err, tc.expectedError)
 			}
 		})
 	}
@@ -1735,7 +1742,7 @@ func TestMappers_ToRange(t *testing.T) {
 				},
 				Pos: 2,
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 		{
 			name: "Success_Unbounded",
@@ -1758,7 +1765,7 @@ func TestMappers_ToRange(t *testing.T) {
 				},
 				Pos: 2,
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 		{
 			name: "Success_Bounded",
@@ -1781,7 +1788,7 @@ func TestMappers_ToRange(t *testing.T) {
 				},
 				Pos: 2,
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 		{
 			name: "InvalidRange",
@@ -1804,7 +1811,6 @@ func TestMappers_ToRange(t *testing.T) {
 				},
 				Pos: 2,
 			},
-			expectedOK:    true,
 			expectedError: "invalid repetition range {6,2}",
 		},
 	}
@@ -1812,13 +1818,14 @@ func TestMappers_ToRange(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			m := new(mappers)
-			res, ok := m.ToRange(tc.r)
+			res, err := m.ToRange(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
-			assert.Equal(t, tc.expectedOK, ok)
-
-			if tc.expectedError != "" {
-				assert.EqualError(t, m.errors, tc.expectedError)
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedResult, res)
+			} else {
+				assert.Empty(t, res)
+				assert.EqualError(t, err, tc.expectedError)
 			}
 		})
 	}
@@ -1836,20 +1843,21 @@ func TestMappers_ToRepetition(t *testing.T) {
 				Val: '*',
 				Pos: 2,
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			m := new(mappers)
-			res, ok := m.ToRepetition(tc.r)
+			res, err := m.ToRepetition(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
-			assert.Equal(t, tc.expectedOK, ok)
-
-			if tc.expectedError != "" {
-				assert.EqualError(t, m.errors, tc.expectedError)
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedResult, res)
+			} else {
+				assert.Empty(t, res)
+				assert.EqualError(t, err, tc.expectedError)
 			}
 		})
 	}
@@ -1873,7 +1881,7 @@ func TestMappers_ToQuantifier(t *testing.T) {
 				},
 				Pos: 2,
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 		{
 			name: "Success_Lazy",
@@ -1891,20 +1899,21 @@ func TestMappers_ToQuantifier(t *testing.T) {
 				},
 				Pos: 2,
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			m := new(mappers)
-			res, ok := m.ToQuantifier(tc.r)
+			res, err := m.ToQuantifier(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
-			assert.Equal(t, tc.expectedOK, ok)
-
-			if tc.expectedError != "" {
-				assert.EqualError(t, m.errors, tc.expectedError)
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedResult, res)
+			} else {
+				assert.Empty(t, res)
+				assert.EqualError(t, err, tc.expectedError)
 			}
 		})
 	}
@@ -1922,20 +1931,21 @@ func TestMappers_ToCharInRange(t *testing.T) {
 				Val: 'a',
 				Pos: 2,
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			m := new(mappers)
-			res, ok := m.ToCharInRange(tc.r)
+			res, err := m.ToCharInRange(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
-			assert.Equal(t, tc.expectedOK, ok)
-
-			if tc.expectedError != "" {
-				assert.EqualError(t, m.errors, tc.expectedError)
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedResult, res)
+			} else {
+				assert.Empty(t, res)
+				assert.EqualError(t, err, tc.expectedError)
 			}
 		})
 	}
@@ -1962,7 +1972,7 @@ func TestMappers_ToCharRange(t *testing.T) {
 					},
 				},
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 		{
 			name: "InvalidRange",
@@ -1979,7 +1989,6 @@ func TestMappers_ToCharRange(t *testing.T) {
 				Pos: 2,
 				Bag: nil,
 			},
-			expectedOK:    true,
 			expectedError: "invalid character range f-a",
 		},
 	}
@@ -1987,13 +1996,14 @@ func TestMappers_ToCharRange(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			m := new(mappers)
-			res, ok := m.ToCharRange(tc.r)
+			res, err := m.ToCharRange(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
-			assert.Equal(t, tc.expectedOK, ok)
-
-			if tc.expectedError != "" {
-				assert.EqualError(t, m.errors, tc.expectedError)
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedResult, res)
+			} else {
+				assert.Empty(t, res)
+				assert.EqualError(t, err, tc.expectedError)
 			}
 		})
 	}
@@ -2017,20 +2027,21 @@ func TestMappers_ToCharGroupItem(t *testing.T) {
 					bagKeyCharRanges: testRanges["digit"],
 				},
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			m := new(mappers)
-			res, ok := m.ToCharGroupItem(tc.r)
+			res, err := m.ToCharGroupItem(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
-			assert.Equal(t, tc.expectedOK, ok)
-
-			if tc.expectedError != "" {
-				assert.EqualError(t, m.errors, tc.expectedError)
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedResult, res)
+			} else {
+				assert.Empty(t, res)
+				assert.EqualError(t, err, tc.expectedError)
 			}
 		})
 	}
@@ -2080,7 +2091,7 @@ func TestMappers_ToCharGroup(t *testing.T) {
 				},
 				Pos: 2,
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 		{
 			name: "Success_Negated",
@@ -2115,20 +2126,21 @@ func TestMappers_ToCharGroup(t *testing.T) {
 				},
 				Pos: 2,
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			m := new(mappers)
-			res, ok := m.ToCharGroup(tc.r)
+			res, err := m.ToCharGroup(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
-			assert.Equal(t, tc.expectedOK, ok)
-
-			if tc.expectedError != "" {
-				assert.EqualError(t, m.errors, tc.expectedError)
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedResult, res)
+			} else {
+				assert.Empty(t, res)
+				assert.EqualError(t, err, tc.expectedError)
 			}
 		})
 	}
@@ -2152,20 +2164,21 @@ func TestMappers_ToMatchItem(t *testing.T) {
 					bagKeyCharRanges: testRanges["digit"],
 				},
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			m := new(mappers)
-			res, ok := m.ToMatchItem(tc.r)
+			res, err := m.ToMatchItem(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
-			assert.Equal(t, tc.expectedOK, ok)
-
-			if tc.expectedError != "" {
-				assert.EqualError(t, m.errors, tc.expectedError)
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedResult, res)
+			} else {
+				assert.Empty(t, res)
+				assert.EqualError(t, err, tc.expectedError)
 			}
 		})
 	}
@@ -2192,7 +2205,7 @@ func TestMappers_ToMatch(t *testing.T) {
 				Val: &Char{Lo: 'x', Hi: 'x'},
 				Pos: 2,
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 		{
 			name: "Success_ZeroOrOne",
@@ -2224,7 +2237,7 @@ func TestMappers_ToMatch(t *testing.T) {
 				},
 				Pos: 2,
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 		{
 			name: "Success_ZeroOrMany",
@@ -2253,7 +2266,7 @@ func TestMappers_ToMatch(t *testing.T) {
 				},
 				Pos: 2,
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 		{
 			name: "Success_OneOrMany",
@@ -2287,7 +2300,7 @@ func TestMappers_ToMatch(t *testing.T) {
 				},
 				Pos: 2,
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 		{
 			name: "Success_FixedRange",
@@ -2322,7 +2335,7 @@ func TestMappers_ToMatch(t *testing.T) {
 				},
 				Pos: 2,
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 		{
 			name: "Success_UnboundedRange",
@@ -2360,7 +2373,7 @@ func TestMappers_ToMatch(t *testing.T) {
 				},
 				Pos: 2,
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 		{
 			name: "Success_BoundedRange",
@@ -2407,7 +2420,7 @@ func TestMappers_ToMatch(t *testing.T) {
 				},
 				Pos: 2,
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 		{
 			name: "Success_Lazy_OneOrMany",
@@ -2444,20 +2457,21 @@ func TestMappers_ToMatch(t *testing.T) {
 					bagKeyLazyQuantifier: true,
 				},
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			m := new(mappers)
-			res, ok := m.ToMatch(tc.r)
+			res, err := m.ToMatch(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
-			assert.Equal(t, tc.expectedOK, ok)
-
-			if tc.expectedError != "" {
-				assert.EqualError(t, m.errors, tc.expectedError)
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedResult, res)
+			} else {
+				assert.Empty(t, res)
+				assert.EqualError(t, err, tc.expectedError)
 			}
 		})
 	}
@@ -2486,7 +2500,7 @@ func TestMappers_ToGroup(t *testing.T) {
 				Val: &Char{Lo: 'x', Hi: 'x'},
 				Pos: 2,
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 		{
 			name: "Success_ZeroOrOne",
@@ -2520,7 +2534,7 @@ func TestMappers_ToGroup(t *testing.T) {
 				},
 				Pos: 2,
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 		{
 			name: "Success_ZeroOrMany",
@@ -2551,7 +2565,7 @@ func TestMappers_ToGroup(t *testing.T) {
 				},
 				Pos: 2,
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 		{
 			name: "Success_OneOrMany",
@@ -2587,7 +2601,7 @@ func TestMappers_ToGroup(t *testing.T) {
 				},
 				Pos: 2,
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 		{
 			name: "Success_FixedRange",
@@ -2624,7 +2638,7 @@ func TestMappers_ToGroup(t *testing.T) {
 				},
 				Pos: 2,
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 		{
 			name: "Success_UnboundedRange",
@@ -2664,7 +2678,7 @@ func TestMappers_ToGroup(t *testing.T) {
 				},
 				Pos: 2,
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 		{
 			name: "Success_BoundedRange",
@@ -2713,7 +2727,7 @@ func TestMappers_ToGroup(t *testing.T) {
 				},
 				Pos: 2,
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 		{
 			name: "Success_Lazy_OneOrMany",
@@ -2752,20 +2766,21 @@ func TestMappers_ToGroup(t *testing.T) {
 					bagKeyLazyQuantifier: true,
 				},
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			m := new(mappers)
-			res, ok := m.ToGroup(tc.r)
+			res, err := m.ToGroup(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
-			assert.Equal(t, tc.expectedOK, ok)
-
-			if tc.expectedError != "" {
-				assert.EqualError(t, m.errors, tc.expectedError)
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedResult, res)
+			} else {
+				assert.Empty(t, res)
+				assert.EqualError(t, err, tc.expectedError)
 			}
 		})
 	}
@@ -2783,20 +2798,21 @@ func TestMappers_ToAnchor(t *testing.T) {
 				Val: EndOfString,
 				Pos: 2,
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			m := new(mappers)
-			res, ok := m.ToAnchor(tc.r)
+			res, err := m.ToAnchor(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
-			assert.Equal(t, tc.expectedOK, ok)
-
-			if tc.expectedError != "" {
-				assert.EqualError(t, m.errors, tc.expectedError)
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedResult, res)
+			} else {
+				assert.Empty(t, res)
+				assert.EqualError(t, err, tc.expectedError)
 			}
 		})
 	}
@@ -2814,20 +2830,21 @@ func TestMappers_ToSubexprItem(t *testing.T) {
 				Val: &Char{Lo: 'x', Hi: 'x'},
 				Pos: 2,
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			m := new(mappers)
-			res, ok := m.ToSubexprItem(tc.r)
+			res, err := m.ToSubexprItem(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
-			assert.Equal(t, tc.expectedOK, ok)
-
-			if tc.expectedError != "" {
-				assert.EqualError(t, m.errors, tc.expectedError)
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedResult, res)
+			} else {
+				assert.Empty(t, res)
+				assert.EqualError(t, err, tc.expectedError)
 			}
 		})
 	}
@@ -2858,20 +2875,21 @@ func TestMappers_ToSubexpr(t *testing.T) {
 				},
 				Pos: 2,
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			m := new(mappers)
-			res, ok := m.ToSubexpr(tc.r)
+			res, err := m.ToSubexpr(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
-			assert.Equal(t, tc.expectedOK, ok)
-
-			if tc.expectedError != "" {
-				assert.EqualError(t, m.errors, tc.expectedError)
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedResult, res)
+			} else {
+				assert.Empty(t, res)
+				assert.EqualError(t, err, tc.expectedError)
 			}
 		})
 	}
@@ -2903,7 +2921,7 @@ func TestMappers_ToExpr(t *testing.T) {
 				},
 				Pos: 2,
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 		{
 			name: "Success_WithExpr",
@@ -2950,20 +2968,21 @@ func TestMappers_ToExpr(t *testing.T) {
 				},
 				Pos: 2,
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			m := new(mappers)
-			res, ok := m.ToExpr(tc.r)
+			res, err := m.ToExpr(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
-			assert.Equal(t, tc.expectedOK, ok)
-
-			if tc.expectedError != "" {
-				assert.EqualError(t, m.errors, tc.expectedError)
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedResult, res)
+			} else {
+				assert.Empty(t, res)
+				assert.EqualError(t, err, tc.expectedError)
 			}
 		})
 	}
@@ -2995,7 +3014,7 @@ func TestMappers_ToRegex(t *testing.T) {
 				},
 				Pos: 0,
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 		{
 			name: "Success_WithStartOfString",
@@ -3024,20 +3043,21 @@ func TestMappers_ToRegex(t *testing.T) {
 					BagKeyStartOfString: true,
 				},
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			m := new(mappers)
-			res, ok := m.ToRegex(tc.r)
+			res, err := m.ToRegex(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
-			assert.Equal(t, tc.expectedOK, ok)
-
-			if tc.expectedError != "" {
-				assert.EqualError(t, m.errors, tc.expectedError)
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedResult, res)
+			} else {
+				assert.Empty(t, res)
+				assert.EqualError(t, err, tc.expectedError)
 			}
 		})
 	}
