@@ -199,6 +199,28 @@ func TestToEscapedChar(t *testing.T) {
 			expectedError:  "",
 		},
 		{
+			name: "Caret",
+			r: comb.Result{
+				Val: comb.List{
+					{Val: '\\', Pos: 1},
+					{Val: '^', Pos: 2},
+				},
+			},
+			expectedResult: comb.Result{Val: '^', Pos: 1},
+			expectedError:  "",
+		},
+		{
+			name: "Dollar",
+			r: comb.Result{
+				Val: comb.List{
+					{Val: '\\', Pos: 1},
+					{Val: '$', Pos: 2},
+				},
+			},
+			expectedResult: comb.Result{Val: '$', Pos: 1},
+			expectedError:  "",
+		},
+		{
 			name: "Bar",
 			r: comb.Result{
 				Val: comb.List{
@@ -265,7 +287,7 @@ func TestToEscapedChar(t *testing.T) {
 			expectedError:  "",
 		},
 		{
-			name: "OpenningParenthesis",
+			name: "OpeningParenthesis",
 			r: comb.Result{
 				Val: comb.List{
 					{Val: '\\', Pos: 1},
@@ -287,7 +309,7 @@ func TestToEscapedChar(t *testing.T) {
 			expectedError:  "",
 		},
 		{
-			name: "OpenningBracket",
+			name: "OpeningBracket",
 			r: comb.Result{
 				Val: comb.List{
 					{Val: '\\', Pos: 1},
@@ -309,7 +331,7 @@ func TestToEscapedChar(t *testing.T) {
 			expectedError:  "",
 		},
 		{
-			name: "OpenningBrace",
+			name: "OpeningBrace",
 			r: comb.Result{
 				Val: comb.List{
 					{Val: '\\', Pos: 1},
@@ -328,28 +350,6 @@ func TestToEscapedChar(t *testing.T) {
 				},
 			},
 			expectedResult: comb.Result{Val: '}', Pos: 1},
-			expectedError:  "",
-		},
-		{
-			name: "Caret",
-			r: comb.Result{
-				Val: comb.List{
-					{Val: '\\', Pos: 1},
-					{Val: '^', Pos: 2},
-				},
-			},
-			expectedResult: comb.Result{Val: '^', Pos: 1},
-			expectedError:  "",
-		},
-		{
-			name: "Dollar",
-			r: comb.Result{
-				Val: comb.List{
-					{Val: '\\', Pos: 1},
-					{Val: '$', Pos: 2},
-				},
-			},
-			expectedResult: comb.Result{Val: '$', Pos: 1},
 			expectedError:  "",
 		},
 	}
@@ -720,7 +720,7 @@ func TestParser_char(t *testing.T) {
 	}
 }
 
-func TestParser_unescapedChar(t *testing.T) {
+func TestParser_rawCharInGroup(t *testing.T) {
 	tests := []struct {
 		name          string
 		m             *mockMappers
@@ -729,11 +729,18 @@ func TestParser_unescapedChar(t *testing.T) {
 		expectedError string
 	}{
 		{
-			name:          "Failure",
+			name:          "OpeningBracket",
 			m:             &mockMappers{},
-			in:            newStringInput(`*`),
+			in:            newStringInput(`[`),
 			expectedOut:   nil,
-			expectedError: "unexpected rune '*' at position 0",
+			expectedError: "0: unexpected rune '['",
+		},
+		{
+			name:          "ClosingBracket",
+			m:             &mockMappers{},
+			in:            newStringInput(`]`),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune ']'",
 		},
 		{
 			name: "Success",
@@ -749,7 +756,161 @@ func TestParser_unescapedChar(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			out, err := p.unescapedChar(tc.in)
+			out, err := p.rawCharInGroup(tc.in)
+
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedOut, out)
+			} else {
+				assert.Nil(t, out)
+				assert.EqualError(t, err, tc.expectedError)
+			}
+		})
+	}
+}
+
+func TestParser_rawChar(t *testing.T) {
+	tests := []struct {
+		name          string
+		m             *mockMappers
+		in            comb.Input
+		expectedOut   *comb.Output
+		expectedError string
+	}{
+		{
+			name:          "Backslash",
+			m:             &mockMappers{},
+			in:            newStringInput("\\"),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '\\\\'",
+		},
+		{
+			name:          "HorizontalTab",
+			m:             &mockMappers{},
+			in:            newStringInput("\t"),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '\\t'",
+		},
+		{
+			name:          "NewLine",
+			m:             &mockMappers{},
+			in:            newStringInput("\n"),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '\\n'",
+		},
+		{
+			name:          "CarriageReturn",
+			m:             &mockMappers{},
+			in:            newStringInput("\r"),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '\\r'",
+		},
+		{
+			name:          "Caret",
+			m:             &mockMappers{},
+			in:            newStringInput(`^`),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '^'",
+		},
+		{
+			name:          "Dollar",
+			m:             &mockMappers{},
+			in:            newStringInput(`$`),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '$'",
+		},
+		{
+			name:          "Bar",
+			m:             &mockMappers{},
+			in:            newStringInput(`|`),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '|'",
+		},
+		{
+			name:          "Dot",
+			m:             &mockMappers{},
+			in:            newStringInput(`.`),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '.'",
+		},
+		{
+			name:          "Question",
+			m:             &mockMappers{},
+			in:            newStringInput(`?`),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '?'",
+		},
+		{
+			name:          "Star",
+			m:             &mockMappers{},
+			in:            newStringInput(`*`),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '*'",
+		},
+		{
+			name:          "Plus",
+			m:             &mockMappers{},
+			in:            newStringInput(`+`),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '+'",
+		},
+		{
+			name:          "OpeningParenthesis",
+			m:             &mockMappers{},
+			in:            newStringInput(`(`),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '('",
+		},
+		{
+			name:          "ClosingParenthesis",
+			m:             &mockMappers{},
+			in:            newStringInput(`)`),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune ')'",
+		},
+		{
+			name:          "OpeningBracket",
+			m:             &mockMappers{},
+			in:            newStringInput(`[`),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '['",
+		},
+		{
+			name:          "ClosingBracket",
+			m:             &mockMappers{},
+			in:            newStringInput(`]`),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune ']'",
+		},
+		{
+			name:          "OpeningBrace",
+			m:             &mockMappers{},
+			in:            newStringInput(`{`),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '{'",
+		},
+		{
+			name:          "ClosingBrace",
+			m:             &mockMappers{},
+			in:            newStringInput(`}`),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '}'",
+		},
+		{
+			name: "Success",
+			m:    &mockMappers{},
+			in:   newStringInput(`a`),
+			expectedOut: &comb.Output{
+				Result: comb.Result{Val: 'a', Pos: 0},
+			},
+			expectedError: "",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			p := New(tc.m)
+			out, err := p.rawChar(tc.in)
 
 			if tc.expectedError == "" {
 				assert.NoError(t, err)
@@ -778,11 +939,155 @@ func TestParser_escapedChar(t *testing.T) {
 			expectedError: "0: unexpected rune 'a'",
 		},
 		{
-			name: "Success",
+			name: "Success_Backslash",
+			m:    &mockMappers{},
+			in:   newStringInput(`\\`),
+			expectedOut: &comb.Output{
+				Result: comb.Result{Val: '\\', Pos: 0},
+			},
+			expectedError: "",
+		},
+		{
+			name: "Success_HorizontalTab",
+			m:    &mockMappers{},
+			in:   newStringInput(`\t`),
+			expectedOut: &comb.Output{
+				Result: comb.Result{Val: '\t', Pos: 0},
+			},
+			expectedError: "",
+		},
+		{
+			name: "Success_NewLine",
+			m:    &mockMappers{},
+			in:   newStringInput(`\n`),
+			expectedOut: &comb.Output{
+				Result: comb.Result{Val: '\n', Pos: 0},
+			},
+			expectedError: "",
+		},
+		{
+			name: "Success_CarriageReturn",
+			m:    &mockMappers{},
+			in:   newStringInput(`\r`),
+			expectedOut: &comb.Output{
+				Result: comb.Result{Val: '\r', Pos: 0},
+			},
+			expectedError: "",
+		},
+		{
+			name: "Success_Caret",
+			m:    &mockMappers{},
+			in:   newStringInput(`\^`),
+			expectedOut: &comb.Output{
+				Result: comb.Result{Val: '^', Pos: 0},
+			},
+			expectedError: "",
+		},
+		{
+			name: "Success_Dollar",
+			m:    &mockMappers{},
+			in:   newStringInput(`\$`),
+			expectedOut: &comb.Output{
+				Result: comb.Result{Val: '$', Pos: 0},
+			},
+			expectedError: "",
+		},
+		{
+			name: "Success_Bar",
+			m:    &mockMappers{},
+			in:   newStringInput(`\|`),
+			expectedOut: &comb.Output{
+				Result: comb.Result{Val: '|', Pos: 0},
+			},
+			expectedError: "",
+		},
+		{
+			name: "Success_Dot",
+			m:    &mockMappers{},
+			in:   newStringInput(`\.`),
+			expectedOut: &comb.Output{
+				Result: comb.Result{Val: '.', Pos: 0},
+			},
+			expectedError: "",
+		},
+		{
+			name: "Success_Question",
+			m:    &mockMappers{},
+			in:   newStringInput(`\?`),
+			expectedOut: &comb.Output{
+				Result: comb.Result{Val: '?', Pos: 0},
+			},
+			expectedError: "",
+		},
+		{
+			name: "Success_Star",
 			m:    &mockMappers{},
 			in:   newStringInput(`\*`),
 			expectedOut: &comb.Output{
 				Result: comb.Result{Val: '*', Pos: 0},
+			},
+			expectedError: "",
+		},
+		{
+			name: "Success_Plus",
+			m:    &mockMappers{},
+			in:   newStringInput(`\+`),
+			expectedOut: &comb.Output{
+				Result: comb.Result{Val: '+', Pos: 0},
+			},
+			expectedError: "",
+		},
+		{
+			name: "Success_OpeningParenthesis",
+			m:    &mockMappers{},
+			in:   newStringInput(`\(`),
+			expectedOut: &comb.Output{
+				Result: comb.Result{Val: '(', Pos: 0},
+			},
+			expectedError: "",
+		},
+		{
+			name: "Success_ClosingParenthesis",
+			m:    &mockMappers{},
+			in:   newStringInput(`\)`),
+			expectedOut: &comb.Output{
+				Result: comb.Result{Val: ')', Pos: 0},
+			},
+			expectedError: "",
+		},
+		{
+			name: "Success_OpeningBracket",
+			m:    &mockMappers{},
+			in:   newStringInput(`\[`),
+			expectedOut: &comb.Output{
+				Result: comb.Result{Val: '[', Pos: 0},
+			},
+			expectedError: "",
+		},
+		{
+			name: "Success_ClosingBracket",
+			m:    &mockMappers{},
+			in:   newStringInput(`\]`),
+			expectedOut: &comb.Output{
+				Result: comb.Result{Val: ']', Pos: 0},
+			},
+			expectedError: "",
+		},
+		{
+			name: "Success_OpeningBrace",
+			m:    &mockMappers{},
+			in:   newStringInput(`\{`),
+			expectedOut: &comb.Output{
+				Result: comb.Result{Val: '{', Pos: 0},
+			},
+			expectedError: "",
+		},
+		{
+			name: "Success_ClosingBrace",
+			m:    &mockMappers{},
+			in:   newStringInput(`\}`),
+			expectedOut: &comb.Output{
+				Result: comb.Result{Val: '}', Pos: 0},
 			},
 			expectedError: "",
 		},
@@ -4120,7 +4425,7 @@ func TestParser_quantifier(t *testing.T) {
 	}
 }
 
-func TestParser_charInRange(t *testing.T) {
+func TestParser_charInGroup(t *testing.T) {
 	tests := []struct {
 		name             string
 		m                *mockMappers
@@ -4136,7 +4441,7 @@ func TestParser_charInRange(t *testing.T) {
 		{
 			name: "Success",
 			m: &mockMappers{
-				ToCharInRangeMocks: []MapFuncMock{
+				ToCharInGroupMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -4146,7 +4451,7 @@ func TestParser_charInRange(t *testing.T) {
 		{
 			name: "Success_ASCII",
 			m: &mockMappers{
-				ToCharInRangeMocks: []MapFuncMock{
+				ToCharInGroupMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -4156,7 +4461,7 @@ func TestParser_charInRange(t *testing.T) {
 		{
 			name: "Success_Unicode",
 			m: &mockMappers{
-				ToCharInRangeMocks: []MapFuncMock{
+				ToCharInGroupMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -4168,10 +4473,10 @@ func TestParser_charInRange(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.charInRange(tc.in)
+			p.charInGroup(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
-			if m := tc.m.ToCharInRangeMocks; len(m) > 0 {
+			if m := tc.m.ToCharInGroupMocks; len(m) > 0 {
 				assert.Equal(t, tc.expectedInResult, m[len(m)-1].InResult)
 			}
 		})
@@ -4188,7 +4493,7 @@ func TestParser_charRange(t *testing.T) {
 		{
 			name: "Failure",
 			m: &mockMappers{
-				ToCharInRangeMocks: []MapFuncMock{
+				ToCharInGroupMocks: []MapFuncMock{
 					{OutError: nil},
 				},
 			},
@@ -4198,7 +4503,7 @@ func TestParser_charRange(t *testing.T) {
 		{
 			name: "Success",
 			m: &mockMappers{
-				ToCharInRangeMocks: []MapFuncMock{
+				ToCharInGroupMocks: []MapFuncMock{
 					{OutError: nil},
 					{OutError: nil},
 				},
@@ -4217,9 +4522,30 @@ func TestParser_charRange(t *testing.T) {
 			},
 		},
 		{
+			name: "Success_Escaped",
+			m: &mockMappers{
+				ToCharInGroupMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
+				},
+				ToCharRangeMocks: []MapFuncMock{
+					{},
+				},
+			},
+			in: newStringInput(`\n-\r`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{},
+					{Val: '-', Pos: 2},
+					{},
+				},
+				Pos: 0,
+			},
+		},
+		{
 			name: "Success_ASCII",
 			m: &mockMappers{
-				ToCharInRangeMocks: []MapFuncMock{
+				ToCharInGroupMocks: []MapFuncMock{
 					{OutError: nil},
 					{OutError: nil},
 				},
@@ -4240,7 +4566,7 @@ func TestParser_charRange(t *testing.T) {
 		{
 			name: "Success_Unicode",
 			m: &mockMappers{
-				ToCharInRangeMocks: []MapFuncMock{
+				ToCharInGroupMocks: []MapFuncMock{
 					{OutError: nil},
 					{OutError: nil},
 				},
@@ -4331,7 +4657,7 @@ func TestParser_charGroupItem(t *testing.T) {
 		{
 			name: "Success_CharRange",
 			m: &mockMappers{
-				ToCharInRangeMocks: []MapFuncMock{
+				ToCharInGroupMocks: []MapFuncMock{
 					{OutError: nil},
 					{OutError: nil},
 				},
@@ -4346,12 +4672,10 @@ func TestParser_charGroupItem(t *testing.T) {
 			expectedInResult: comb.Result{},
 		},
 		{
-			name: "Success_SingleChar",
+			name: "Success_CharInGroup",
 			m: &mockMappers{
-				ToCharInRangeMocks: []MapFuncMock{
+				ToCharInGroupMocks: []MapFuncMock{
 					{OutError: nil},
-				},
-				ToSingleCharMocks: []MapFuncMock{
 					{OutError: nil},
 				},
 				ToCharGroupItemMocks: []MapFuncMock{
@@ -4392,14 +4716,12 @@ func TestParser_charGroup(t *testing.T) {
 		{
 			name: "Success_Chars",
 			m: &mockMappers{
-				ToCharInRangeMocks: []MapFuncMock{
+				ToCharInGroupMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
 					{OutError: nil},
 					{OutError: nil},
 					{OutError: nil}, // ']'
-				},
-				ToSingleCharMocks: []MapFuncMock{
-					{OutError: nil},
-					{OutError: nil},
 				},
 				ToCharGroupItemMocks: []MapFuncMock{
 					{OutError: nil},
@@ -4428,14 +4750,12 @@ func TestParser_charGroup(t *testing.T) {
 		{
 			name: "Success_Negated_Chars",
 			m: &mockMappers{
-				ToCharInRangeMocks: []MapFuncMock{
+				ToCharInGroupMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
 					{OutError: nil},
 					{OutError: nil},
 					{OutError: nil}, // ']'
-				},
-				ToSingleCharMocks: []MapFuncMock{
-					{OutError: nil},
-					{OutError: nil},
 				},
 				ToCharGroupItemMocks: []MapFuncMock{
 					{OutError: nil},
@@ -4560,7 +4880,7 @@ func TestParser_matchItem(t *testing.T) {
 		{
 			name: "Success_CharGroup",
 			m: &mockMappers{
-				ToCharInRangeMocks: []MapFuncMock{
+				ToCharInGroupMocks: []MapFuncMock{
 					{OutError: nil},
 					{OutError: nil},
 					{OutError: nil}, // ]
@@ -4925,7 +5245,7 @@ func TestParser_subexpr(t *testing.T) {
 			expectedInResult: comb.Result{},
 		},
 		{
-			name: "Success_UnescapedChar",
+			name: "Success_SingleChar",
 			m: &mockMappers{
 				ToSingleCharMocks: []MapFuncMock{
 					{OutError: nil},
@@ -5276,8 +5596,8 @@ type mockMappers struct {
 	ToQuantifierIndex int
 	ToQuantifierMocks []MapFuncMock
 
-	ToCharInRangeIndex int
-	ToCharInRangeMocks []MapFuncMock
+	ToCharInGroupIndex int
+	ToCharInGroupMocks []MapFuncMock
 
 	ToCharRangeIndex int
 	ToCharRangeMocks []MapFuncMock
@@ -5390,11 +5710,11 @@ func (m *mockMappers) ToQuantifier(r comb.Result) (comb.Result, error) {
 	return m.ToQuantifierMocks[i].OutResult, m.ToQuantifierMocks[i].OutError
 }
 
-func (m *mockMappers) ToCharInRange(r comb.Result) (comb.Result, error) {
-	i := m.ToCharInRangeIndex
-	m.ToCharInRangeIndex++
-	m.ToCharInRangeMocks[i].InResult = r
-	return m.ToCharInRangeMocks[i].OutResult, m.ToCharInRangeMocks[i].OutError
+func (m *mockMappers) ToCharInGroup(r comb.Result) (comb.Result, error) {
+	i := m.ToCharInGroupIndex
+	m.ToCharInGroupIndex++
+	m.ToCharInGroupMocks[i].InResult = r
+	return m.ToCharInGroupMocks[i].OutResult, m.ToCharInGroupMocks[i].OutError
 }
 
 func (m *mockMappers) ToCharRange(r comb.Result) (comb.Result, error) {

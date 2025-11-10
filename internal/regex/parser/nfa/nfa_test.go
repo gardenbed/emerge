@@ -551,6 +551,87 @@ func TestParse(t *testing.T) {
 	}
 }
 
+func TestParse_Sanity(t *testing.T) {
+	regexes := []string{
+		// Escaped characters
+		`\\`, `\t`, `\n`, `\r`,
+		`\^`, `\$`,
+		`\|`, `\.`,
+		`\?`, `\*`, `\+`,
+		`\(`, `\)`, `\[`, `\]`, `\{`, `\}`,
+		// Character groups
+		`[+-]`,
+		`[$^]`,
+		`[!@#]`,
+		`[tnr]`,
+		`[Σσ]`,
+		// Character ranges
+		`[0-9]`,
+		`[A-Z]`,
+		`[a-z]`,
+		`[Α-Ω]`,
+		`[α-ω]`,
+		`[۱-۹]`,
+		`[ا-ی]`,
+		`[A-Za-z]`,
+		`[0-9A-Za-z]`,
+		`[0-9A-Za-z-]`,
+		`[0-9A-Za-z_]`,
+		// Character classes
+		`\s`, `\S`,
+		`\d`, `\D`,
+		`\w`, `\W`,
+		// Character ASCII Classes
+		`[:blank:]`,
+		`[:space:]`,
+		`[:digit:]`,
+		`[:xdigit:]`,
+		`[:upper:]`,
+		`[:lower:]`,
+		`[:alpha:]`,
+		`[:alnum:]`,
+		`[:word:]`,
+		`[:ascii:]`,
+		// Character Unicode Classes
+		`\p{Letter}`, `\p{L}`, `\p{Lu}`, `\p{Ll}`, `\p{Lt}`, `\p{Lm}`, `\p{Lo}`,
+		`\P{Letter}`, `\P{L}`, `\P{Lu}`, `\P{Ll}`, `\P{Lt}`, `\P{Lm}`, `\P{Lo}`,
+		`\p{Mark}`, `\p{M}`, `\p{Mn}`, `\p{Mc}`, `\p{Me}`,
+		`\P{Mark}`, `\P{M}`, `\P{Mn}`, `\P{Mc}`, `\P{Me}`,
+		`\p{Number}`, `\p{N}`, `\p{Nd}`, `\p{Nl}`, `\p{No}`,
+		`\P{Number}`, `\P{N}`, `\P{Nd}`, `\P{Nl}`, `\P{No}`,
+		`\p{Punctuation}`, `\p{P}`, `\p{Pc}`, `\p{Pd}`, `\p{Ps}`, `\p{Pe}`, `\p{Pi}`, `\p{Pf}`, `\p{Po}`,
+		`\P{Punctuation}`, `\P{P}`, `\P{Pc}`, `\P{Pd}`, `\P{Ps}`, `\P{Pe}`, `\P{Pi}`, `\P{Pf}`, `\P{Po}`,
+		`\p{Symbol}`, `\p{S}`, `\p{Sm}`, `\p{Sc}`, `\p{Sk}`, `\p{So}`,
+		`\P{Symbol}`, `\P{S}`, `\P{Sm}`, `\P{Sc}`, `\P{Sk}`, `\P{So}`,
+		`\p{Separator}`, `\p{Z}`, `\p{Zs}`, `\p{Zl}`, `\p{Zp}`,
+		`\P{Separator}`, `\P{Z}`, `\P{Zs}`, `\P{Zl}`, `\P{Zp}`,
+		`\p{Latin}`, `\p{Greek}`, `\p{Cyrillic}`, `\p{Han}`, `\p{Persian}`,
+		`\P{Latin}`, `\P{Greek}`, `\P{Cyrillic}`, `\P{Han}`, `\P{Persian}`,
+		`\p{Math}`, `\p{Emoji}`,
+		`\P{Math}`, `\P{Emoji}`,
+		// Quantifiers
+		`.?`, `.*`, `.+`,
+		`\d?`, `\d*`, `\d+`, `\d{2}`, `\d{2,}`, `\d{2,4}`,
+		// Alernation & Grouping
+		`0|1`,
+		`(PREFIX|prefix)(SUFFIX|suffix)`,
+		// Misc
+		`-?[0-9]+`,
+		`-?[0-9]+(\.[0-9]+)?`,
+		`"([^\\"]|\\[\\"'tnr])*"`,
+		`(#|//)[^\n\r]*|/\*.*?\*/`,
+	}
+
+	for _, regex := range regexes {
+		t.Run(regex, func(t *testing.T) {
+			nfa, err := Parse(regex)
+
+			assert.NotNil(t, nfa)
+			assert.NoError(t, err)
+		})
+	}
+}
+
 func TestMappers_ToAnyChar(t *testing.T) {
 	tests := []MapperTest{
 		{
@@ -1265,7 +1346,7 @@ func TestMappers_ToQuantifier(t *testing.T) {
 	}
 }
 
-func TestMappers_ToCharInRange(t *testing.T) {
+func TestMappers_ToCharInGroup(t *testing.T) {
 	tests := []MapperTest{
 		{
 			name: "Success",
@@ -1284,7 +1365,7 @@ func TestMappers_ToCharInRange(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			m := new(mappers)
-			res, err := m.ToCharInRange(tc.r)
+			res, err := m.ToCharInGroup(tc.r)
 
 			if tc.expectedError == "" {
 				assert.NoError(t, err)

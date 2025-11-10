@@ -14,7 +14,7 @@ func excludeRunes(r ...rune) comb.BindFunc {
 			if a, ok := res.Val.(rune); ok {
 				for _, b := range r {
 					if a == b {
-						return nil, fmt.Errorf("unexpected rune %q at position %d", a, res.Pos)
+						return nil, fmt.Errorf("%d: unexpected rune %q", res.Pos, a)
 					}
 				}
 			}
@@ -137,7 +137,7 @@ func toUnicodeChar(r comb.Result) (comb.Result, error) {
 // Mappers defines mapping functions for various non-terminals in the regex grammar.
 type Mappers interface {
 	ToAnyChar(comb.Result) (comb.Result, error)          // any_char --> "."
-	ToSingleChar(comb.Result) (comb.Result, error)       // single_char --> unicode_char | ascii_char | escaped_char | unescaped_char
+	ToSingleChar(comb.Result) (comb.Result, error)       // single_char --> unicode_char | ascii_char | escaped_char | raw_char
 	ToCharClass(comb.Result) (comb.Result, error)        // char_class --> "\s" | "\S" | "\d" | "\D" | "\w" | "\W"
 	ToASCIICharClass(comb.Result) (comb.Result, error)   // ascii_char_class --> "[:blank:]" | "[:space:]" | "[:digit:]" | "[:xdigit:]" | ...
 	ToUnicodeCategory(comb.Result) (comb.Result, error)  // unicode_category --> ...
@@ -147,9 +147,9 @@ type Mappers interface {
 	ToRange(comb.Result) (comb.Result, error)            // range --> "{" num upper_bound? "}"
 	ToRepetition(comb.Result) (comb.Result, error)       // repetition --> rep_op | range
 	ToQuantifier(comb.Result) (comb.Result, error)       // quantifier --> repetition lazy_modifier?
-	ToCharInRange(comb.Result) (comb.Result, error)      // char_in_range --> unicode_char | ascii_char | char
+	ToCharInGroup(comb.Result) (comb.Result, error)      // char_in_group --> unicode_char | ascii_char | escaped_char | raw_char_in_group
 	ToCharRange(comb.Result) (comb.Result, error)        // char_range --> char_in_range "-" char_in_range
-	ToCharGroupItem(comb.Result) (comb.Result, error)    // char_group_item --> unicode_char_class | ascii_char_class | char_class | char_range | single_char
+	ToCharGroupItem(comb.Result) (comb.Result, error)    // char_group_item --> unicode_char_class | ascii_char_class | char_class | char_range | char_in_group
 	ToCharGroup(comb.Result) (comb.Result, error)        // char_group --> "[" "^"? char_group_item+ "]"
 	ToMatchItem(comb.Result) (comb.Result, error)        // match_item --> any_char | single_char | char_class | ascii_char_class | unicode_char_class | char_group
 	ToMatch(comb.Result) (comb.Result, error)            // match --> match_item quantifier?
@@ -172,7 +172,8 @@ type Parser struct {
 	num              comb.Parser
 	letters          comb.Parser
 	char             comb.Parser
-	unescapedChar    comb.Parser
+	rawCharInGroup   comb.Parser
+	rawChar          comb.Parser
 	escapedChar      comb.Parser
 	asciiChar        comb.Parser
 	unicodeChar      comb.Parser
@@ -187,7 +188,7 @@ type Parser struct {
 	range_           comb.Parser
 	repetition       comb.Parser
 	quantifier       comb.Parser
-	charInRange      comb.Parser
+	charInGroup      comb.Parser
 	charRange        comb.Parser
 	charGroupItem    comb.Parser
 	charGroup        comb.Parser
@@ -212,8 +213,13 @@ func New(m Mappers) *Parser {
 	// char --> all Unicode characters
 	p.char = comb.ExpectRuneInRange(0x20, 0x10FFFF)
 
-	// unescaped_char --> all characters excluding the escaped ones
-	p.unescapedChar = p.char.Bind(
+	// raw_char_in_group --> all characters except '[' and ']'
+	p.rawCharInGroup = p.char.Bind(
+		excludeRunes('[', ']'),
+	)
+
+	// raw_char --> all characters except the escaped ones
+	p.rawChar = p.char.Bind(
 		excludeRunes('\\', '\t', '\n', '\r', '^', '$', '|', '.', '?', '*', '+', '(', ')', '[', ']', '{', '}'),
 	)
 
@@ -233,12 +239,12 @@ func New(m Mappers) *Parser {
 	// any_char --> "."
 	p.anyChar = comb.ExpectRune('.').Map(p.m.ToAnyChar)
 
-	// single_char --> unicode_char | ascii_char | escaped_char | unescaped_char
+	// single_char --> unicode_char | ascii_char | escaped_char | raw_char
 	p.singleChar = comb.ALT(
 		p.unicodeChar,
 		p.asciiChar,
 		p.escapedChar,
-		p.unescapedChar,
+		p.rawChar,
 	).Map(p.m.ToSingleChar)
 
 	// char_class --> "\s" | "\S" | "\d" | "\D" | "\w" | "\W"
@@ -301,22 +307,29 @@ func New(m Mappers) *Parser {
 
 	p.repetition = p.repOp.ALT(p.range_).Map(p.m.ToRepetition)                           // repetition --> rep_op | range
 	p.quantifier = p.repetition.CONCAT(comb.ExpectRune('?').OPT()).Map(p.m.ToQuantifier) // quantifier --> repetition lazy_modifier?
-	p.charInRange = p.unicodeChar.ALT(p.asciiChar, p.char).Map(p.m.ToCharInRange)        // char_in_range --> unicode_char | ascii_char | char
 
-	// char_range --> char_in_range "-" char_in_range
+	// char_in_group --> unicode_char | ascii_char | escaped_char | raw_char_in_group
+	p.charInGroup = comb.ALT(
+		p.unicodeChar,
+		p.asciiChar,
+		p.escapedChar,
+		p.rawCharInGroup,
+	).Map(p.m.ToCharInGroup)
+
+	// char_range --> char_in_group "-" char_in_group
 	p.charRange = comb.CONCAT(
-		p.charInRange,
+		p.charInGroup,
 		comb.ExpectRune('-'),
-		p.charInRange,
+		p.charInGroup,
 	).Map(p.m.ToCharRange)
 
-	// char_group_item --> unicode_char_class | ascii_char_class | char_class | char_range | single_char
+	// char_group_item --> unicode_char_class | ascii_char_class | char_class | char_range | char_in_group
 	p.charGroupItem = comb.ALT(
 		p.unicodeCharClass,
 		p.asciiCharClass,
 		p.charClass,
 		p.charRange,
-		p.singleChar,
+		p.charInGroup,
 	).Map(p.m.ToCharGroupItem)
 
 	// char_group --> "[" "^"? char_group_item+ "]"

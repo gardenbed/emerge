@@ -214,7 +214,7 @@ func (m *mappers) ToQuantifier(r combinator.Result) (combinator.Result, error) {
 	}, nil
 }
 
-func (m *mappers) ToCharInRange(r combinator.Result) (combinator.Result, error) {
+func (m *mappers) ToCharInGroup(r combinator.Result) (combinator.Result, error) {
 	// Passing the result up the parsing chain
 	return r, nil
 }
