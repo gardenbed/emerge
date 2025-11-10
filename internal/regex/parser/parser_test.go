@@ -729,6 +729,34 @@ func TestParser_rawCharInGroup(t *testing.T) {
 		expectedError string
 	}{
 		{
+			name:          "Backslash",
+			m:             &mockMappers{},
+			in:            newStringInput("\\"),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '\\\\'",
+		},
+		{
+			name:          "HorizontalTab",
+			m:             &mockMappers{},
+			in:            newStringInput("\t"),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '\\t'",
+		},
+		{
+			name:          "NewLine",
+			m:             &mockMappers{},
+			in:            newStringInput("\n"),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '\\n'",
+		},
+		{
+			name:          "CarriageReturn",
+			m:             &mockMappers{},
+			in:            newStringInput("\r"),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '\\r'",
+		},
+		{
 			name:          "OpeningBracket",
 			m:             &mockMappers{},
 			in:            newStringInput(`[`),
@@ -4439,7 +4467,7 @@ func TestParser_charInGroup(t *testing.T) {
 			expectedInResult: comb.Result{},
 		},
 		{
-			name: "Success",
+			name: "Success_Letter",
 			m: &mockMappers{
 				ToCharInGroupMocks: []MapFuncMock{
 					{},
@@ -4447,6 +4475,26 @@ func TestParser_charInGroup(t *testing.T) {
 			},
 			in:               newStringInput(`a`),
 			expectedInResult: comb.Result{Val: 'a', Pos: 0},
+		},
+		{
+			name: "Success_Hyphen",
+			m: &mockMappers{
+				ToCharInGroupMocks: []MapFuncMock{
+					{},
+				},
+			},
+			in:               newStringInput(`-`),
+			expectedInResult: comb.Result{Val: '-', Pos: 0},
+		},
+		{
+			name: "Success_Underscore",
+			m: &mockMappers{
+				ToCharInGroupMocks: []MapFuncMock{
+					{},
+				},
+			},
+			in:               newStringInput(`_`),
+			expectedInResult: comb.Result{Val: '_', Pos: 0},
 		},
 		{
 			name: "Success_ASCII",
@@ -4672,7 +4720,7 @@ func TestParser_charGroupItem(t *testing.T) {
 			expectedInResult: comb.Result{},
 		},
 		{
-			name: "Success_CharInGroup",
+			name: "Success_CharInGroup_Letter",
 			m: &mockMappers{
 				ToCharInGroupMocks: []MapFuncMock{
 					{OutError: nil},
@@ -4683,6 +4731,34 @@ func TestParser_charGroupItem(t *testing.T) {
 				},
 			},
 			in:               newStringInput(`a`),
+			expectedInResult: comb.Result{},
+		},
+		{
+			name: "Success_CharInGroup_Hyphen",
+			m: &mockMappers{
+				ToCharInGroupMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
+				},
+				ToCharGroupItemMocks: []MapFuncMock{
+					{},
+				},
+			},
+			in:               newStringInput(`-`),
+			expectedInResult: comb.Result{},
+		},
+		{
+			name: "Success_CharInGroup_Underscore",
+			m: &mockMappers{
+				ToCharInGroupMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
+				},
+				ToCharGroupItemMocks: []MapFuncMock{
+					{},
+				},
+			},
+			in:               newStringInput(`_`),
 			expectedInResult: comb.Result{},
 		},
 	}
@@ -4731,7 +4807,7 @@ func TestParser_charGroup(t *testing.T) {
 					{},
 				},
 			},
-			in: newStringInput(`[ab]`),
+			in: newStringInput(`[+-]`),
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: '[', Pos: 0},
@@ -4765,7 +4841,7 @@ func TestParser_charGroup(t *testing.T) {
 					{},
 				},
 			},
-			in: newStringInput(`[^ab]`),
+			in: newStringInput(`[^+-]`),
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: '[', Pos: 0},
@@ -4777,6 +4853,90 @@ func TestParser_charGroup(t *testing.T) {
 						},
 					},
 					comb.Result{Val: ']', Pos: 4},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_RangeAndChars",
+			m: &mockMappers{
+				ToCharInGroupMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
+					{OutError: nil},
+					{OutError: nil},
+					{OutError: nil},
+					{OutError: nil},
+					{OutError: nil}, // ']'
+				},
+				ToCharRangeMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
+				},
+				ToCharGroupItemMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
+					{OutError: nil},
+				},
+				ToCharGroupMocks: []MapFuncMock{
+					{},
+				},
+			},
+			in: newStringInput(`[A-Za-z_]`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: '[', Pos: 0},
+					{Val: comb.Empty{}},
+					{
+						Val: comb.List{
+							{},
+							{},
+							{},
+						},
+					},
+					comb.Result{Val: ']', Pos: 8},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Negated_RangeAndChars",
+			m: &mockMappers{
+				ToCharInGroupMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
+					{OutError: nil},
+					{OutError: nil},
+					{OutError: nil},
+					{OutError: nil},
+					{OutError: nil}, // ']'
+				},
+				ToCharRangeMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
+				},
+				ToCharGroupItemMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
+					{OutError: nil},
+				},
+				ToCharGroupMocks: []MapFuncMock{
+					{},
+				},
+			},
+			in: newStringInput(`[^A-Za-z_]`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: '[', Pos: 0},
+					{Val: '^', Pos: 1},
+					{
+						Val: comb.List{
+							{},
+							{},
+							{},
+						},
+					},
+					comb.Result{Val: ']', Pos: 9},
 				},
 				Pos: 0,
 			},

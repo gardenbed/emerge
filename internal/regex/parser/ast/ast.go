@@ -492,6 +492,7 @@ const (
 	StartOfString Anchor = iota + 1
 	EndOfString
 
+	bagKeyChar           combinator.BagKey = "char"
 	bagKeyCharRanges     combinator.BagKey = "char_ranges"
 	bagKeyLazyQuantifier combinator.BagKey = "lazy_quantifier"
 	BagKeyStartOfString  combinator.BagKey = "start_of_string"
@@ -517,6 +518,7 @@ func (m *mappers) ToSingleChar(r combinator.Result) (combinator.Result, error) {
 		Val: node,
 		Pos: r.Pos,
 		Bag: combinator.Bag{
+			bagKeyChar:       c,
 			bagKeyCharRanges: ranges,
 		},
 	}, nil
@@ -670,15 +672,24 @@ func (m *mappers) ToQuantifier(r combinator.Result) (combinator.Result, error) {
 }
 
 func (m *mappers) ToCharInGroup(r combinator.Result) (combinator.Result, error) {
-	// Passing the result up the parsing chain
-	return r, nil
+	c := r.Val.(rune)
+	node, ranges := charRangesToNode(false, char.RangeList{{c, c}})
+
+	return combinator.Result{
+		Val: node,
+		Pos: r.Pos,
+		Bag: combinator.Bag{
+			bagKeyChar:       c,
+			bagKeyCharRanges: ranges,
+		},
+	}, nil
 }
 
 func (m *mappers) ToCharRange(r combinator.Result) (combinator.Result, error) {
 	r0, _ := r.Get(0)
 	r2, _ := r.Get(2)
 
-	lo, hi := r0.Val.(rune), r2.Val.(rune)
+	lo, hi := r0.Bag[bagKeyChar].(rune), r2.Bag[bagKeyChar].(rune)
 
 	if lo > hi {
 		return combinator.Result{}, fmt.Errorf("invalid character range %c-%c", lo, hi)

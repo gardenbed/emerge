@@ -141,7 +141,7 @@ type Mappers interface {
 	ToCharClass(comb.Result) (comb.Result, error)        // char_class --> "\s" | "\S" | "\d" | "\D" | "\w" | "\W"
 	ToASCIICharClass(comb.Result) (comb.Result, error)   // ascii_char_class --> "[:blank:]" | "[:space:]" | "[:digit:]" | "[:xdigit:]" | ...
 	ToUnicodeCategory(comb.Result) (comb.Result, error)  // unicode_category --> ...
-	ToUnicodeCharClass(comb.Result) (comb.Result, error) // unicode_char_class --> "\p" "{" unicode_category "}"
+	ToUnicodeCharClass(comb.Result) (comb.Result, error) // unicode_char_class --> ("\p" | "\P") "{" unicode_category "}"
 	ToRepOp(comb.Result) (comb.Result, error)            // rep_op --> "?" | "*" | "+"
 	ToUpperBound(comb.Result) (comb.Result, error)       // upper_bound --> "," num?
 	ToRange(comb.Result) (comb.Result, error)            // range --> "{" num upper_bound? "}"
@@ -215,7 +215,7 @@ func New(m Mappers) *Parser {
 
 	// raw_char_in_group --> all characters except '[' and ']'
 	p.rawCharInGroup = p.char.Bind(
-		excludeRunes('[', ']'),
+		excludeRunes('\\', '\t', '\n', '\r', '[', ']'),
 	)
 
 	// raw_char --> all characters except the escaped ones
@@ -223,7 +223,7 @@ func New(m Mappers) *Parser {
 		excludeRunes('\\', '\t', '\n', '\r', '^', '$', '|', '.', '?', '*', '+', '(', ')', '[', ']', '{', '}'),
 	)
 
-	// escaped_char --> "\" ( ... )
+	// escaped_char --> "\" (...)
 	p.escapedChar = comb.ExpectRune('\\').CONCAT(
 		comb.ExpectRuneIn('\\', 't', 'n', 'r', '^', '$', '|', '.', '?', '*', '+', '(', ')', '[', ']', '{', '}'),
 	).Map(toEscapedChar)
@@ -280,7 +280,7 @@ func New(m Mappers) *Parser {
 		comb.ExpectString("Symbol"), comb.ExpectString("Sm"), comb.ExpectString("Sc"), comb.ExpectString("Sk"), comb.ExpectString("So"), comb.ExpectString("S"),
 	).Map(p.m.ToUnicodeCategory)
 
-	// unicode_char_class --> "\p" "{" unicode_category "}"
+	// unicode_char_class --> ("\p" | "\P") "{" unicode_category "}"
 	p.unicodeCharClass = comb.ExpectString(`\p`).ALT(comb.ExpectString(`\P`)).CONCAT(
 		comb.ExpectRune('{'),
 		p.unicodeCategory,

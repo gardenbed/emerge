@@ -12,6 +12,18 @@ import (
 )
 
 var testNFA = map[string]*automata.NFA{
+	"a": automata.NewNFABuilder().
+		SetStart(0).
+		SetFinal([]automata.State{1}).
+		AddTransition(0, 'a', 'a', []automata.State{1}).
+		Build(),
+
+	"f": automata.NewNFABuilder().
+		SetStart(0).
+		SetFinal([]automata.State{1}).
+		AddTransition(0, 'f', 'f', []automata.State{1}).
+		Build(),
+
 	"x": automata.NewNFABuilder().
 		SetStart(0).
 		SetFinal([]automata.State{1}).
@@ -494,63 +506,6 @@ func assertEqualResults(t *testing.T, expected, actual combinator.Result) {
 	assert.Equal(t, expected.Bag, actual.Bag, "Expected Bag:\n%v\nGot:\n%v\n", expected.Bag, actual.Bag)
 }
 
-func TestParse(t *testing.T) {
-	tests := []struct {
-		name          string
-		regex         string
-		expectedError string
-		expectedNFA   *automata.NFA
-	}{
-		{
-			name:          "InvalidRegex",
-			regex:         "[",
-			expectedError: "invalid regular expression: [: 0: unexpected rune '['",
-		},
-		{
-			name:          "InvalidCharRange",
-			regex:         "[9-0]",
-			expectedError: "invalid regular expression: [9-0]: 1: invalid character range 9-0",
-		},
-		{
-			name:          "InvalidRepRange",
-			regex:         "[0-9]{4,2}",
-			expectedError: "invalid regular expression: [0-9]{4,2}: 5: invalid repetition range {4,2}",
-		},
-		{
-			name:  "Success_EscapedChars",
-			regex: `\n|\r|\r\n`,
-			expectedNFA: testNFA["\n"].Union(
-				testNFA["\r"].Union(
-					testNFA["\r"].Concat(testNFA["\n"]),
-				),
-			),
-		},
-		{
-			name:  "Success_CharRanges",
-			regex: `^[A-Z]?[a-z][0-9A-Za-z]{1,}$`,
-			expectedNFA: empty().Union(testNFA["upper"]).Concat(
-				testNFA["lower"],
-				testNFA["alnum"].Concat(testNFA["alnum"].Star()),
-			),
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			nfa, err := Parse(tc.regex)
-
-			if tc.expectedError != "" {
-				assert.Nil(t, nfa)
-				assert.EqualError(t, err, tc.expectedError)
-			} else {
-				assert.NoError(t, err)
-				assert.NotNil(t, nfa)
-				assert.True(t, nfa.Equal(tc.expectedNFA))
-			}
-		})
-	}
-}
-
 func TestParse_Sanity(t *testing.T) {
 	regexes := []string{
 		// Escaped characters
@@ -632,6 +587,68 @@ func TestParse_Sanity(t *testing.T) {
 	}
 }
 
+func TestParse_Verify(t *testing.T) {
+	tests := []struct {
+		regex         string
+		expectedError string
+		expectedNFA   *automata.NFA
+	}{
+		{
+			regex:         "[",
+			expectedError: "invalid regular expression: [: 0: unexpected rune '['",
+		},
+		{
+			regex:         "[9-0]",
+			expectedError: "invalid regular expression: [9-0]: 1: invalid character range 9-0",
+		},
+		{
+			regex:         "[0-9]{4,2}",
+			expectedError: "invalid regular expression: [0-9]{4,2}: 5: invalid repetition range {4,2}",
+		},
+		{
+			regex: `\n|\r|\r\n`,
+			expectedNFA: testNFA["\n"].Union(
+				testNFA["\r"].Union(
+					testNFA["\r"].Concat(testNFA["\n"]),
+				),
+			),
+		},
+		{
+			regex: `^[A-Z]?[a-z][0-9A-Za-z]{1,}$`,
+			expectedNFA: empty().Union(testNFA["upper"]).Concat(
+				testNFA["lower"],
+				testNFA["alnum"].Concat(testNFA["alnum"].Star()),
+			),
+		},
+		{
+			regex: `[A-Za-z_][0-9A-Za-z_]*`,
+			expectedNFA: automata.NewNFABuilder().
+				SetStart(0).
+				SetFinal([]automata.State{1}).
+				AddTransition(0, 'A', 'Z', []automata.State{1}).
+				AddTransition(0, '_', '_', []automata.State{1}).
+				AddTransition(0, 'a', 'z', []automata.State{1}).
+				Build().
+				Concat(testNFA["word"].Star()),
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.regex, func(t *testing.T) {
+			nfa, err := Parse(tc.regex)
+
+			if tc.expectedError != "" {
+				assert.Nil(t, nfa)
+				assert.EqualError(t, err, tc.expectedError)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, nfa)
+				assert.True(t, nfa.Equal(tc.expectedNFA))
+			}
+		})
+	}
+}
+
 func TestMappers_ToAnyChar(t *testing.T) {
 	tests := []MapperTest{
 		{
@@ -676,6 +693,7 @@ func TestMappers_ToSingleChar(t *testing.T) {
 				Val: testNFA["x"],
 				Pos: 2,
 				Bag: combinator.Bag{
+					bagKeyChar: 'x',
 					bagKeyCharRanges: char.RangeList{
 						{'x', 'x'},
 					},
@@ -1355,8 +1373,14 @@ func TestMappers_ToCharInGroup(t *testing.T) {
 				Pos: 2,
 			},
 			expectedResult: combinator.Result{
-				Val: 'a',
+				Val: testNFA["a"],
 				Pos: 2,
+				Bag: combinator.Bag{
+					bagKeyChar: 'a',
+					bagKeyCharRanges: char.RangeList{
+						{'a', 'a'},
+					},
+				},
 			},
 			expectedError: "",
 		},
@@ -1384,9 +1408,27 @@ func TestMappers_ToCharRange(t *testing.T) {
 			name: "Success",
 			r: combinator.Result{
 				Val: combinator.List{
-					{Val: 'a', Pos: 2},
+					{
+						Val: testNFA["a"],
+						Pos: 2,
+						Bag: combinator.Bag{
+							bagKeyChar: 'a',
+							bagKeyCharRanges: char.RangeList{
+								{'a', 'a'},
+							},
+						},
+					},
 					{Val: '-', Pos: 3},
-					{Val: 'f', Pos: 4},
+					{
+						Val: testNFA["f"],
+						Pos: 4,
+						Bag: combinator.Bag{
+							bagKeyChar: 'f',
+							bagKeyCharRanges: char.RangeList{
+								{'f', 'f'},
+							},
+						},
+					},
 				},
 				Pos: 2,
 			},
@@ -1409,9 +1451,27 @@ func TestMappers_ToCharRange(t *testing.T) {
 			name: "InvalidRange",
 			r: combinator.Result{
 				Val: combinator.List{
-					{Val: 'f', Pos: 2},
+					{
+						Val: testNFA["f"],
+						Pos: 2,
+						Bag: combinator.Bag{
+							bagKeyChar: 'f',
+							bagKeyCharRanges: char.RangeList{
+								{'f', 'f'},
+							},
+						},
+					},
 					{Val: '-', Pos: 3},
-					{Val: 'a', Pos: 4},
+					{
+						Val: testNFA["a"],
+						Pos: 4,
+						Bag: combinator.Bag{
+							bagKeyChar: 'a',
+							bagKeyCharRanges: char.RangeList{
+								{'a', 'a'},
+							},
+						},
+					},
 				},
 				Pos: 2,
 			},
