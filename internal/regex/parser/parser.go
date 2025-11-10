@@ -7,8 +7,6 @@ import (
 	comb "github.com/moorara/algo/parser/combinator"
 )
 
-var escapedChars = []rune{'\\', 't', 'n', 'r', '|', '.', '?', '*', '+', '-', '(', ')', '[', ']', '{', '}', '^', '$'}
-
 // excludeRunes can be bound on a rune parser to exclude certain runes.
 func excludeRunes(r ...rune) comb.BindFunc {
 	return func(res comb.Result) comb.Parser {
@@ -211,10 +209,21 @@ func New(m Mappers) *Parser {
 	p.num = p.digit.REP1().Map(toNum)                                                                         // num --> digit+
 	p.letters = p.letter.REP1().Map(toLetters)                                                                // letters --> letter+
 
-	p.char = comb.ExpectRuneInRange(0x20, 0x10FFFF)                                                     // char --> all Unicode characters
-	p.unescapedChar = p.char.Bind(excludeRunes(escapedChars...))                                        // unescaped_char --> all characters excluding the escaped ones
-	p.escapedChar = comb.ExpectRune('\\').CONCAT(comb.ExpectRuneIn(escapedChars...)).Map(toEscapedChar) // escaped_char --> "\" ( "\" | ... | "$" )
-	p.asciiChar = comb.ExpectString(`\x`).CONCAT(p.hexDigit, p.hexDigit).Map(toASCIIChar)               // ascii_char --> "\x" hex_digit{2}
+	// char --> all Unicode characters
+	p.char = comb.ExpectRuneInRange(0x20, 0x10FFFF)
+
+	// unescaped_char --> all characters excluding the escaped ones
+	p.unescapedChar = p.char.Bind(
+		excludeRunes('\\', '\t', '\n', '\r', '^', '$', '|', '.', '?', '*', '+', '(', ')', '[', ']', '{', '}'),
+	)
+
+	// escaped_char --> "\" ( ... )
+	p.escapedChar = comb.ExpectRune('\\').CONCAT(
+		comb.ExpectRuneIn('\\', 't', 'n', 'r', '^', '$', '|', '.', '?', '*', '+', '(', ')', '[', ']', '{', '}'),
+	).Map(toEscapedChar)
+
+	// ascii_char --> "\x" hex_digit{2}
+	p.asciiChar = comb.ExpectString(`\x`).CONCAT(p.hexDigit, p.hexDigit).Map(toASCIIChar)
 
 	// unicode_char --> "\x" hex_digit{4,8}
 	p.unicodeChar = comb.ExpectString(`\x`).CONCAT(p.hexDigit, p.hexDigit, p.hexDigit, p.hexDigit,
