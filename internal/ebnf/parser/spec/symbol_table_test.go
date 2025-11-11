@@ -640,40 +640,6 @@ func TestSymbolTable_AddProduction(t *testing.T) {
 	}
 }
 
-func TestSymbolTable_GetOpt(t *testing.T) {
-	st := NewSymbolTable()
-
-	tests := []struct {
-		name                string
-		st                  *SymbolTable
-		s                   Strings
-		expectedNonTerminal grammar.NonTerminal
-	}{
-		{
-			name: "New",
-			st:   st,
-			s: Strings{
-				grammar.String[grammar.Symbol]{grammar.Terminal(";")},
-			},
-			expectedNonTerminal: "gen_semi_opt",
-		},
-		{
-			name: "Existent",
-			st:   st,
-			s: Strings{
-				grammar.String[grammar.Symbol]{grammar.Terminal(";")},
-			},
-			expectedNonTerminal: "gen_semi_opt",
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			assert.Equal(t, tc.expectedNonTerminal, tc.st.GetOpt(tc.s))
-		})
-	}
-}
-
 func TestSymbolTable_GetGroup(t *testing.T) {
 	st := NewSymbolTable()
 
@@ -708,6 +674,40 @@ func TestSymbolTable_GetGroup(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			assert.Equal(t, tc.expectedNonTerminal, tc.st.GetGroup(tc.s))
+		})
+	}
+}
+
+func TestSymbolTable_GetOpt(t *testing.T) {
+	st := NewSymbolTable()
+
+	tests := []struct {
+		name                string
+		st                  *SymbolTable
+		s                   Strings
+		expectedNonTerminal grammar.NonTerminal
+	}{
+		{
+			name: "New",
+			st:   st,
+			s: Strings{
+				grammar.String[grammar.Symbol]{grammar.Terminal(";")},
+			},
+			expectedNonTerminal: "gen_semi_opt",
+		},
+		{
+			name: "Existent",
+			st:   st,
+			s: Strings{
+				grammar.String[grammar.Symbol]{grammar.Terminal(";")},
+			},
+			expectedNonTerminal: "gen_semi_opt",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.expectedNonTerminal, tc.st.GetOpt(tc.s))
 		})
 	}
 }

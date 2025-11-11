@@ -495,25 +495,6 @@ func (t *SymbolTable) AddProduction(p *grammar.Production, pos *lexer.Position) 
 	})
 }
 
-// GetOpt generates a new non-terminal symbol for an optional (zero or one) occurrence of a list of grammar strings.
-// If a name was previously generated for the same strings and purpose, it will be reused.
-func (t *SymbolTable) GetOpt(s Strings) grammar.NonTerminal {
-	t.Lock()
-	defer t.Unlock()
-
-	e, ok := t.strings.table.Get(s)
-	if ok {
-		return e.Opt
-	}
-
-	opt := t.mapStringToNoneTerminal(s, "opt")
-	t.strings.table.Put(s, &stringsEntry{
-		Opt: opt,
-	})
-
-	return opt
-}
-
 // GetGroup generates a new non-terminal symbol for grouping a list of grammar strings.
 // If a name was previously generated for the same strings and purpose, it will be reused.
 func (t *SymbolTable) GetGroup(s Strings) grammar.NonTerminal {
@@ -531,6 +512,25 @@ func (t *SymbolTable) GetGroup(s Strings) grammar.NonTerminal {
 	})
 
 	return group
+}
+
+// GetOpt generates a new non-terminal symbol for an optional (zero or one) occurrence of a list of grammar strings.
+// If a name was previously generated for the same strings and purpose, it will be reused.
+func (t *SymbolTable) GetOpt(s Strings) grammar.NonTerminal {
+	t.Lock()
+	defer t.Unlock()
+
+	e, ok := t.strings.table.Get(s)
+	if ok {
+		return e.Opt
+	}
+
+	opt := t.mapStringToNoneTerminal(s, "opt")
+	t.strings.table.Put(s, &stringsEntry{
+		Opt: opt,
+	})
+
+	return opt
 }
 
 // GetStar generates a new non-terminal symbol for zero or more occurrences of a list of grammar strings.
