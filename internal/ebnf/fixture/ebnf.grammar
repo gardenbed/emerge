@@ -3,8 +3,8 @@ grammar ebnf
 PREDEF = /\$[A-Z][0-9A-Z_]*/
 IDENT  = /[a-z][0-9a-z_]*/
 TOKEN  = /[A-Z][0-9A-Z_]*/
-STRING = /"([\x21\x23-\x5B\x5D-\x7E]\|\\[\x21-\x7E])+"/
-REGEX  = /\/([\x20-\x2E\x30-\x5B\x5D-\x7E]\|\\[\x20-\x7E])*\//
+STRING = /"([^\\"]|\\[\\"'tnr]|\\x[0-9A-Fa-f]{2}|\\u[0-9A-Fa-f]{4}|\\U[0-9A-Fa-f]{8})*"/
+REGEX  = /\/([^\/\\*]|\\.)([^\/\\]|\\.)*\//
 
 @left  <rhs = rhs rhs>
 @left  "(" "[" "{" "{{" IDENT TOKEN STRING
