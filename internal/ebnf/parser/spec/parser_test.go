@@ -68,8 +68,8 @@ func TestParse(t *testing.T) {
 
 				assert.True(t, spec.Name == tc.expectedSpec.Name)
 				assert.NotNil(t, spec.Definitions)
-				assert.True(t, spec.Grammar.Equal(tc.expectedSpec.Grammar))
-				assert.True(t, spec.Precedences.Equal(tc.expectedSpec.Precedences))
+				assert.True(t, spec.Grammar.Equal(tc.expectedSpec.Grammar), "Expected:\n%s\nGot:\n%s", tc.expectedSpec.Grammar, spec.Grammar)
+				assert.True(t, spec.Precedences.Equal(tc.expectedSpec.Precedences), "Expected:\n%s\nGot:\n%s", tc.expectedSpec.Precedences, spec.Precedences)
 			}
 		})
 	}

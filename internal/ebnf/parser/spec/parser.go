@@ -61,7 +61,7 @@ func Parse(filename string, src io.Reader) (*Spec, error) {
 		case 29:
 			s := rhs[0].Val.(Strings)
 
-			var all Strings
+			all := make(Strings, 0, len(s)+1)
 			all = append(all, s...)
 			all = append(all, grammar.E)
 
@@ -72,7 +72,7 @@ func Parse(filename string, src io.Reader) (*Spec, error) {
 			s1 := rhs[0].Val.(Strings)
 			s2 := rhs[2].Val.(Strings)
 
-			var all Strings
+			all := make(Strings, 0, len(s1)+len(s2))
 			all = append(all, s1...)
 			all = append(all, s2...)
 
@@ -121,44 +121,23 @@ func Parse(filename string, src io.Reader) (*Spec, error) {
 		// rhs → "[" rhs "]"
 		case 25:
 			s := rhs[1].Val.(Strings)
-			opt := table.GetOpt(s)
-			table.AddNonTerminal(opt, rhs[1].Pos)
 
-			for _, α := range s {
-				table.AddProduction(
-					&grammar.Production{Head: opt, Body: α},
-					rhs[0].Pos,
-				)
-			}
+			all := make(Strings, 0, len(s)+1)
+			all = append(all, s...)
+			all = append(all, grammar.E)
 
-			table.AddProduction(
-				&grammar.Production{Head: opt, Body: grammar.E},
-				rhs[0].Pos,
-			)
-
-			return Strings{{opt}}, nil
+			return all, nil
 
 		// rhs → "(" rhs ")"
 		case 24:
-			s := rhs[1].Val.(Strings)
-			group := table.GetGroup(s)
-			table.AddNonTerminal(group, rhs[1].Pos)
-
-			for _, α := range s {
-				table.AddProduction(
-					&grammar.Production{Head: group, Body: α},
-					rhs[0].Pos,
-				)
-			}
-
-			return Strings{{group}}, nil
+			return rhs[1].Val, nil
 
 		// rhs → rhs rhs
 		case 23:
 			s1 := rhs[0].Val.(Strings)
 			s2 := rhs[1].Val.(Strings)
 
-			var all Strings
+			all := make(Strings, 0, len(s1)*len(s2))
 			for _, α := range s1 {
 				for _, β := range s2 {
 					all = append(all, α.Concat(β))
