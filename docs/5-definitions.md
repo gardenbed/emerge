@@ -22,30 +22,30 @@ we can define the regular expression language using the EBNF notation as well
 
 {% raw %}
 ```
-regex              = [ "^" ] expr
-expr               = subexpr [ "|" expr ]
-subexpr            = {{ subexpr_item }}
+regex              = ["^"] expr
+expr               = subexpr ["|" expr]
+subexpr            = {{subexpr_item}}
 subexpr_item       = anchor | group | match
 anchor             = "$"
-group              = "(" expr ")" [ quantifier ]
-match              = match_item [ quantifier ]
+group              = "(" expr ")" [quantifier]
+match              = match_item [quantifier]
 match_item         = any_char | single_char | char_class | ascii_char_class | unicode_char_class | char_group
-char_group         = "[" [ "^" ] {{ char_group_item }} "]"
-char_group_item    = unicode_char_class | ascii_char_class | char_class | char_range | single_char
-char_range         = char_in_range "-" char_in_range
-char_in_range      = unicode_char | ascii_char | char
-quantifier         = repetition [ "?" ]
+char_group         = "[" ["^"] {{char_group_item}} "]"
+char_group_item    = unicode_char_class | ascii_char_class | char_class | char_range | char_in_group
+char_range         = char_in_group "-" char_in_group
+char_in_group      = unicode_char | ascii_char | escaped_char | raw_char_in_group
+quantifier         = repetition ["?"]
 repetition         = "?" | "*" | "+" | range
-range              = "{" num [ upper_bound ] "}"
-upper_bound        = "," [ num ]
+range              = "{" num [upper_bound] "}"
+upper_bound        = "," [num]
 any_char           = "."
-single_char        = unicode_char | ascii_char | escaped_char | unescaped_char
+single_char        = unicode_char | ascii_char | escaped_char | raw_char
 char_class         = "\s" | "\S" | "\d" | "\D" | "\w" | "\W"
 
 ascii_char_class   = "[:blank:]" | "[:space:]" | "[:digit:]" | "[:xdigit:]" | "[:upper:]"
                    | "[:lower:]" | "[:alpha:]" | "[:alnum:]" | "[:word:]"   | "[:ascii:]"
 
-unicode_char_class = ( "\p" | "\P" ) "{" unicode_category "}"
+unicode_char_class = ("\p" | "\P") "{" unicode_category "}"
 unicode_category   = "Math" | "Emoji"
                    | "Latin" | "Greek" | "Cyrillic" | "Han" | "Persian"
                    | "Letter" | "Lu" | "Ll" | "Lt" | "Lm" | "Lo" | "L"
@@ -57,12 +57,13 @@ unicode_category   = "Math" | "Emoji"
 
 ascii_char         = "\x" hex_digit{2}
 unicode_char       = "\x" hex_digit{4,8}
-escaped_char       = "\" ( "\" | "|" | "." | "?" | "*" | "+" | "(" | ")" | "[" | "]" | "{" | "}" | "$" )
-unescaped_char     = # all characters excluding the escaped ones
+escaped_char       = "\" ("\", "t", "n", "r", "^", "$", "|", ".", "?", "*", "+", "(", ")", "[", "]", "{", "}")
+raw_char           = # all characters except "\\", "\t", "\n", "\r", "^", "$", "|", ".", "?", "*", "+", "(", ")", "[", "]", "{", "}"
+raw_char_in_group  = # all characters except "\\", "\t", "\n", "\r", "[", "]"
 char               = # all characters
 
-num                = {{ digit }}
-letters            = {{ letter }}
+num                = {{digit}}
+letters            = {{letter}}
 digit              = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
 hex_digit          = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "A" | "B" | "C" | "D" | "E" | "F"
 letter             = "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" | "K" | "L" | "M"

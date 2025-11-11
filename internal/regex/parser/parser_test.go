@@ -13,22 +13,27 @@ func TestToDigit(t *testing.T) {
 		name           string
 		r              comb.Result
 		expectedResult comb.Result
-		expectedOK     bool
+		expectedError  string
 	}{
 		{
 			name:           "OK",
 			r:              comb.Result{Val: '7', Pos: 1},
 			expectedResult: comb.Result{Val: 7, Pos: 1},
-			expectedOK:     true,
+			expectedError:  "",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			res, ok := toDigit(tc.r)
+			res, err := toDigit(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
-			assert.Equal(t, tc.expectedOK, ok)
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedResult, res)
+			} else {
+				assert.Nil(t, res)
+				assert.EqualError(t, err, tc.expectedError)
+			}
 		})
 	}
 }
@@ -38,28 +43,33 @@ func TestToHexDigit(t *testing.T) {
 		name           string
 		r              comb.Result
 		expectedResult comb.Result
-		expectedOK     bool
+		expectedError  string
 	}{
 		{
 			name:           "Digit",
 			r:              comb.Result{Val: '7', Pos: 1},
 			expectedResult: comb.Result{Val: 7, Pos: 1},
-			expectedOK:     true,
+			expectedError:  "",
 		},
 		{
 			name:           "Hex",
 			r:              comb.Result{Val: 'F', Pos: 1},
 			expectedResult: comb.Result{Val: 15, Pos: 1},
-			expectedOK:     true,
+			expectedError:  "",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			res, ok := toHexDigit(tc.r)
+			res, err := toHexDigit(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
-			assert.Equal(t, tc.expectedOK, ok)
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedResult, res)
+			} else {
+				assert.Nil(t, res)
+				assert.EqualError(t, err, tc.expectedError)
+			}
 		})
 	}
 }
@@ -69,7 +79,7 @@ func TestToNum(t *testing.T) {
 		name           string
 		r              comb.Result
 		expectedResult comb.Result
-		expectedOK     bool
+		expectedError  string
 	}{
 		{
 			name: "OK",
@@ -80,16 +90,21 @@ func TestToNum(t *testing.T) {
 				},
 			},
 			expectedResult: comb.Result{Val: 69, Pos: 1},
-			expectedOK:     true,
+			expectedError:  "",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			res, ok := toNum(tc.r)
+			res, err := toNum(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
-			assert.Equal(t, tc.expectedOK, ok)
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedResult, res)
+			} else {
+				assert.Nil(t, res)
+				assert.EqualError(t, err, tc.expectedError)
+			}
 		})
 	}
 }
@@ -99,7 +114,7 @@ func TestToLetters(t *testing.T) {
 		name           string
 		r              comb.Result
 		expectedResult comb.Result
-		expectedOK     bool
+		expectedError  string
 	}{
 		{
 			name: "OK",
@@ -113,16 +128,21 @@ func TestToLetters(t *testing.T) {
 				},
 			},
 			expectedResult: comb.Result{Val: "Lorem", Pos: 1},
-			expectedOK:     true,
+			expectedError:  "",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			res, ok := toLetters(tc.r)
+			res, err := toLetters(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
-			assert.Equal(t, tc.expectedOK, ok)
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedResult, res)
+			} else {
+				assert.Nil(t, res)
+				assert.EqualError(t, err, tc.expectedError)
+			}
 		})
 	}
 }
@@ -132,7 +152,7 @@ func TestToEscapedChar(t *testing.T) {
 		name           string
 		r              comb.Result
 		expectedResult comb.Result
-		expectedOK     bool
+		expectedError  string
 	}{
 		{
 			name: "Backslash",
@@ -143,7 +163,7 @@ func TestToEscapedChar(t *testing.T) {
 				},
 			},
 			expectedResult: comb.Result{Val: '\\', Pos: 1},
-			expectedOK:     true,
+			expectedError:  "",
 		},
 		{
 			name: "HorizontalTab",
@@ -154,7 +174,7 @@ func TestToEscapedChar(t *testing.T) {
 				},
 			},
 			expectedResult: comb.Result{Val: '\t', Pos: 1},
-			expectedOK:     true,
+			expectedError:  "",
 		},
 		{
 			name: "NewLine",
@@ -165,7 +185,7 @@ func TestToEscapedChar(t *testing.T) {
 				},
 			},
 			expectedResult: comb.Result{Val: '\n', Pos: 1},
-			expectedOK:     true,
+			expectedError:  "",
 		},
 		{
 			name: "CarriageReturn",
@@ -176,139 +196,7 @@ func TestToEscapedChar(t *testing.T) {
 				},
 			},
 			expectedResult: comb.Result{Val: '\r', Pos: 1},
-			expectedOK:     true,
-		},
-		{
-			name: "Bar",
-			r: comb.Result{
-				Val: comb.List{
-					{Val: '\\', Pos: 1},
-					{Val: '|', Pos: 2},
-				},
-			},
-			expectedResult: comb.Result{Val: '|', Pos: 1},
-			expectedOK:     true,
-		},
-		{
-			name: "Dot",
-			r: comb.Result{
-				Val: comb.List{
-					{Val: '\\', Pos: 1},
-					{Val: '.', Pos: 2},
-				},
-			},
-			expectedResult: comb.Result{Val: '.', Pos: 1},
-			expectedOK:     true,
-		},
-		{
-			name: "Question",
-			r: comb.Result{
-				Val: comb.List{
-					{Val: '\\', Pos: 1},
-					{Val: '?', Pos: 2},
-				},
-			},
-			expectedResult: comb.Result{Val: '?', Pos: 1},
-			expectedOK:     true,
-		},
-		{
-			name: "Asterisk",
-			r: comb.Result{
-				Val: comb.List{
-					{Val: '\\', Pos: 1},
-					{Val: '*', Pos: 2},
-				},
-			},
-			expectedResult: comb.Result{Val: '*', Pos: 1},
-			expectedOK:     true,
-		},
-		{
-			name: "Plus",
-			r: comb.Result{
-				Val: comb.List{
-					{Val: '\\', Pos: 1},
-					{Val: '+', Pos: 2},
-				},
-			},
-			expectedResult: comb.Result{Val: '+', Pos: 1},
-			expectedOK:     true,
-		},
-		{
-			name: "Hyphen",
-			r: comb.Result{
-				Val: comb.List{
-					{Val: '\\', Pos: 1},
-					{Val: '-', Pos: 2},
-				},
-			},
-			expectedResult: comb.Result{Val: '-', Pos: 1},
-			expectedOK:     true,
-		},
-		{
-			name: "OpenningParenthesis",
-			r: comb.Result{
-				Val: comb.List{
-					{Val: '\\', Pos: 1},
-					{Val: '(', Pos: 2},
-				},
-			},
-			expectedResult: comb.Result{Val: '(', Pos: 1},
-			expectedOK:     true,
-		},
-		{
-			name: "ClosingParenthesis",
-			r: comb.Result{
-				Val: comb.List{
-					{Val: '\\', Pos: 1},
-					{Val: ')', Pos: 2},
-				},
-			},
-			expectedResult: comb.Result{Val: ')', Pos: 1},
-			expectedOK:     true,
-		},
-		{
-			name: "OpenningBracket",
-			r: comb.Result{
-				Val: comb.List{
-					{Val: '\\', Pos: 1},
-					{Val: '[', Pos: 2},
-				},
-			},
-			expectedResult: comb.Result{Val: '[', Pos: 1},
-			expectedOK:     true,
-		},
-		{
-			name: "ClosingBracket",
-			r: comb.Result{
-				Val: comb.List{
-					{Val: '\\', Pos: 1},
-					{Val: ']', Pos: 2},
-				},
-			},
-			expectedResult: comb.Result{Val: ']', Pos: 1},
-			expectedOK:     true,
-		},
-		{
-			name: "OpenningBrace",
-			r: comb.Result{
-				Val: comb.List{
-					{Val: '\\', Pos: 1},
-					{Val: '{', Pos: 2},
-				},
-			},
-			expectedResult: comb.Result{Val: '{', Pos: 1},
-			expectedOK:     true,
-		},
-		{
-			name: "ClosingBrace",
-			r: comb.Result{
-				Val: comb.List{
-					{Val: '\\', Pos: 1},
-					{Val: '}', Pos: 2},
-				},
-			},
-			expectedResult: comb.Result{Val: '}', Pos: 1},
-			expectedOK:     true,
+			expectedError:  "",
 		},
 		{
 			name: "Caret",
@@ -319,7 +207,7 @@ func TestToEscapedChar(t *testing.T) {
 				},
 			},
 			expectedResult: comb.Result{Val: '^', Pos: 1},
-			expectedOK:     true,
+			expectedError:  "",
 		},
 		{
 			name: "Dollar",
@@ -330,16 +218,153 @@ func TestToEscapedChar(t *testing.T) {
 				},
 			},
 			expectedResult: comb.Result{Val: '$', Pos: 1},
-			expectedOK:     true,
+			expectedError:  "",
+		},
+		{
+			name: "Bar",
+			r: comb.Result{
+				Val: comb.List{
+					{Val: '\\', Pos: 1},
+					{Val: '|', Pos: 2},
+				},
+			},
+			expectedResult: comb.Result{Val: '|', Pos: 1},
+			expectedError:  "",
+		},
+		{
+			name: "Dot",
+			r: comb.Result{
+				Val: comb.List{
+					{Val: '\\', Pos: 1},
+					{Val: '.', Pos: 2},
+				},
+			},
+			expectedResult: comb.Result{Val: '.', Pos: 1},
+			expectedError:  "",
+		},
+		{
+			name: "Question",
+			r: comb.Result{
+				Val: comb.List{
+					{Val: '\\', Pos: 1},
+					{Val: '?', Pos: 2},
+				},
+			},
+			expectedResult: comb.Result{Val: '?', Pos: 1},
+			expectedError:  "",
+		},
+		{
+			name: "Asterisk",
+			r: comb.Result{
+				Val: comb.List{
+					{Val: '\\', Pos: 1},
+					{Val: '*', Pos: 2},
+				},
+			},
+			expectedResult: comb.Result{Val: '*', Pos: 1},
+			expectedError:  "",
+		},
+		{
+			name: "Plus",
+			r: comb.Result{
+				Val: comb.List{
+					{Val: '\\', Pos: 1},
+					{Val: '+', Pos: 2},
+				},
+			},
+			expectedResult: comb.Result{Val: '+', Pos: 1},
+			expectedError:  "",
+		},
+		{
+			name: "Hyphen",
+			r: comb.Result{
+				Val: comb.List{
+					{Val: '\\', Pos: 1},
+					{Val: '-', Pos: 2},
+				},
+			},
+			expectedResult: comb.Result{Val: '-', Pos: 1},
+			expectedError:  "",
+		},
+		{
+			name: "OpeningParenthesis",
+			r: comb.Result{
+				Val: comb.List{
+					{Val: '\\', Pos: 1},
+					{Val: '(', Pos: 2},
+				},
+			},
+			expectedResult: comb.Result{Val: '(', Pos: 1},
+			expectedError:  "",
+		},
+		{
+			name: "ClosingParenthesis",
+			r: comb.Result{
+				Val: comb.List{
+					{Val: '\\', Pos: 1},
+					{Val: ')', Pos: 2},
+				},
+			},
+			expectedResult: comb.Result{Val: ')', Pos: 1},
+			expectedError:  "",
+		},
+		{
+			name: "OpeningBracket",
+			r: comb.Result{
+				Val: comb.List{
+					{Val: '\\', Pos: 1},
+					{Val: '[', Pos: 2},
+				},
+			},
+			expectedResult: comb.Result{Val: '[', Pos: 1},
+			expectedError:  "",
+		},
+		{
+			name: "ClosingBracket",
+			r: comb.Result{
+				Val: comb.List{
+					{Val: '\\', Pos: 1},
+					{Val: ']', Pos: 2},
+				},
+			},
+			expectedResult: comb.Result{Val: ']', Pos: 1},
+			expectedError:  "",
+		},
+		{
+			name: "OpeningBrace",
+			r: comb.Result{
+				Val: comb.List{
+					{Val: '\\', Pos: 1},
+					{Val: '{', Pos: 2},
+				},
+			},
+			expectedResult: comb.Result{Val: '{', Pos: 1},
+			expectedError:  "",
+		},
+		{
+			name: "ClosingBrace",
+			r: comb.Result{
+				Val: comb.List{
+					{Val: '\\', Pos: 1},
+					{Val: '}', Pos: 2},
+				},
+			},
+			expectedResult: comb.Result{Val: '}', Pos: 1},
+			expectedError:  "",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			res, ok := toEscapedChar(tc.r)
+			res, err := toEscapedChar(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
-			assert.Equal(t, tc.expectedOK, ok)
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedResult, res)
+			} else {
+				assert.Nil(t, res)
+				assert.EqualError(t, err, tc.expectedError)
+			}
 		})
 	}
 }
@@ -349,7 +374,7 @@ func TestToASCIIChar(t *testing.T) {
 		name           string
 		r              comb.Result
 		expectedResult comb.Result
-		expectedOK     bool
+		expectedError  string
 	}{
 		{
 			name: "OK",
@@ -361,16 +386,21 @@ func TestToASCIIChar(t *testing.T) {
 				},
 			},
 			expectedResult: comb.Result{Val: 'M', Pos: 1},
-			expectedOK:     true,
+			expectedError:  "",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			res, ok := toASCIIChar(tc.r)
+			res, err := toASCIIChar(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
-			assert.Equal(t, tc.expectedOK, ok)
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedResult, res)
+			} else {
+				assert.Nil(t, res)
+				assert.EqualError(t, err, tc.expectedError)
+			}
 		})
 	}
 }
@@ -380,7 +410,7 @@ func TestToUnicodeChar(t *testing.T) {
 		name           string
 		r              comb.Result
 		expectedResult comb.Result
-		expectedOK     bool
+		expectedError  string
 	}{
 		{
 			name: "OK",
@@ -394,16 +424,21 @@ func TestToUnicodeChar(t *testing.T) {
 				},
 			},
 			expectedResult: comb.Result{Val: 'Ʃ', Pos: 1},
-			expectedOK:     true,
+			expectedError:  "",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			res, ok := toUnicodeChar(tc.r)
+			res, err := toUnicodeChar(tc.r)
 
-			assert.Equal(t, tc.expectedResult, res)
-			assert.Equal(t, tc.expectedOK, ok)
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedResult, res)
+			} else {
+				assert.Nil(t, res)
+				assert.EqualError(t, err, tc.expectedError)
+			}
 		})
 	}
 }
@@ -417,388 +452,771 @@ func TestNew(t *testing.T) {
 
 func TestParser_digit(t *testing.T) {
 	tests := []struct {
-		name        string
-		m           *mockMappers
-		in          comb.Input
-		expectedOut comb.Output
-		expectedOK  bool
+		name          string
+		m             *mockMappers
+		in            comb.Input
+		expectedOut   *comb.Output
+		expectedError string
 	}{
 		{
-			name:        "Failure",
-			m:           &mockMappers{},
-			in:          newStringInput(`a`),
-			expectedOut: comb.Output{},
-			expectedOK:  false,
+			name:          "Failure",
+			m:             &mockMappers{},
+			in:            newStringInput(`a`),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune 'a'",
 		},
 		{
 			name: "Success",
 			m:    &mockMappers{},
 			in:   newStringInput(`7`),
-			expectedOut: comb.Output{
+			expectedOut: &comb.Output{
 				Result: comb.Result{Val: 7, Pos: 0},
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			out, ok := p.digit(tc.in)
+			out, err := p.digit(tc.in)
 
-			assert.Equal(t, tc.expectedOut, out)
-			assert.Equal(t, tc.expectedOK, ok)
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedOut, out)
+			} else {
+				assert.Nil(t, out)
+				assert.EqualError(t, err, tc.expectedError)
+			}
 		})
 	}
 }
 
 func TestParser_hexDigit(t *testing.T) {
 	tests := []struct {
-		name        string
-		m           *mockMappers
-		in          comb.Input
-		expectedOut comb.Output
-		expectedOK  bool
+		name          string
+		m             *mockMappers
+		in            comb.Input
+		expectedOut   *comb.Output
+		expectedError string
 	}{
 		{
-			name:        "Failure",
-			m:           &mockMappers{},
-			in:          newStringInput(`a`),
-			expectedOut: comb.Output{},
-			expectedOK:  false,
+			name:          "Failure",
+			m:             &mockMappers{},
+			in:            newStringInput(`a`),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune 'a'",
 		},
 		{
 			name: "Success",
 			m:    &mockMappers{},
 			in:   newStringInput(`A`),
-			expectedOut: comb.Output{
+			expectedOut: &comb.Output{
 				Result: comb.Result{Val: 10, Pos: 0},
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			out, ok := p.hexDigit(tc.in)
+			out, err := p.hexDigit(tc.in)
 
-			assert.Equal(t, tc.expectedOut, out)
-			assert.Equal(t, tc.expectedOK, ok)
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedOut, out)
+			} else {
+				assert.Nil(t, out)
+				assert.EqualError(t, err, tc.expectedError)
+			}
 		})
 	}
 }
 
 func TestParser_letter(t *testing.T) {
 	tests := []struct {
-		name        string
-		m           *mockMappers
-		in          comb.Input
-		expectedOut comb.Output
-		expectedOK  bool
+		name          string
+		m             *mockMappers
+		in            comb.Input
+		expectedOut   *comb.Output
+		expectedError string
 	}{
 		{
-			name:        "Failure",
-			m:           &mockMappers{},
-			in:          newStringInput(`0`),
-			expectedOut: comb.Output{},
-			expectedOK:  false,
+			name:          "Failure",
+			m:             &mockMappers{},
+			in:            newStringInput(`0`),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '0'",
 		},
 		{
 			name: "Success_Upper",
 			m:    &mockMappers{},
 			in:   newStringInput(`A`),
-			expectedOut: comb.Output{
+			expectedOut: &comb.Output{
 				Result: comb.Result{Val: 'A', Pos: 0},
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 		{
 			name: "Success_Lower",
 			m:    &mockMappers{},
 			in:   newStringInput(`a`),
-			expectedOut: comb.Output{
+			expectedOut: &comb.Output{
 				Result: comb.Result{Val: 'a', Pos: 0},
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			out, ok := p.letter(tc.in)
+			out, err := p.letter(tc.in)
 
-			assert.Equal(t, tc.expectedOut, out)
-			assert.Equal(t, tc.expectedOK, ok)
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedOut, out)
+			} else {
+				assert.Nil(t, out)
+				assert.EqualError(t, err, tc.expectedError)
+			}
 		})
 	}
 }
 
 func TestParser_num(t *testing.T) {
 	tests := []struct {
-		name        string
-		m           *mockMappers
-		in          comb.Input
-		expectedOut comb.Output
-		expectedOK  bool
+		name          string
+		m             *mockMappers
+		in            comb.Input
+		expectedOut   *comb.Output
+		expectedError string
 	}{
 		{
-			name:        "Failure",
-			m:           &mockMappers{},
-			in:          newStringInput(`a`),
-			expectedOut: comb.Output{},
-			expectedOK:  false,
+			name:          "Failure",
+			m:             &mockMappers{},
+			in:            newStringInput(`a`),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune 'a'",
 		},
 		{
 			name: "Success",
 			m:    &mockMappers{},
 			in:   newStringInput(`69`),
-			expectedOut: comb.Output{
+			expectedOut: &comb.Output{
 				Result: comb.Result{Val: 69, Pos: 0},
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			out, ok := p.num(tc.in)
+			out, err := p.num(tc.in)
 
-			assert.Equal(t, tc.expectedOut, out)
-			assert.Equal(t, tc.expectedOK, ok)
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedOut, out)
+			} else {
+				assert.Nil(t, out)
+				assert.EqualError(t, err, tc.expectedError)
+			}
 		})
 	}
 }
 
 func TestParser_letters(t *testing.T) {
 	tests := []struct {
-		name        string
-		m           *mockMappers
-		in          comb.Input
-		expectedOut comb.Output
-		expectedOK  bool
+		name          string
+		m             *mockMappers
+		in            comb.Input
+		expectedOut   *comb.Output
+		expectedError string
 	}{
 		{
-			name:        "Failure",
-			m:           &mockMappers{},
-			in:          newStringInput(`0`),
-			expectedOut: comb.Output{},
-			expectedOK:  false,
+			name:          "Failure",
+			m:             &mockMappers{},
+			in:            newStringInput(`0`),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '0'",
 		},
 		{
 			name: "Success",
 			m:    &mockMappers{},
 			in:   newStringInput(`Symbol`),
-			expectedOut: comb.Output{
+			expectedOut: &comb.Output{
 				Result: comb.Result{Val: "Symbol", Pos: 0},
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			out, ok := p.letters(tc.in)
+			out, err := p.letters(tc.in)
 
-			assert.Equal(t, tc.expectedOut, out)
-			assert.Equal(t, tc.expectedOK, ok)
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedOut, out)
+			} else {
+				assert.Nil(t, out)
+				assert.EqualError(t, err, tc.expectedError)
+			}
 		})
 	}
 }
 
 func TestParser_char(t *testing.T) {
 	tests := []struct {
-		name        string
-		m           *mockMappers
-		in          comb.Input
-		expectedOut comb.Output
-		expectedOK  bool
+		name          string
+		m             *mockMappers
+		in            comb.Input
+		expectedOut   *comb.Output
+		expectedError string
 	}{
 		{
-			name:        "Failure",
-			m:           &mockMappers{},
-			in:          newStringInput("\x00"),
-			expectedOut: comb.Output{},
-			expectedOK:  false,
+			name:          "Failure",
+			m:             &mockMappers{},
+			in:            newStringInput("\x00"),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '\\x00'",
 		},
 		{
 			name: "Success_Low",
 			m:    &mockMappers{},
 			in:   newStringInput(` `),
-			expectedOut: comb.Output{
+			expectedOut: &comb.Output{
 				Result: comb.Result{Val: ' ', Pos: 0},
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 		{
 			name: "Success_High",
 			m:    &mockMappers{},
 			in:   newStringInput(`~`),
-			expectedOut: comb.Output{
+			expectedOut: &comb.Output{
 				Result: comb.Result{Val: '~', Pos: 0},
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			out, ok := p.char(tc.in)
+			out, err := p.char(tc.in)
 
-			assert.Equal(t, tc.expectedOut, out)
-			assert.Equal(t, tc.expectedOK, ok)
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedOut, out)
+			} else {
+				assert.Nil(t, out)
+				assert.EqualError(t, err, tc.expectedError)
+			}
 		})
 	}
 }
 
-func TestParser_unescapedChar(t *testing.T) {
+func TestParser_rawCharInGroup(t *testing.T) {
 	tests := []struct {
-		name        string
-		m           *mockMappers
-		in          comb.Input
-		expectedOut comb.Output
-		expectedOK  bool
+		name          string
+		m             *mockMappers
+		in            comb.Input
+		expectedOut   *comb.Output
+		expectedError string
 	}{
 		{
-			name:        "Failure",
-			m:           &mockMappers{},
-			in:          newStringInput(`*`),
-			expectedOut: comb.Output{},
-			expectedOK:  false,
+			name:          "Backslash",
+			m:             &mockMappers{},
+			in:            newStringInput("\\"),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '\\\\'",
+		},
+		{
+			name:          "HorizontalTab",
+			m:             &mockMappers{},
+			in:            newStringInput("\t"),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '\\t'",
+		},
+		{
+			name:          "NewLine",
+			m:             &mockMappers{},
+			in:            newStringInput("\n"),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '\\n'",
+		},
+		{
+			name:          "CarriageReturn",
+			m:             &mockMappers{},
+			in:            newStringInput("\r"),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '\\r'",
+		},
+		{
+			name:          "OpeningBracket",
+			m:             &mockMappers{},
+			in:            newStringInput(`[`),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '['",
+		},
+		{
+			name:          "ClosingBracket",
+			m:             &mockMappers{},
+			in:            newStringInput(`]`),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune ']'",
 		},
 		{
 			name: "Success",
 			m:    &mockMappers{},
 			in:   newStringInput(`a`),
-			expectedOut: comb.Output{
+			expectedOut: &comb.Output{
 				Result: comb.Result{Val: 'a', Pos: 0},
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			out, ok := p.unescapedChar(tc.in)
+			out, err := p.rawCharInGroup(tc.in)
 
-			assert.Equal(t, tc.expectedOut, out)
-			assert.Equal(t, tc.expectedOK, ok)
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedOut, out)
+			} else {
+				assert.Nil(t, out)
+				assert.EqualError(t, err, tc.expectedError)
+			}
+		})
+	}
+}
+
+func TestParser_rawChar(t *testing.T) {
+	tests := []struct {
+		name          string
+		m             *mockMappers
+		in            comb.Input
+		expectedOut   *comb.Output
+		expectedError string
+	}{
+		{
+			name:          "Backslash",
+			m:             &mockMappers{},
+			in:            newStringInput("\\"),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '\\\\'",
+		},
+		{
+			name:          "HorizontalTab",
+			m:             &mockMappers{},
+			in:            newStringInput("\t"),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '\\t'",
+		},
+		{
+			name:          "NewLine",
+			m:             &mockMappers{},
+			in:            newStringInput("\n"),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '\\n'",
+		},
+		{
+			name:          "CarriageReturn",
+			m:             &mockMappers{},
+			in:            newStringInput("\r"),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '\\r'",
+		},
+		{
+			name:          "Caret",
+			m:             &mockMappers{},
+			in:            newStringInput(`^`),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '^'",
+		},
+		{
+			name:          "Dollar",
+			m:             &mockMappers{},
+			in:            newStringInput(`$`),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '$'",
+		},
+		{
+			name:          "Bar",
+			m:             &mockMappers{},
+			in:            newStringInput(`|`),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '|'",
+		},
+		{
+			name:          "Dot",
+			m:             &mockMappers{},
+			in:            newStringInput(`.`),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '.'",
+		},
+		{
+			name:          "Question",
+			m:             &mockMappers{},
+			in:            newStringInput(`?`),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '?'",
+		},
+		{
+			name:          "Star",
+			m:             &mockMappers{},
+			in:            newStringInput(`*`),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '*'",
+		},
+		{
+			name:          "Plus",
+			m:             &mockMappers{},
+			in:            newStringInput(`+`),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '+'",
+		},
+		{
+			name:          "OpeningParenthesis",
+			m:             &mockMappers{},
+			in:            newStringInput(`(`),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '('",
+		},
+		{
+			name:          "ClosingParenthesis",
+			m:             &mockMappers{},
+			in:            newStringInput(`)`),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune ')'",
+		},
+		{
+			name:          "OpeningBracket",
+			m:             &mockMappers{},
+			in:            newStringInput(`[`),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '['",
+		},
+		{
+			name:          "ClosingBracket",
+			m:             &mockMappers{},
+			in:            newStringInput(`]`),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune ']'",
+		},
+		{
+			name:          "OpeningBrace",
+			m:             &mockMappers{},
+			in:            newStringInput(`{`),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '{'",
+		},
+		{
+			name:          "ClosingBrace",
+			m:             &mockMappers{},
+			in:            newStringInput(`}`),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '}'",
+		},
+		{
+			name: "Success",
+			m:    &mockMappers{},
+			in:   newStringInput(`a`),
+			expectedOut: &comb.Output{
+				Result: comb.Result{Val: 'a', Pos: 0},
+			},
+			expectedError: "",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			p := New(tc.m)
+			out, err := p.rawChar(tc.in)
+
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedOut, out)
+			} else {
+				assert.Nil(t, out)
+				assert.EqualError(t, err, tc.expectedError)
+			}
 		})
 	}
 }
 
 func TestParser_escapedChar(t *testing.T) {
 	tests := []struct {
-		name        string
-		m           *mockMappers
-		in          comb.Input
-		expectedOut comb.Output
-		expectedOK  bool
+		name          string
+		m             *mockMappers
+		in            comb.Input
+		expectedOut   *comb.Output
+		expectedError string
 	}{
 		{
-			name:        "Failure",
-			m:           &mockMappers{},
-			in:          newStringInput(`a`),
-			expectedOut: comb.Output{},
-			expectedOK:  false,
+			name:          "Failure",
+			m:             &mockMappers{},
+			in:            newStringInput(`a`),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune 'a'",
 		},
 		{
-			name: "Success",
+			name: "Success_Backslash",
+			m:    &mockMappers{},
+			in:   newStringInput(`\\`),
+			expectedOut: &comb.Output{
+				Result: comb.Result{Val: '\\', Pos: 0},
+			},
+			expectedError: "",
+		},
+		{
+			name: "Success_HorizontalTab",
+			m:    &mockMappers{},
+			in:   newStringInput(`\t`),
+			expectedOut: &comb.Output{
+				Result: comb.Result{Val: '\t', Pos: 0},
+			},
+			expectedError: "",
+		},
+		{
+			name: "Success_NewLine",
+			m:    &mockMappers{},
+			in:   newStringInput(`\n`),
+			expectedOut: &comb.Output{
+				Result: comb.Result{Val: '\n', Pos: 0},
+			},
+			expectedError: "",
+		},
+		{
+			name: "Success_CarriageReturn",
+			m:    &mockMappers{},
+			in:   newStringInput(`\r`),
+			expectedOut: &comb.Output{
+				Result: comb.Result{Val: '\r', Pos: 0},
+			},
+			expectedError: "",
+		},
+		{
+			name: "Success_Caret",
+			m:    &mockMappers{},
+			in:   newStringInput(`\^`),
+			expectedOut: &comb.Output{
+				Result: comb.Result{Val: '^', Pos: 0},
+			},
+			expectedError: "",
+		},
+		{
+			name: "Success_Dollar",
+			m:    &mockMappers{},
+			in:   newStringInput(`\$`),
+			expectedOut: &comb.Output{
+				Result: comb.Result{Val: '$', Pos: 0},
+			},
+			expectedError: "",
+		},
+		{
+			name: "Success_Bar",
+			m:    &mockMappers{},
+			in:   newStringInput(`\|`),
+			expectedOut: &comb.Output{
+				Result: comb.Result{Val: '|', Pos: 0},
+			},
+			expectedError: "",
+		},
+		{
+			name: "Success_Dot",
+			m:    &mockMappers{},
+			in:   newStringInput(`\.`),
+			expectedOut: &comb.Output{
+				Result: comb.Result{Val: '.', Pos: 0},
+			},
+			expectedError: "",
+		},
+		{
+			name: "Success_Question",
+			m:    &mockMappers{},
+			in:   newStringInput(`\?`),
+			expectedOut: &comb.Output{
+				Result: comb.Result{Val: '?', Pos: 0},
+			},
+			expectedError: "",
+		},
+		{
+			name: "Success_Star",
 			m:    &mockMappers{},
 			in:   newStringInput(`\*`),
-			expectedOut: comb.Output{
+			expectedOut: &comb.Output{
 				Result: comb.Result{Val: '*', Pos: 0},
 			},
-			expectedOK: true,
+			expectedError: "",
+		},
+		{
+			name: "Success_Plus",
+			m:    &mockMappers{},
+			in:   newStringInput(`\+`),
+			expectedOut: &comb.Output{
+				Result: comb.Result{Val: '+', Pos: 0},
+			},
+			expectedError: "",
+		},
+		{
+			name: "Success_OpeningParenthesis",
+			m:    &mockMappers{},
+			in:   newStringInput(`\(`),
+			expectedOut: &comb.Output{
+				Result: comb.Result{Val: '(', Pos: 0},
+			},
+			expectedError: "",
+		},
+		{
+			name: "Success_ClosingParenthesis",
+			m:    &mockMappers{},
+			in:   newStringInput(`\)`),
+			expectedOut: &comb.Output{
+				Result: comb.Result{Val: ')', Pos: 0},
+			},
+			expectedError: "",
+		},
+		{
+			name: "Success_OpeningBracket",
+			m:    &mockMappers{},
+			in:   newStringInput(`\[`),
+			expectedOut: &comb.Output{
+				Result: comb.Result{Val: '[', Pos: 0},
+			},
+			expectedError: "",
+		},
+		{
+			name: "Success_ClosingBracket",
+			m:    &mockMappers{},
+			in:   newStringInput(`\]`),
+			expectedOut: &comb.Output{
+				Result: comb.Result{Val: ']', Pos: 0},
+			},
+			expectedError: "",
+		},
+		{
+			name: "Success_OpeningBrace",
+			m:    &mockMappers{},
+			in:   newStringInput(`\{`),
+			expectedOut: &comb.Output{
+				Result: comb.Result{Val: '{', Pos: 0},
+			},
+			expectedError: "",
+		},
+		{
+			name: "Success_ClosingBrace",
+			m:    &mockMappers{},
+			in:   newStringInput(`\}`),
+			expectedOut: &comb.Output{
+				Result: comb.Result{Val: '}', Pos: 0},
+			},
+			expectedError: "",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			out, ok := p.escapedChar(tc.in)
+			out, err := p.escapedChar(tc.in)
 
-			assert.Equal(t, tc.expectedOut, out)
-			assert.Equal(t, tc.expectedOK, ok)
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedOut, out)
+			} else {
+				assert.Nil(t, out)
+				assert.EqualError(t, err, tc.expectedError)
+			}
 		})
 	}
 }
 
 func TestParser_asciiChar(t *testing.T) {
 	tests := []struct {
-		name        string
-		m           *mockMappers
-		in          comb.Input
-		expectedOut comb.Output
-		expectedOK  bool
+		name          string
+		m             *mockMappers
+		in            comb.Input
+		expectedOut   *comb.Output
+		expectedError string
 	}{
 		{
-			name:        "Failure",
-			m:           &mockMappers{},
-			in:          newStringInput(`4D`),
-			expectedOut: comb.Output{},
-			expectedOK:  false,
+			name:          "Failure",
+			m:             &mockMappers{},
+			in:            newStringInput(`4D`),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '4'",
 		},
 		{
 			name: "Success",
 			m:    &mockMappers{},
 			in:   newStringInput(`\x4D`),
-			expectedOut: comb.Output{
+			expectedOut: &comb.Output{
 				Result: comb.Result{Val: 'M', Pos: 0},
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			out, ok := p.asciiChar(tc.in)
+			out, err := p.asciiChar(tc.in)
 
-			assert.Equal(t, tc.expectedOut, out)
-			assert.Equal(t, tc.expectedOK, ok)
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedOut, out)
+			} else {
+				assert.Nil(t, out)
+				assert.EqualError(t, err, tc.expectedError)
+			}
 		})
 	}
 }
 
 func TestParser_unicodeChar(t *testing.T) {
 	tests := []struct {
-		name        string
-		m           *mockMappers
-		in          comb.Input
-		expectedOut comb.Output
-		expectedOK  bool
+		name          string
+		m             *mockMappers
+		in            comb.Input
+		expectedOut   *comb.Output
+		expectedError string
 	}{
 		{
-			name:        "Failure",
-			m:           &mockMappers{},
-			in:          newStringInput(`01A9`),
-			expectedOut: comb.Output{},
-			expectedOK:  false,
+			name:          "Failure",
+			m:             &mockMappers{},
+			in:            newStringInput(`01A9`),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '0'",
 		},
 		{
 			name: "Success",
 			m:    &mockMappers{},
 			in:   newStringInput(`\x01A9`),
-			expectedOut: comb.Output{
+			expectedOut: &comb.Output{
 				Result: comb.Result{Val: 'Ʃ', Pos: 0},
 			},
-			expectedOK: true,
+			expectedError: "",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			out, ok := p.unicodeChar(tc.in)
+			out, err := p.unicodeChar(tc.in)
 
-			assert.Equal(t, tc.expectedOut, out)
-			assert.Equal(t, tc.expectedOK, ok)
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedOut, out)
+			} else {
+				assert.Nil(t, out)
+				assert.EqualError(t, err, tc.expectedError)
+			}
 		})
 	}
 }
@@ -831,7 +1249,7 @@ func TestParser_anyChar(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.anyChar(tc.in)
+			_, _ = p.anyChar(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
 			if m := tc.m.ToAnyCharMocks; len(m) > 0 {
@@ -889,7 +1307,7 @@ func TestParser_singleChar(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.singleChar(tc.in)
+			_, _ = p.singleChar(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
 			if m := tc.m.ToSingleCharMocks; len(m) > 0 {
@@ -977,7 +1395,7 @@ func TestParser_charClass(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.charClass(tc.in)
+			_, _ = p.charClass(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
 			if m := tc.m.ToCharClassMocks; len(m) > 0 {
@@ -1105,7 +1523,7 @@ func TestParser_asciiCharClass(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.asciiCharClass(tc.in)
+			_, _ = p.asciiCharClass(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
 			if m := tc.m.ToASCIICharClassMocks; len(m) > 0 {
@@ -1573,7 +1991,7 @@ func TestParser_unicodeCategory(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.unicodeCategory(tc.in)
+			_, _ = p.unicodeCategory(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
 			if m := tc.m.ToUnicodeCategoryMocks; len(m) > 0 {
@@ -1600,6 +2018,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Math",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Math", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1607,9 +2031,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\p`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Math", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Math", Pos: 3},
+					{Val: '}', Pos: 7},
 				},
 				Pos: 0,
 			},
@@ -1618,6 +2042,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Math_Negated",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Math", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1625,9 +2055,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\P`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Math", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Math", Pos: 3},
+					{Val: '}', Pos: 7},
 				},
 				Pos: 0,
 			},
@@ -1636,6 +2066,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Emoji",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Emoji", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1643,9 +2079,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\p`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Emoji", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Emoji", Pos: 3},
+					{Val: '}', Pos: 8},
 				},
 				Pos: 0,
 			},
@@ -1654,6 +2090,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Emoji_Negated",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Emoji", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1661,9 +2103,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\P`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Emoji", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Emoji", Pos: 3},
+					{Val: '}', Pos: 8},
 				},
 				Pos: 0,
 			},
@@ -1672,6 +2114,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Latin",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Latin", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1679,9 +2127,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\p`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Latin", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Latin", Pos: 3},
+					{Val: '}', Pos: 8},
 				},
 				Pos: 0,
 			},
@@ -1690,6 +2138,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Latin_Negated",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Latin", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1697,9 +2151,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\P`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Latin", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Latin", Pos: 3},
+					{Val: '}', Pos: 8},
 				},
 				Pos: 0,
 			},
@@ -1708,6 +2162,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Greek",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Greek", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1715,9 +2175,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\p`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Greek", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Greek", Pos: 3},
+					{Val: '}', Pos: 8},
 				},
 				Pos: 0,
 			},
@@ -1726,6 +2186,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Greek_Negated",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Greek", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1733,9 +2199,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\P`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Greek", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Greek", Pos: 3},
+					{Val: '}', Pos: 8},
 				},
 				Pos: 0,
 			},
@@ -1744,6 +2210,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Cyrillic",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Cyrillic", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1751,9 +2223,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\p`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Cyrillic", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Cyrillic", Pos: 3},
+					{Val: '}', Pos: 11},
 				},
 				Pos: 0,
 			},
@@ -1762,6 +2234,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Cyrillic_Negated",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Cyrillic", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1769,9 +2247,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\P`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Cyrillic", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Cyrillic", Pos: 3},
+					{Val: '}', Pos: 11},
 				},
 				Pos: 0,
 			},
@@ -1780,6 +2258,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Han",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Han", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1787,9 +2271,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\p`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Han", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Han", Pos: 3},
+					{Val: '}', Pos: 6},
 				},
 				Pos: 0,
 			},
@@ -1798,6 +2282,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Han_Negated",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Han", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1805,9 +2295,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\P`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Han", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Han", Pos: 3},
+					{Val: '}', Pos: 6},
 				},
 				Pos: 0,
 			},
@@ -1816,6 +2306,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Persian",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Persian", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1823,9 +2319,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\p`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Persian", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Persian", Pos: 3},
+					{Val: '}', Pos: 10},
 				},
 				Pos: 0,
 			},
@@ -1834,6 +2330,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Persian_Negated",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Persian", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1841,9 +2343,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\P`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Persian", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Persian", Pos: 3},
+					{Val: '}', Pos: 10},
 				},
 				Pos: 0,
 			},
@@ -1852,6 +2354,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Letter",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Letter", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1859,9 +2367,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\p`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Letter", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Letter", Pos: 3},
+					{Val: '}', Pos: 9},
 				},
 				Pos: 0,
 			},
@@ -1870,6 +2378,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Letter_Negated",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Letter", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1877,9 +2391,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\P`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Letter", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Letter", Pos: 3},
+					{Val: '}', Pos: 9},
 				},
 				Pos: 0,
 			},
@@ -1888,6 +2402,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Lu",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Lu", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1895,9 +2415,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\p`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Lu", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Lu", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -1906,6 +2426,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Lu_Negated",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Lu", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1913,9 +2439,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\P`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Lu", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Lu", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -1924,6 +2450,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Ll",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Ll", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1931,9 +2463,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\p`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Ll", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Ll", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -1942,6 +2474,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Ll_Negated",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Ll", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1949,9 +2487,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\P`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Ll", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Ll", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -1960,6 +2498,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Lt",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Lt", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1967,9 +2511,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\p`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Lt", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Lt", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -1978,6 +2522,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Lt_Negated",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Lt", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -1985,9 +2535,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\P`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Lt", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Lt", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -1996,6 +2546,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Lm",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Lm", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2003,9 +2559,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\p`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Lm", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Lm", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -2014,6 +2570,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Lm_Negated",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Lm", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2021,9 +2583,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\P`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Lm", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Lm", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -2032,6 +2594,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Lo",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Lo", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2039,9 +2607,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\p`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Lo", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Lo", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -2050,6 +2618,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Lo_Negated",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Lo", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2057,9 +2631,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\P`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Lo", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Lo", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -2068,6 +2642,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_L",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "L", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2075,9 +2655,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\p`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "L", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "L", Pos: 3},
+					{Val: '}', Pos: 4},
 				},
 				Pos: 0,
 			},
@@ -2086,6 +2666,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_L_Negated",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "L", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2093,9 +2679,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\P`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "L", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "L", Pos: 3},
+					{Val: '}', Pos: 4},
 				},
 				Pos: 0,
 			},
@@ -2104,6 +2690,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Mark",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Mark", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2111,9 +2703,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\p`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Mark", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Mark", Pos: 3},
+					{Val: '}', Pos: 7},
 				},
 				Pos: 0,
 			},
@@ -2122,6 +2714,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Mark_Negated",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Mark", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2129,9 +2727,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\P`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Mark", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Mark", Pos: 3},
+					{Val: '}', Pos: 7},
 				},
 				Pos: 0,
 			},
@@ -2140,6 +2738,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Mn",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Mn", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2147,9 +2751,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\p`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Mn", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Mn", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -2158,6 +2762,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Mn_Negated",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Mn", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2165,9 +2775,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\P`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Mn", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Mn", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -2176,6 +2786,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Mc",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Mc", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2183,9 +2799,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\p`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Mc", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Mc", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -2194,6 +2810,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Mc_Negated",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Mc", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2201,9 +2823,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\P`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Mc", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Mc", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -2212,6 +2834,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Me",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Me", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2219,9 +2847,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\p`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Me", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Me", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -2230,6 +2858,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Me_Negated",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Me", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2237,9 +2871,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\P`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Me", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Me", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -2248,6 +2882,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_M",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "M", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2255,9 +2895,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\p`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "M", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "M", Pos: 3},
+					{Val: '}', Pos: 4},
 				},
 				Pos: 0,
 			},
@@ -2266,6 +2906,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_M_Negated",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "M", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2273,9 +2919,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\P`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "M", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "M", Pos: 3},
+					{Val: '}', Pos: 4},
 				},
 				Pos: 0,
 			},
@@ -2284,6 +2930,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Number",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Number", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2291,9 +2943,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\p`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Number", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Number", Pos: 3},
+					{Val: '}', Pos: 9},
 				},
 				Pos: 0,
 			},
@@ -2302,6 +2954,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Number_Negated",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Number", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2309,9 +2967,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\P`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Number", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Number", Pos: 3},
+					{Val: '}', Pos: 9},
 				},
 				Pos: 0,
 			},
@@ -2320,6 +2978,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Nd",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Nd", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2327,9 +2991,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\p`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Nd", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Nd", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -2338,6 +3002,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Nd_Negated",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Nd", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2345,9 +3015,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\P`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Nd", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Nd", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -2356,6 +3026,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Nl",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Nl", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2363,9 +3039,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\p`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Nl", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Nl", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -2374,6 +3050,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Nl_Negated",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Nl", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2381,9 +3063,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\P`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Nl", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Nl", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -2392,6 +3074,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_No",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "No", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2399,9 +3087,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\p`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "No", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "No", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -2410,6 +3098,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_No_Negated",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "No", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2417,9 +3111,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\P`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "No", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "No", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -2428,6 +3122,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_N",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "N", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2435,9 +3135,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\p`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "N", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "N", Pos: 3},
+					{Val: '}', Pos: 4},
 				},
 				Pos: 0,
 			},
@@ -2446,6 +3146,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_N_Negated",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "N", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2453,9 +3159,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\P`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "N", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "N", Pos: 3},
+					{Val: '}', Pos: 4},
 				},
 				Pos: 0,
 			},
@@ -2464,6 +3170,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Punctuation",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Punctuation", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2471,9 +3183,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\p`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Punctuation", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Punctuation", Pos: 3},
+					{Val: '}', Pos: 14},
 				},
 				Pos: 0,
 			},
@@ -2482,6 +3194,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Punctuation_Negated",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Punctuation", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2489,9 +3207,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\P`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Punctuation", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Punctuation", Pos: 3},
+					{Val: '}', Pos: 14},
 				},
 				Pos: 0,
 			},
@@ -2500,6 +3218,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Pc",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Pc", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2507,9 +3231,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\p`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Pc", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Pc", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -2518,6 +3242,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Pc_Negated",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Pc", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2525,9 +3255,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\P`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Pc", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Pc", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -2536,6 +3266,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Pd",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Pd", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2543,9 +3279,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\p`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Pd", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Pd", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -2554,6 +3290,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Pd_Negated",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Pd", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2561,9 +3303,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\P`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Pd", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Pd", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -2572,6 +3314,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Ps",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Ps", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2579,9 +3327,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\p`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Ps", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Ps", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -2590,6 +3338,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Ps_Negated",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Ps", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2597,9 +3351,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\P`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Ps", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Ps", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -2608,6 +3362,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Pe",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Pe", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2615,9 +3375,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\p`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Pe", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Pe", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -2626,6 +3386,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Pe_Negated",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Pe", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2633,9 +3399,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\P`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Pe", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Pe", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -2644,6 +3410,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Pi",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Pi", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2651,9 +3423,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\p`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Pi", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Pi", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -2662,6 +3434,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Pi_Negated",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Pi", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2669,9 +3447,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\P`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Pi", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Pi", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -2680,6 +3458,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Pf",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Pf", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2687,9 +3471,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\p`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Pf", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Pf", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -2698,6 +3482,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Pf_Negated",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Pf", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2705,9 +3495,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\P`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Pf", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Pf", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -2716,6 +3506,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Po",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Po", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2723,9 +3519,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\p`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Po", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Po", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -2734,6 +3530,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Po_Negated",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Po", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2741,9 +3543,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\P`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Po", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Po", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -2752,6 +3554,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_P",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "P", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2759,9 +3567,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\p`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "P", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "P", Pos: 3},
+					{Val: '}', Pos: 4},
 				},
 				Pos: 0,
 			},
@@ -2770,6 +3578,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_P_Negated",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "P", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2777,9 +3591,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\P`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "P", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "P", Pos: 3},
+					{Val: '}', Pos: 4},
 				},
 				Pos: 0,
 			},
@@ -2788,6 +3602,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Separator",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Separator", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2795,9 +3615,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\p`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Separator", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Separator", Pos: 3},
+					{Val: '}', Pos: 12},
 				},
 				Pos: 0,
 			},
@@ -2806,6 +3626,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Separator_Negated",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Separator", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2813,9 +3639,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\P`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Separator", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Separator", Pos: 3},
+					{Val: '}', Pos: 12},
 				},
 				Pos: 0,
 			},
@@ -2824,6 +3650,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Zs",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Zs", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2831,9 +3663,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\p`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Zs", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Zs", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -2842,6 +3674,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Zs_Negated",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Zs", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2849,9 +3687,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\P`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Zs", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Zs", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -2860,6 +3698,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Zl",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Zl", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2867,9 +3711,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\p`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Zl", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Zl", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -2878,6 +3722,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Zl_Negated",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Zl", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2885,9 +3735,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\P`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Zl", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Zl", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -2896,6 +3746,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Zp",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Zp", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2903,9 +3759,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\p`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Zp", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Zp", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -2914,6 +3770,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Zp_Negated",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Zp", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2921,9 +3783,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\P`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Zp", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Zp", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -2932,6 +3794,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Z",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Z", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2939,9 +3807,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\p`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Z", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Z", Pos: 3},
+					{Val: '}', Pos: 4},
 				},
 				Pos: 0,
 			},
@@ -2950,6 +3818,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Z_Negated",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Z", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2957,9 +3831,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\P`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Z", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Z", Pos: 3},
+					{Val: '}', Pos: 4},
 				},
 				Pos: 0,
 			},
@@ -2968,6 +3842,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Symbol",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Symbol", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2975,9 +3855,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\p`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Symbol", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Symbol", Pos: 3},
+					{Val: '}', Pos: 9},
 				},
 				Pos: 0,
 			},
@@ -2986,6 +3866,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Symbol_Negated",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Symbol", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -2993,9 +3879,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\P`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Symbol", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Symbol", Pos: 3},
+					{Val: '}', Pos: 9},
 				},
 				Pos: 0,
 			},
@@ -3004,6 +3890,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Sm",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Sm", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3011,9 +3903,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\p`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Sm", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Sm", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -3022,6 +3914,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Sm_Negated",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Sm", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3029,9 +3927,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\P`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Sm", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Sm", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -3040,6 +3938,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Sc",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Sc", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3047,9 +3951,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\p`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Sc", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Sc", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -3058,6 +3962,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Sc_Negated",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Sc", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3065,9 +3975,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\P`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Sc", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Sc", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -3076,6 +3986,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Sk",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Sk", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3083,9 +3999,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\p`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Sk", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Sk", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -3094,6 +4010,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_Sk_Negated",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "Sk", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3101,9 +4023,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\P`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "Sk", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "Sk", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -3112,6 +4034,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_So",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "So", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3119,9 +4047,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\p`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "So", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "So", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -3130,6 +4058,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_So_Negated",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "So", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3137,9 +4071,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\P`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "So", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "So", Pos: 3},
+					{Val: '}', Pos: 5},
 				},
 				Pos: 0,
 			},
@@ -3148,6 +4082,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_S",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "S", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3155,9 +4095,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\p`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "S", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "S", Pos: 3},
+					{Val: '}', Pos: 4},
 				},
 				Pos: 0,
 			},
@@ -3166,6 +4106,12 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			name: "Success_S_Negated",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
+					{
+						OutResult: comb.Result{Val: "S", Pos: 3, Bag: nil},
+						OutError:  nil,
+					},
+				},
+				ToUnicodeCharClassMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3173,9 +4119,9 @@ func TestParser_unicodeCharClass(t *testing.T) {
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: `\P`, Pos: 0},
-					{Val: '{', Pos: 0},
-					{Val: "S", Pos: 0},
-					{Val: '}', Pos: 0},
+					{Val: '{', Pos: 2},
+					{Val: "S", Pos: 3},
+					{Val: '}', Pos: 4},
 				},
 				Pos: 0,
 			},
@@ -3185,7 +4131,7 @@ func TestParser_unicodeCharClass(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.unicodeCharClass(tc.in)
+			_, _ = p.unicodeCharClass(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
 			if m := tc.m.ToUnicodeCharClassMocks; len(m) > 0 {
@@ -3243,7 +4189,7 @@ func TestParser_repOp(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.repOp(tc.in)
+			_, _ = p.repOp(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
 			if m := tc.m.ToRepOpMocks; len(m) > 0 {
@@ -3303,7 +4249,7 @@ func TestParser_upperBound(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.upperBound(tc.in)
+			_, _ = p.upperBound(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
 			if m := tc.m.ToUpperBoundMocks; len(m) > 0 {
@@ -3348,7 +4294,7 @@ func TestParser_range(t *testing.T) {
 			name: "Success_WithUpperBound",
 			m: &mockMappers{
 				ToUpperBoundMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToRangeMocks: []MapFuncMock{
 					{},
@@ -3370,7 +4316,7 @@ func TestParser_range(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.range_(tc.in)
+			_, _ = p.range_(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
 			if m := tc.m.ToRangeMocks; len(m) > 0 {
@@ -3397,7 +4343,7 @@ func TestParser_repetition(t *testing.T) {
 			name: "Success_RepOp",
 			m: &mockMappers{
 				ToRepOpMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToRepetitionMocks: []MapFuncMock{
 					{},
@@ -3410,10 +4356,10 @@ func TestParser_repetition(t *testing.T) {
 			name: "Success_Range",
 			m: &mockMappers{
 				ToUpperBoundMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToRangeMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToRepetitionMocks: []MapFuncMock{
 					{},
@@ -3427,7 +4373,7 @@ func TestParser_repetition(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.repetition(tc.in)
+			_, _ = p.repetition(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
 			if m := tc.m.ToRepetitionMocks; len(m) > 0 {
@@ -3454,10 +4400,10 @@ func TestParser_quantifier(t *testing.T) {
 			name: "Success",
 			m: &mockMappers{
 				ToRepOpMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToRepetitionMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToQuantifierMocks: []MapFuncMock{
 					{},
@@ -3475,10 +4421,10 @@ func TestParser_quantifier(t *testing.T) {
 			name: "Success_Lazy",
 			m: &mockMappers{
 				ToRepOpMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToRepetitionMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToQuantifierMocks: []MapFuncMock{
 					{},
@@ -3497,7 +4443,7 @@ func TestParser_quantifier(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.quantifier(tc.in)
+			_, _ = p.quantifier(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
 			if m := tc.m.ToQuantifierMocks; len(m) > 0 {
@@ -3507,7 +4453,7 @@ func TestParser_quantifier(t *testing.T) {
 	}
 }
 
-func TestParser_charInRange(t *testing.T) {
+func TestParser_charInGroup(t *testing.T) {
 	tests := []struct {
 		name             string
 		m                *mockMappers
@@ -3521,9 +4467,9 @@ func TestParser_charInRange(t *testing.T) {
 			expectedInResult: comb.Result{},
 		},
 		{
-			name: "Success",
+			name: "Success_Letter",
 			m: &mockMappers{
-				ToCharInRangeMocks: []MapFuncMock{
+				ToCharInGroupMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3531,9 +4477,29 @@ func TestParser_charInRange(t *testing.T) {
 			expectedInResult: comb.Result{Val: 'a', Pos: 0},
 		},
 		{
+			name: "Success_Hyphen",
+			m: &mockMappers{
+				ToCharInGroupMocks: []MapFuncMock{
+					{},
+				},
+			},
+			in:               newStringInput(`-`),
+			expectedInResult: comb.Result{Val: '-', Pos: 0},
+		},
+		{
+			name: "Success_Underscore",
+			m: &mockMappers{
+				ToCharInGroupMocks: []MapFuncMock{
+					{},
+				},
+			},
+			in:               newStringInput(`_`),
+			expectedInResult: comb.Result{Val: '_', Pos: 0},
+		},
+		{
 			name: "Success_ASCII",
 			m: &mockMappers{
-				ToCharInRangeMocks: []MapFuncMock{
+				ToCharInGroupMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3543,7 +4509,7 @@ func TestParser_charInRange(t *testing.T) {
 		{
 			name: "Success_Unicode",
 			m: &mockMappers{
-				ToCharInRangeMocks: []MapFuncMock{
+				ToCharInGroupMocks: []MapFuncMock{
 					{},
 				},
 			},
@@ -3555,10 +4521,10 @@ func TestParser_charInRange(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.charInRange(tc.in)
+			_, _ = p.charInGroup(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
-			if m := tc.m.ToCharInRangeMocks; len(m) > 0 {
+			if m := tc.m.ToCharInGroupMocks; len(m) > 0 {
 				assert.Equal(t, tc.expectedInResult, m[len(m)-1].InResult)
 			}
 		})
@@ -3575,8 +4541,8 @@ func TestParser_charRange(t *testing.T) {
 		{
 			name: "Failure",
 			m: &mockMappers{
-				ToCharInRangeMocks: []MapFuncMock{
-					{OutOK: true},
+				ToCharInGroupMocks: []MapFuncMock{
+					{OutError: nil},
 				},
 			},
 			in:               newStringInput(`a-`),
@@ -3585,9 +4551,9 @@ func TestParser_charRange(t *testing.T) {
 		{
 			name: "Success",
 			m: &mockMappers{
-				ToCharInRangeMocks: []MapFuncMock{
-					{OutOK: true},
-					{OutOK: true},
+				ToCharInGroupMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
 				},
 				ToCharRangeMocks: []MapFuncMock{
 					{},
@@ -3604,11 +4570,32 @@ func TestParser_charRange(t *testing.T) {
 			},
 		},
 		{
+			name: "Success_Escaped",
+			m: &mockMappers{
+				ToCharInGroupMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
+				},
+				ToCharRangeMocks: []MapFuncMock{
+					{},
+				},
+			},
+			in: newStringInput(`\n-\r`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{},
+					{Val: '-', Pos: 2},
+					{},
+				},
+				Pos: 0,
+			},
+		},
+		{
 			name: "Success_ASCII",
 			m: &mockMappers{
-				ToCharInRangeMocks: []MapFuncMock{
-					{OutOK: true},
-					{OutOK: true},
+				ToCharInGroupMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
 				},
 				ToCharRangeMocks: []MapFuncMock{
 					{},
@@ -3627,9 +4614,9 @@ func TestParser_charRange(t *testing.T) {
 		{
 			name: "Success_Unicode",
 			m: &mockMappers{
-				ToCharInRangeMocks: []MapFuncMock{
-					{OutOK: true},
-					{OutOK: true},
+				ToCharInGroupMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
 				},
 				ToCharRangeMocks: []MapFuncMock{
 					{},
@@ -3650,7 +4637,7 @@ func TestParser_charRange(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.charRange(tc.in)
+			_, _ = p.charRange(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
 			if m := tc.m.ToCharRangeMocks; len(m) > 0 {
@@ -3677,10 +4664,10 @@ func TestParser_charGroupItem(t *testing.T) {
 			name: "Success_UnicodeCharClass",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToUnicodeCharClassMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToCharGroupItemMocks: []MapFuncMock{
 					{},
@@ -3693,7 +4680,7 @@ func TestParser_charGroupItem(t *testing.T) {
 			name: "Success_ASCIICharClass",
 			m: &mockMappers{
 				ToASCIICharClassMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToCharGroupItemMocks: []MapFuncMock{
 					{},
@@ -3706,7 +4693,7 @@ func TestParser_charGroupItem(t *testing.T) {
 			name: "Success_CharClass",
 			m: &mockMappers{
 				ToCharClassMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToCharGroupItemMocks: []MapFuncMock{
 					{},
@@ -3718,12 +4705,12 @@ func TestParser_charGroupItem(t *testing.T) {
 		{
 			name: "Success_CharRange",
 			m: &mockMappers{
-				ToCharInRangeMocks: []MapFuncMock{
-					{OutOK: true},
-					{OutOK: true},
+				ToCharInGroupMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
 				},
 				ToCharRangeMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToCharGroupItemMocks: []MapFuncMock{
 					{},
@@ -3733,13 +4720,11 @@ func TestParser_charGroupItem(t *testing.T) {
 			expectedInResult: comb.Result{},
 		},
 		{
-			name: "Success_SingleChar",
+			name: "Success_CharInGroup_Letter",
 			m: &mockMappers{
-				ToCharInRangeMocks: []MapFuncMock{
-					{OutOK: true},
-				},
-				ToSingleCharMocks: []MapFuncMock{
-					{OutOK: true},
+				ToCharInGroupMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
 				},
 				ToCharGroupItemMocks: []MapFuncMock{
 					{},
@@ -3748,12 +4733,40 @@ func TestParser_charGroupItem(t *testing.T) {
 			in:               newStringInput(`a`),
 			expectedInResult: comb.Result{},
 		},
+		{
+			name: "Success_CharInGroup_Hyphen",
+			m: &mockMappers{
+				ToCharInGroupMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
+				},
+				ToCharGroupItemMocks: []MapFuncMock{
+					{},
+				},
+			},
+			in:               newStringInput(`-`),
+			expectedInResult: comb.Result{},
+		},
+		{
+			name: "Success_CharInGroup_Underscore",
+			m: &mockMappers{
+				ToCharInGroupMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
+				},
+				ToCharGroupItemMocks: []MapFuncMock{
+					{},
+				},
+			},
+			in:               newStringInput(`_`),
+			expectedInResult: comb.Result{},
+		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.charGroupItem(tc.in)
+			_, _ = p.charGroupItem(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
 			if m := tc.m.ToCharGroupItemMocks; len(m) > 0 {
@@ -3779,24 +4792,22 @@ func TestParser_charGroup(t *testing.T) {
 		{
 			name: "Success_Chars",
 			m: &mockMappers{
-				ToCharInRangeMocks: []MapFuncMock{
-					{OutOK: true},
-					{OutOK: true},
-					{OutOK: true}, // ']'
-				},
-				ToSingleCharMocks: []MapFuncMock{
-					{OutOK: true},
-					{OutOK: true},
+				ToCharInGroupMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
+					{OutError: nil},
+					{OutError: nil},
+					{OutError: nil}, // ']'
 				},
 				ToCharGroupItemMocks: []MapFuncMock{
-					{OutOK: true},
-					{OutOK: true},
+					{OutError: nil},
+					{OutError: nil},
 				},
 				ToCharGroupMocks: []MapFuncMock{
 					{},
 				},
 			},
-			in: newStringInput(`[ab]`),
+			in: newStringInput(`[+-]`),
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: '[', Pos: 0},
@@ -3815,24 +4826,22 @@ func TestParser_charGroup(t *testing.T) {
 		{
 			name: "Success_Negated_Chars",
 			m: &mockMappers{
-				ToCharInRangeMocks: []MapFuncMock{
-					{OutOK: true},
-					{OutOK: true},
-					{OutOK: true}, // ']'
-				},
-				ToSingleCharMocks: []MapFuncMock{
-					{OutOK: true},
-					{OutOK: true},
+				ToCharInGroupMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
+					{OutError: nil},
+					{OutError: nil},
+					{OutError: nil}, // ']'
 				},
 				ToCharGroupItemMocks: []MapFuncMock{
-					{OutOK: true},
-					{OutOK: true},
+					{OutError: nil},
+					{OutError: nil},
 				},
 				ToCharGroupMocks: []MapFuncMock{
 					{},
 				},
 			},
-			in: newStringInput(`[^ab]`),
+			in: newStringInput(`[^+-]`),
 			expectedInResult: comb.Result{
 				Val: comb.List{
 					{Val: '[', Pos: 0},
@@ -3848,12 +4857,96 @@ func TestParser_charGroup(t *testing.T) {
 				Pos: 0,
 			},
 		},
+		{
+			name: "Success_RangeAndChars",
+			m: &mockMappers{
+				ToCharInGroupMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
+					{OutError: nil},
+					{OutError: nil},
+					{OutError: nil},
+					{OutError: nil},
+					{OutError: nil}, // ']'
+				},
+				ToCharRangeMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
+				},
+				ToCharGroupItemMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
+					{OutError: nil},
+				},
+				ToCharGroupMocks: []MapFuncMock{
+					{},
+				},
+			},
+			in: newStringInput(`[A-Za-z_]`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: '[', Pos: 0},
+					{Val: comb.Empty{}},
+					{
+						Val: comb.List{
+							{},
+							{},
+							{},
+						},
+					},
+					comb.Result{Val: ']', Pos: 8},
+				},
+				Pos: 0,
+			},
+		},
+		{
+			name: "Success_Negated_RangeAndChars",
+			m: &mockMappers{
+				ToCharInGroupMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
+					{OutError: nil},
+					{OutError: nil},
+					{OutError: nil},
+					{OutError: nil},
+					{OutError: nil}, // ']'
+				},
+				ToCharRangeMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
+				},
+				ToCharGroupItemMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
+					{OutError: nil},
+				},
+				ToCharGroupMocks: []MapFuncMock{
+					{},
+				},
+			},
+			in: newStringInput(`[^A-Za-z_]`),
+			expectedInResult: comb.Result{
+				Val: comb.List{
+					{Val: '[', Pos: 0},
+					{Val: '^', Pos: 1},
+					{
+						Val: comb.List{
+							{},
+							{},
+							{},
+						},
+					},
+					comb.Result{Val: ']', Pos: 9},
+				},
+				Pos: 0,
+			},
+		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.charGroup(tc.in)
+			_, _ = p.charGroup(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
 			if m := tc.m.ToCharGroupMocks; len(m) > 0 {
@@ -3880,7 +4973,7 @@ func TestParser_matchItem(t *testing.T) {
 			name: "Success_AnyChar",
 			m: &mockMappers{
 				ToAnyCharMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToMatchItemMocks: []MapFuncMock{
 					{},
@@ -3893,7 +4986,7 @@ func TestParser_matchItem(t *testing.T) {
 			name: "Success_SingleChar",
 			m: &mockMappers{
 				ToSingleCharMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToMatchItemMocks: []MapFuncMock{
 					{},
@@ -3906,7 +4999,7 @@ func TestParser_matchItem(t *testing.T) {
 			name: "Success_CharClass",
 			m: &mockMappers{
 				ToCharClassMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToMatchItemMocks: []MapFuncMock{
 					{},
@@ -3919,7 +5012,7 @@ func TestParser_matchItem(t *testing.T) {
 			name: "Success_ASCIICharClass",
 			m: &mockMappers{
 				ToASCIICharClassMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToMatchItemMocks: []MapFuncMock{
 					{},
@@ -3932,10 +5025,10 @@ func TestParser_matchItem(t *testing.T) {
 			name: "Success_UnicodeCharClass",
 			m: &mockMappers{
 				ToUnicodeCategoryMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToUnicodeCharClassMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToMatchItemMocks: []MapFuncMock{
 					{},
@@ -3947,19 +5040,19 @@ func TestParser_matchItem(t *testing.T) {
 		{
 			name: "Success_CharGroup",
 			m: &mockMappers{
-				ToCharInRangeMocks: []MapFuncMock{
-					{OutOK: true},
-					{OutOK: true},
-					{OutOK: true}, // ]
+				ToCharInGroupMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
+					{OutError: nil}, // ]
 				},
 				ToCharRangeMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToCharGroupItemMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToCharGroupMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToMatchItemMocks: []MapFuncMock{
 					{},
@@ -3973,7 +5066,7 @@ func TestParser_matchItem(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.matchItem(tc.in)
+			_, _ = p.matchItem(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
 			if m := tc.m.ToMatchItemMocks; len(m) > 0 {
@@ -4000,10 +5093,10 @@ func TestParser_match(t *testing.T) {
 			name: "Success_WithoutQuantifier",
 			m: &mockMappers{
 				ToCharClassMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToMatchItemMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToMatchMocks: []MapFuncMock{
 					{},
@@ -4021,19 +5114,19 @@ func TestParser_match(t *testing.T) {
 			name: "Success_WithQuantifier",
 			m: &mockMappers{
 				ToASCIICharClassMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToMatchItemMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToRepOpMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToRepetitionMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToQuantifierMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToMatchMocks: []MapFuncMock{
 					{},
@@ -4052,7 +5145,7 @@ func TestParser_match(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.match(tc.in)
+			_, _ = p.match(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
 			if m := tc.m.ToMatchMocks; len(m) > 0 {
@@ -4079,22 +5172,22 @@ func TestParser_group(t *testing.T) {
 			name: "Success_WithoutQuantifier",
 			m: &mockMappers{
 				ToSingleCharMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToMatchItemMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToMatchMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToSubexprItemMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToSubexprMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToExprMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToGroupMocks: []MapFuncMock{
 					{},
@@ -4115,31 +5208,31 @@ func TestParser_group(t *testing.T) {
 			name: "Success_WithQuantifier",
 			m: &mockMappers{
 				ToSingleCharMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToMatchItemMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToMatchMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToSubexprItemMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToSubexprMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToExprMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToRepOpMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToRepetitionMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToQuantifierMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToGroupMocks: []MapFuncMock{
 					{},
@@ -4161,11 +5254,11 @@ func TestParser_group(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.group(tc.in)
+			_, _ = p.group(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
 			if m := tc.m.ToGroupMocks; len(m) > 0 {
-				assert.Equal(t, tc.expectedInResult, tc.m.ToGroupMocks[0].InResult)
+				assert.Equal(t, tc.expectedInResult, m[0].InResult)
 			}
 		})
 	}
@@ -4199,7 +5292,7 @@ func TestParser_anchor(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.anchor(tc.in)
+			_, _ = p.anchor(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
 			if m := tc.m.ToAnchorMocks; len(m) > 0 {
@@ -4226,7 +5319,7 @@ func TestParser_subexprItem(t *testing.T) {
 			name: "Success_Anchor",
 			m: &mockMappers{
 				ToAnchorMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToSubexprItemMocks: []MapFuncMock{
 					{},
@@ -4239,25 +5332,25 @@ func TestParser_subexprItem(t *testing.T) {
 			name: "Success_Group",
 			m: &mockMappers{
 				ToSingleCharMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToMatchItemMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToMatchMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToSubexprMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToExprMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToGroupMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToSubexprItemMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 					{},
 				},
 			},
@@ -4268,13 +5361,13 @@ func TestParser_subexprItem(t *testing.T) {
 			name: "Success_Match",
 			m: &mockMappers{
 				ToCharClassMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToMatchItemMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToMatchMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToSubexprItemMocks: []MapFuncMock{
 					{},
@@ -4288,7 +5381,7 @@ func TestParser_subexprItem(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.subexprItem(tc.in)
+			_, _ = p.subexprItem(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
 			if m := tc.m.ToSubexprItemMocks; len(m) > 0 {
@@ -4312,23 +5405,23 @@ func TestParser_subexpr(t *testing.T) {
 			expectedInResult: comb.Result{},
 		},
 		{
-			name: "Success_UnescapedChar",
+			name: "Success_SingleChar",
 			m: &mockMappers{
 				ToSingleCharMocks: []MapFuncMock{
-					{OutOK: true},
-					{OutOK: true},
+					{OutError: nil},
+					{OutError: nil},
 				},
 				ToMatchItemMocks: []MapFuncMock{
-					{OutOK: true},
-					{OutOK: true},
+					{OutError: nil},
+					{OutError: nil},
 				},
 				ToMatchMocks: []MapFuncMock{
-					{OutOK: true},
-					{OutOK: true},
+					{OutError: nil},
+					{OutError: nil},
 				},
 				ToSubexprItemMocks: []MapFuncMock{
-					{OutOK: true},
-					{OutOK: true},
+					{OutError: nil},
+					{OutError: nil},
 				},
 				ToSubexprMocks: []MapFuncMock{
 					{},
@@ -4347,7 +5440,7 @@ func TestParser_subexpr(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.subexpr(tc.in)
+			_, _ = p.subexpr(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
 			if m := tc.m.ToSubexprMocks; len(m) > 0 {
@@ -4374,19 +5467,19 @@ func TestParser_expr(t *testing.T) {
 			name: "Success",
 			m: &mockMappers{
 				ToSingleCharMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToMatchItemMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToMatchMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToSubexprItemMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToSubexprMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToExprMocks: []MapFuncMock{
 					{},
@@ -4401,30 +5494,30 @@ func TestParser_expr(t *testing.T) {
 			},
 		},
 		{
-			name: "Success",
+			name: "Success_Alt",
 			m: &mockMappers{
 				ToSingleCharMocks: []MapFuncMock{
-					{OutOK: true},
-					{OutOK: true},
+					{OutError: nil},
+					{OutError: nil},
 				},
 				ToMatchItemMocks: []MapFuncMock{
-					{OutOK: true},
-					{OutOK: true},
+					{OutError: nil},
+					{OutError: nil},
 				},
 				ToMatchMocks: []MapFuncMock{
-					{OutOK: true},
-					{OutOK: true},
+					{OutError: nil},
+					{OutError: nil},
 				},
 				ToSubexprItemMocks: []MapFuncMock{
-					{OutOK: true},
-					{OutOK: true},
+					{OutError: nil},
+					{OutError: nil},
 				},
 				ToSubexprMocks: []MapFuncMock{
-					{OutOK: true},
-					{OutOK: true},
+					{OutError: nil},
+					{OutError: nil},
 				},
 				ToExprMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 					{},
 				},
 			},
@@ -4447,7 +5540,7 @@ func TestParser_expr(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.expr(tc.in)
+			_, _ = p.expr(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
 			if m := tc.m.ToExprMocks; len(m) > 0 {
@@ -4474,22 +5567,22 @@ func TestParser_regex(t *testing.T) {
 			name: "Success_WithoutStartOfString",
 			m: &mockMappers{
 				ToSingleCharMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToMatchItemMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToMatchMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToSubexprItemMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToSubexprMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToExprMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToRegexMocks: []MapFuncMock{
 					{},
@@ -4507,22 +5600,22 @@ func TestParser_regex(t *testing.T) {
 			name: "Success_WithStartOfString",
 			m: &mockMappers{
 				ToSingleCharMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToMatchItemMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToMatchMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToSubexprItemMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToSubexprMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToExprMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 				ToRegexMocks: []MapFuncMock{
 					{},
@@ -4542,7 +5635,7 @@ func TestParser_regex(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			p.regex(tc.in)
+			_, _ = p.regex(tc.in)
 
 			// Verify the expected result has been passed to the mapper function
 			if m := tc.m.ToRegexMocks; len(m) > 0 {
@@ -4554,56 +5647,68 @@ func TestParser_regex(t *testing.T) {
 
 func TestParser_Parse(t *testing.T) {
 	tests := []struct {
-		name           string
-		m              *mockMappers
-		regex          string
-		expectedOutput comb.Output
-		expectedOK     bool
+		name          string
+		m             *mockMappers
+		regex         string
+		expectedOut   *comb.Output
+		expectedError string
 	}{
 		{
 			name: "Success",
 			m: &mockMappers{
 				ToSingleCharMocks: []MapFuncMock{
-					{OutOK: true},
-					{OutOK: true},
+					{OutError: nil},
+					{OutError: nil},
 				},
 				ToMatchItemMocks: []MapFuncMock{
-					{OutOK: true},
-					{OutOK: true},
+					{OutError: nil},
+					{OutError: nil},
 				},
 				ToMatchMocks: []MapFuncMock{
-					{OutOK: true},
-					{OutOK: true},
+					{OutError: nil},
+					{OutError: nil},
 				},
 				ToSubexprItemMocks: []MapFuncMock{
-					{OutOK: true},
-					{OutOK: true},
+					{OutError: nil},
+					{OutError: nil},
 				},
 				ToSubexprMocks: []MapFuncMock{
-					{OutOK: true},
-					{OutOK: true},
+					{OutError: nil},
+					{OutError: nil},
 				},
 				ToExprMocks: []MapFuncMock{
-					{OutOK: true},
-					{OutOK: true},
+					{OutError: nil},
+					{OutError: nil},
 				},
 				ToRegexMocks: []MapFuncMock{
-					{OutOK: true},
+					{OutError: nil},
 				},
 			},
-			regex:          `a`,
-			expectedOutput: comb.Output{},
-			expectedOK:     true,
+			regex: `a`,
+			expectedOut: &comb.Output{
+				Result: comb.Result{
+					Val: nil,
+					Pos: 0,
+					Bag: nil,
+				},
+				Remaining: nil,
+			},
+			expectedError: "",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			p := New(tc.m)
-			out, ok := p.Parse(tc.regex)
+			out, err := p.Parse(tc.regex)
 
-			assert.Equal(t, tc.expectedOutput, out)
-			assert.Equal(t, tc.expectedOK, ok)
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedOut, out)
+			} else {
+				assert.Nil(t, out)
+				assert.EqualError(t, err, tc.expectedError)
+			}
 		})
 	}
 }
@@ -4613,7 +5718,7 @@ func TestParser_Parse(t *testing.T) {
 type MapFuncMock struct {
 	InResult  comb.Result
 	OutResult comb.Result
-	OutOK     bool
+	OutError  error
 }
 
 // mockMappers implements the Mapper interface for testing purposes.
@@ -4651,8 +5756,8 @@ type mockMappers struct {
 	ToQuantifierIndex int
 	ToQuantifierMocks []MapFuncMock
 
-	ToCharInRangeIndex int
-	ToCharInRangeMocks []MapFuncMock
+	ToCharInGroupIndex int
+	ToCharInGroupMocks []MapFuncMock
 
 	ToCharRangeIndex int
 	ToCharRangeMocks []MapFuncMock
@@ -4688,163 +5793,163 @@ type mockMappers struct {
 	ToRegexMocks []MapFuncMock
 }
 
-func (m *mockMappers) ToAnyChar(r comb.Result) (comb.Result, bool) {
+func (m *mockMappers) ToAnyChar(r comb.Result) (comb.Result, error) {
 	i := m.ToAnyCharIndex
 	m.ToAnyCharIndex++
 	m.ToAnyCharMocks[i].InResult = r
-	return m.ToAnyCharMocks[i].OutResult, m.ToAnyCharMocks[i].OutOK
+	return m.ToAnyCharMocks[i].OutResult, m.ToAnyCharMocks[i].OutError
 }
 
-func (m *mockMappers) ToSingleChar(r comb.Result) (comb.Result, bool) {
+func (m *mockMappers) ToSingleChar(r comb.Result) (comb.Result, error) {
 	i := m.ToSingleCharIndex
 	m.ToSingleCharIndex++
 	m.ToSingleCharMocks[i].InResult = r
-	return m.ToSingleCharMocks[i].OutResult, m.ToSingleCharMocks[i].OutOK
+	return m.ToSingleCharMocks[i].OutResult, m.ToSingleCharMocks[i].OutError
 }
 
-func (m *mockMappers) ToCharClass(r comb.Result) (comb.Result, bool) {
+func (m *mockMappers) ToCharClass(r comb.Result) (comb.Result, error) {
 	i := m.ToCharClassIndex
 	m.ToCharClassIndex++
 	m.ToCharClassMocks[i].InResult = r
-	return m.ToCharClassMocks[i].OutResult, m.ToCharClassMocks[i].OutOK
+	return m.ToCharClassMocks[i].OutResult, m.ToCharClassMocks[i].OutError
 }
 
-func (m *mockMappers) ToASCIICharClass(r comb.Result) (comb.Result, bool) {
+func (m *mockMappers) ToASCIICharClass(r comb.Result) (comb.Result, error) {
 	i := m.ToASCIICharClassIndex
 	m.ToASCIICharClassIndex++
 	m.ToASCIICharClassMocks[i].InResult = r
-	return m.ToASCIICharClassMocks[i].OutResult, m.ToASCIICharClassMocks[i].OutOK
+	return m.ToASCIICharClassMocks[i].OutResult, m.ToASCIICharClassMocks[i].OutError
 }
 
-func (m *mockMappers) ToUnicodeCategory(r comb.Result) (comb.Result, bool) {
+func (m *mockMappers) ToUnicodeCategory(r comb.Result) (comb.Result, error) {
 	i := m.ToUnicodeCategoryIndex
 	m.ToUnicodeCategoryIndex++
 	m.ToUnicodeCategoryMocks[i].InResult = r
-	return m.ToUnicodeCategoryMocks[i].OutResult, m.ToUnicodeCategoryMocks[i].OutOK
+	return m.ToUnicodeCategoryMocks[i].OutResult, m.ToUnicodeCategoryMocks[i].OutError
 }
 
-func (m *mockMappers) ToUnicodeCharClass(r comb.Result) (comb.Result, bool) {
+func (m *mockMappers) ToUnicodeCharClass(r comb.Result) (comb.Result, error) {
 	i := m.ToUnicodeCharClassIndex
 	m.ToUnicodeCharClassIndex++
 	m.ToUnicodeCharClassMocks[i].InResult = r
-	return m.ToUnicodeCharClassMocks[i].OutResult, m.ToUnicodeCharClassMocks[i].OutOK
+	return m.ToUnicodeCharClassMocks[i].OutResult, m.ToUnicodeCharClassMocks[i].OutError
 }
 
-func (m *mockMappers) ToRepOp(r comb.Result) (comb.Result, bool) {
+func (m *mockMappers) ToRepOp(r comb.Result) (comb.Result, error) {
 	i := m.ToRepOpIndex
 	m.ToRepOpIndex++
 	m.ToRepOpMocks[i].InResult = r
-	return m.ToRepOpMocks[i].OutResult, m.ToRepOpMocks[i].OutOK
+	return m.ToRepOpMocks[i].OutResult, m.ToRepOpMocks[i].OutError
 }
 
-func (m *mockMappers) ToUpperBound(r comb.Result) (comb.Result, bool) {
+func (m *mockMappers) ToUpperBound(r comb.Result) (comb.Result, error) {
 	i := m.ToUpperBoundIndex
 	m.ToUpperBoundIndex++
 	m.ToUpperBoundMocks[i].InResult = r
-	return m.ToUpperBoundMocks[i].OutResult, m.ToUpperBoundMocks[i].OutOK
+	return m.ToUpperBoundMocks[i].OutResult, m.ToUpperBoundMocks[i].OutError
 }
 
-func (m *mockMappers) ToRange(r comb.Result) (comb.Result, bool) {
+func (m *mockMappers) ToRange(r comb.Result) (comb.Result, error) {
 	i := m.ToRangeIndex
 	m.ToRangeIndex++
 	m.ToRangeMocks[i].InResult = r
-	return m.ToRangeMocks[i].OutResult, m.ToRangeMocks[i].OutOK
+	return m.ToRangeMocks[i].OutResult, m.ToRangeMocks[i].OutError
 }
 
-func (m *mockMappers) ToRepetition(r comb.Result) (comb.Result, bool) {
+func (m *mockMappers) ToRepetition(r comb.Result) (comb.Result, error) {
 	i := m.ToRepetitionIndex
 	m.ToRepetitionIndex++
 	m.ToRepetitionMocks[i].InResult = r
-	return m.ToRepetitionMocks[i].OutResult, m.ToRepetitionMocks[i].OutOK
+	return m.ToRepetitionMocks[i].OutResult, m.ToRepetitionMocks[i].OutError
 }
 
-func (m *mockMappers) ToQuantifier(r comb.Result) (comb.Result, bool) {
+func (m *mockMappers) ToQuantifier(r comb.Result) (comb.Result, error) {
 	i := m.ToQuantifierIndex
 	m.ToQuantifierIndex++
 	m.ToQuantifierMocks[i].InResult = r
-	return m.ToQuantifierMocks[i].OutResult, m.ToQuantifierMocks[i].OutOK
+	return m.ToQuantifierMocks[i].OutResult, m.ToQuantifierMocks[i].OutError
 }
 
-func (m *mockMappers) ToCharInRange(r comb.Result) (comb.Result, bool) {
-	i := m.ToCharInRangeIndex
-	m.ToCharInRangeIndex++
-	m.ToCharInRangeMocks[i].InResult = r
-	return m.ToCharInRangeMocks[i].OutResult, m.ToCharInRangeMocks[i].OutOK
+func (m *mockMappers) ToCharInGroup(r comb.Result) (comb.Result, error) {
+	i := m.ToCharInGroupIndex
+	m.ToCharInGroupIndex++
+	m.ToCharInGroupMocks[i].InResult = r
+	return m.ToCharInGroupMocks[i].OutResult, m.ToCharInGroupMocks[i].OutError
 }
 
-func (m *mockMappers) ToCharRange(r comb.Result) (comb.Result, bool) {
+func (m *mockMappers) ToCharRange(r comb.Result) (comb.Result, error) {
 	i := m.ToCharRangeIndex
 	m.ToCharRangeIndex++
 	m.ToCharRangeMocks[i].InResult = r
-	return m.ToCharRangeMocks[i].OutResult, m.ToCharRangeMocks[i].OutOK
+	return m.ToCharRangeMocks[i].OutResult, m.ToCharRangeMocks[i].OutError
 }
 
-func (m *mockMappers) ToCharGroupItem(r comb.Result) (comb.Result, bool) {
+func (m *mockMappers) ToCharGroupItem(r comb.Result) (comb.Result, error) {
 	i := m.ToCharGroupItemIndex
 	m.ToCharGroupItemIndex++
 	m.ToCharGroupItemMocks[i].InResult = r
-	return m.ToCharGroupItemMocks[i].OutResult, m.ToCharGroupItemMocks[i].OutOK
+	return m.ToCharGroupItemMocks[i].OutResult, m.ToCharGroupItemMocks[i].OutError
 }
 
-func (m *mockMappers) ToCharGroup(r comb.Result) (comb.Result, bool) {
+func (m *mockMappers) ToCharGroup(r comb.Result) (comb.Result, error) {
 	i := m.ToCharGroupIndex
 	m.ToCharGroupIndex++
 	m.ToCharGroupMocks[i].InResult = r
-	return m.ToCharGroupMocks[i].OutResult, m.ToCharGroupMocks[i].OutOK
+	return m.ToCharGroupMocks[i].OutResult, m.ToCharGroupMocks[i].OutError
 }
 
-func (m *mockMappers) ToMatchItem(r comb.Result) (comb.Result, bool) {
+func (m *mockMappers) ToMatchItem(r comb.Result) (comb.Result, error) {
 	i := m.ToMatchItemIndex
 	m.ToMatchItemIndex++
 	m.ToMatchItemMocks[i].InResult = r
-	return m.ToMatchItemMocks[i].OutResult, m.ToMatchItemMocks[i].OutOK
+	return m.ToMatchItemMocks[i].OutResult, m.ToMatchItemMocks[i].OutError
 }
 
-func (m *mockMappers) ToMatch(r comb.Result) (comb.Result, bool) {
+func (m *mockMappers) ToMatch(r comb.Result) (comb.Result, error) {
 	i := m.ToMatchIndex
 	m.ToMatchIndex++
 	m.ToMatchMocks[i].InResult = r
-	return m.ToMatchMocks[i].OutResult, m.ToMatchMocks[i].OutOK
+	return m.ToMatchMocks[i].OutResult, m.ToMatchMocks[i].OutError
 }
 
-func (m *mockMappers) ToGroup(r comb.Result) (comb.Result, bool) {
+func (m *mockMappers) ToGroup(r comb.Result) (comb.Result, error) {
 	i := m.ToGroupIndex
 	m.ToGroupIndex++
 	m.ToGroupMocks[i].InResult = r
-	return m.ToGroupMocks[i].OutResult, m.ToGroupMocks[i].OutOK
+	return m.ToGroupMocks[i].OutResult, m.ToGroupMocks[i].OutError
 }
 
-func (m *mockMappers) ToAnchor(r comb.Result) (comb.Result, bool) {
+func (m *mockMappers) ToAnchor(r comb.Result) (comb.Result, error) {
 	i := m.ToAnchorIndex
 	m.ToAnchorIndex++
 	m.ToAnchorMocks[i].InResult = r
-	return m.ToAnchorMocks[i].OutResult, m.ToAnchorMocks[i].OutOK
+	return m.ToAnchorMocks[i].OutResult, m.ToAnchorMocks[i].OutError
 }
 
-func (m *mockMappers) ToSubexprItem(r comb.Result) (comb.Result, bool) {
+func (m *mockMappers) ToSubexprItem(r comb.Result) (comb.Result, error) {
 	i := m.ToSubexprItemIndex
 	m.ToSubexprItemIndex++
 	m.ToSubexprItemMocks[i].InResult = r
-	return m.ToSubexprItemMocks[i].OutResult, m.ToSubexprItemMocks[i].OutOK
+	return m.ToSubexprItemMocks[i].OutResult, m.ToSubexprItemMocks[i].OutError
 }
 
-func (m *mockMappers) ToSubexpr(r comb.Result) (comb.Result, bool) {
+func (m *mockMappers) ToSubexpr(r comb.Result) (comb.Result, error) {
 	i := m.ToSubexprIndex
 	m.ToSubexprIndex++
 	m.ToSubexprMocks[i].InResult = r
-	return m.ToSubexprMocks[i].OutResult, m.ToSubexprMocks[i].OutOK
+	return m.ToSubexprMocks[i].OutResult, m.ToSubexprMocks[i].OutError
 }
 
-func (m *mockMappers) ToExpr(r comb.Result) (comb.Result, bool) {
+func (m *mockMappers) ToExpr(r comb.Result) (comb.Result, error) {
 	i := m.ToExprIndex
 	m.ToExprIndex++
 	m.ToExprMocks[i].InResult = r
-	return m.ToExprMocks[i].OutResult, m.ToExprMocks[i].OutOK
+	return m.ToExprMocks[i].OutResult, m.ToExprMocks[i].OutError
 }
 
-func (m *mockMappers) ToRegex(r comb.Result) (comb.Result, bool) {
+func (m *mockMappers) ToRegex(r comb.Result) (comb.Result, error) {
 	i := m.ToRegexIndex
 	m.ToRegexIndex++
 	m.ToRegexMocks[i].InResult = r
-	return m.ToRegexMocks[i].OutResult, m.ToRegexMocks[i].OutOK
+	return m.ToRegexMocks[i].OutResult, m.ToRegexMocks[i].OutError
 }
