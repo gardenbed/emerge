@@ -65,7 +65,7 @@ func Parse(regex string) (*AST, error) {
 	}
 
 	// Assign one-based positions to Char nodes.
-	a.backfillCharPos(a.Root)
+	a.assignCharPos(a.Root)
 
 	// Preprocessing: compute followpos function.
 	a.computeFollows(a.Root)
@@ -76,26 +76,26 @@ func Parse(regex string) (*AST, error) {
 	return a, nil
 }
 
-// backfillCharPos backfills Pos for all Char nodes in the abstract syntaxt tree from left to right.
+// assignCharPos backfills Pos for all Char nodes in the abstract syntaxt tree from left to right.
 // These positions are one-based and used for directly converting a regular expression to a DFA.
 // They are semantically different from the zero-based positions set by parsers (in the mappers).
 //
 // It also creates a map of positions to characters and vice versa.
 // These mappings are used when constructing the DFA from the AST.
-func (a *AST) backfillCharPos(n Node) {
+func (a *AST) assignCharPos(n Node) {
 	switch v := n.(type) {
 	case *Concat:
 		for _, e := range v.Exprs {
-			a.backfillCharPos(e)
+			a.assignCharPos(e)
 		}
 
 	case *Alt:
 		for _, e := range v.Exprs {
-			a.backfillCharPos(e)
+			a.assignCharPos(e)
 		}
 
 	case *Star:
-		a.backfillCharPos(v.Expr)
+		a.assignCharPos(v.Expr)
 
 	case *Char:
 		// Assign the next position to the current Char.
