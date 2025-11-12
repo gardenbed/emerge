@@ -215,17 +215,17 @@ func New(m Mappers) *Parser {
 
 	// raw_char_in_group --> all characters except '[' and ']'
 	p.rawCharInGroup = p.char.Bind(
-		excludeRunes('\\', '\t', '\n', '\r', '[', ']'),
+		excludeRunes('/', '\\', '\t', '\n', '\r', '[', ']'),
 	)
 
 	// raw_char --> all characters except the escaped ones
 	p.rawChar = p.char.Bind(
-		excludeRunes('\\', '\t', '\n', '\r', '^', '$', '|', '.', '?', '*', '+', '(', ')', '[', ']', '{', '}'),
+		excludeRunes('/', '\\', '\t', '\n', '\r', '^', '$', '|', '.', '?', '*', '+', '(', ')', '[', ']', '{', '}'),
 	)
 
 	// escaped_char --> "\" (...)
 	p.escapedChar = comb.ExpectRune('\\').CONCAT(
-		comb.ExpectRuneIn('\\', 't', 'n', 'r', '^', '$', '|', '.', '?', '*', '+', '(', ')', '[', ']', '{', '}'),
+		comb.ExpectRuneIn('/', '\\', 't', 'n', 'r', '^', '$', '|', '.', '?', '*', '+', '(', ')', '[', ']', '{', '}'),
 	).Map(toEscapedChar)
 
 	// ascii_char --> "\x" hex_digit{2}

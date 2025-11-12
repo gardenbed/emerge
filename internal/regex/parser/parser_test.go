@@ -155,6 +155,17 @@ func TestToEscapedChar(t *testing.T) {
 		expectedError  string
 	}{
 		{
+			name: "Slash",
+			r: comb.Result{
+				Val: comb.List{
+					{Val: '\\', Pos: 1},
+					{Val: '/', Pos: 2},
+				},
+			},
+			expectedResult: comb.Result{Val: '/', Pos: 1},
+			expectedError:  "",
+		},
+		{
 			name: "Backslash",
 			r: comb.Result{
 				Val: comb.List{
@@ -806,6 +817,13 @@ func TestParser_rawChar(t *testing.T) {
 		expectedError string
 	}{
 		{
+			name:          "Slash",
+			m:             &mockMappers{},
+			in:            newStringInput(`/`),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '/'",
+		},
+		{
 			name:          "Backslash",
 			m:             &mockMappers{},
 			in:            newStringInput("\\"),
@@ -965,6 +983,15 @@ func TestParser_escapedChar(t *testing.T) {
 			in:            newStringInput(`a`),
 			expectedOut:   nil,
 			expectedError: "0: unexpected rune 'a'",
+		},
+		{
+			name: "Success_Slash",
+			m:    &mockMappers{},
+			in:   newStringInput(`\/`),
+			expectedOut: &comb.Output{
+				Result: comb.Result{Val: '/', Pos: 0},
+			},
+			expectedError: "",
 		},
 		{
 			name: "Success_Backslash",
