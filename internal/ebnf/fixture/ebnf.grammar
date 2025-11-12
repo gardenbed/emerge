@@ -1,17 +1,20 @@
 grammar ebnf
 
+// Token declarations
 PREDEF = /\$[A-Z][0-9A-Z_]*/
 IDENT  = /[a-z][0-9a-z_]*/
 TOKEN  = /[A-Z][0-9A-Z_]*/
 STRING = /"([^\\"]|\\[\\"'tnr]|\\x[0-9A-Fa-f]{2}|\\u[0-9A-Fa-f]{4}|\\U[0-9A-Fa-f]{8})*"/
 REGEX  = /\/([^\/\\*]|\\.)([^\/\\]|\\.)*\//
 
+// Associativity and Precedence
 @left  <rhs = rhs rhs>
 @left  "(" "[" "{" "{{" IDENT TOKEN STRING
 @right "|"
 @none  "="
 @none  "@left" "@right" "@none"
 
+// Production rules
 start     = name {decl};
 name      = "grammar" IDENT [";"];
 decl      = token [";"] | directive [";"] | rule ";";
