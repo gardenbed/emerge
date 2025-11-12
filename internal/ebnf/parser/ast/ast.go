@@ -33,10 +33,8 @@ type LeafNode interface {
 	leaf()
 }
 
-// Traverse performs a depth-first traversal of an EBNF abstract syntax tree (AST),
-// starting from the given root node.
-// It visits each node according to the specified traversal order
-// and passes each node to the provided visit function.
+// Traverse performs a depth-first traversal of an EBNF abstract syntax tree (AST), starting from the given root node.
+// It visits each node according to the specified traversal order and passes each node to the provided visit function.
 // If the visit function returns false, the traversal is stopped early.
 //
 // Valid traversal orders for an AST are VLR, VRL, LRV, and RLV.
@@ -98,7 +96,7 @@ func (n *Grammar) String() string {
 	var b bytes.Buffer
 
 	fmt.Fprintf(&b, "Grammar::%s", n.Name)
-	if hasPositionValue(n.Position) {
+	if hasPosition(n.Position) {
 		fmt.Fprintf(&b, " <%s>", n.Position)
 	}
 
@@ -257,7 +255,7 @@ func (n *Grammar) DOT() string {
 		return true
 	})
 
-	return graph.DOT()
+	return graph.DOT() + "\n"
 }
 
 // Decl represents a declaration in an EBNF grammar.
@@ -279,7 +277,7 @@ func (n *StringTokenDecl) String() string {
 	var b bytes.Buffer
 
 	fmt.Fprintf(&b, "TokenDecl::%s=%q", n.Name, n.Value)
-	if hasPositionValue(n.Position) {
+	if hasPosition(n.Position) {
 		fmt.Fprintf(&b, " <%s>", n.Position)
 	}
 
@@ -314,7 +312,7 @@ func (n *RegexTokenDecl) String() string {
 	var b bytes.Buffer
 
 	fmt.Fprintf(&b, "TokenDecl::%s=/%s/", n.Name, n.Regex)
-	if hasPositionValue(n.Position) {
+	if hasPosition(n.Position) {
 		fmt.Fprintf(&b, " <%s>", n.Position)
 	}
 
@@ -349,7 +347,7 @@ func (n *PrecedenceDecl) String() string {
 	var b bytes.Buffer
 
 	fmt.Fprintf(&b, "PrecedenceDecl::%s=%s", n.Associativity, n.Handles)
-	if hasPositionValue(n.Position) {
+	if hasPosition(n.Position) {
 		fmt.Fprintf(&b, " <%s>", n.Position)
 	}
 
@@ -412,7 +410,7 @@ func (n *TerminalHandle) String() string {
 	var b bytes.Buffer
 
 	fmt.Fprintf(&b, "TerminalHandle::%s", n.Terminal)
-	if hasPositionValue(n.Position) {
+	if hasPosition(n.Position) {
 		fmt.Fprintf(&b, " <%s>", n.Position)
 	}
 
@@ -527,6 +525,7 @@ func (n *ConcatRHS) String() string {
 		fmt.Fprintf(&b, "%s ", op)
 	}
 
+	// Remove trailing space
 	if len(n.Ops) > 0 {
 		b.Truncate(b.Len() - 1)
 	}
@@ -583,11 +582,12 @@ func (n *AltRHS) String() string {
 
 	fmt.Fprintf(&b, "AltRHS::")
 	for _, op := range n.Ops {
-		fmt.Fprintf(&b, "%s \"|\" ", op)
+		fmt.Fprintf(&b, "%s | ", op)
 	}
 
+	// Remove trailing separator
 	if len(n.Ops) > 0 {
-		b.Truncate(b.Len() - 5)
+		b.Truncate(b.Len() - 3)
 	}
 
 	return b.String()
@@ -744,7 +744,7 @@ func (n *NonTerminalRHS) String() string {
 	var b bytes.Buffer
 
 	fmt.Fprintf(&b, "NonTerminalRHS::%s", n.NonTerminal)
-	if hasPositionValue(n.Position) {
+	if hasPosition(n.Position) {
 		fmt.Fprintf(&b, " <%s>", n.Position)
 	}
 
@@ -777,7 +777,7 @@ func (n *TerminalRHS) String() string {
 	var b bytes.Buffer
 
 	fmt.Fprintf(&b, "TerminalRHS::%s", n.Terminal)
-	if hasPositionValue(n.Position) {
+	if hasPosition(n.Position) {
 		fmt.Fprintf(&b, " <%s>", n.Position)
 	}
 
@@ -804,11 +804,7 @@ func (n *TerminalRHS) rhs() {}
 type EmptyRHS struct{}
 
 func (n *EmptyRHS) String() string {
-	var b bytes.Buffer
-
-	fmt.Fprintf(&b, "EmptyRHS::ε")
-
-	return b.String()
+	return "EmptyRHS::ε"
 }
 
 func (n *EmptyRHS) Equal(rhs Node) bool {
@@ -824,8 +820,8 @@ func (n *EmptyRHS) leaf() {}
 
 func (n *EmptyRHS) rhs() {}
 
-// hasPositionValue checks if a position has a non-nil non-zero value.
-func hasPositionValue(pos *lexer.Position) bool {
+// hasPosition checks if a position has a non-nil non-zero value.
+func hasPosition(pos *lexer.Position) bool {
 	return pos != nil && !pos.IsZero()
 }
 

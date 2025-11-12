@@ -6,10 +6,237 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/moorara/algo/automata"
+	"github.com/moorara/algo/generic"
 	"github.com/moorara/algo/parser/combinator"
 
 	"github.com/gardenbed/emerge/internal/char"
 )
+
+var testAST = map[string]*AST{
+	`(a|b)*abb`: {
+		Root: &Concat{
+			Exprs: []Node{
+				&Concat{
+					Exprs: []Node{
+						&Star{
+							Expr: &Alt{
+								Exprs: []Node{
+									&Concat{
+										Exprs: []Node{
+											&Char{Lo: 'a', Hi: 'a', Pos: 1},
+										},
+										comp: &computed{
+											nullable: false,
+											firstPos: Poses{1},
+											lastPos:  Poses{1},
+										},
+									},
+									&Concat{
+										Exprs: []Node{
+											&Char{Lo: 'b', Hi: 'b', Pos: 2},
+										},
+										comp: &computed{
+											nullable: false,
+											firstPos: Poses{2},
+											lastPos:  Poses{2},
+										},
+									},
+								},
+								comp: &computed{
+									nullable: false,
+									firstPos: Poses{1, 2},
+									lastPos:  Poses{1, 2},
+								},
+							},
+						},
+						&Char{Lo: 'a', Hi: 'a', Pos: 3},
+						&Char{Lo: 'b', Hi: 'b', Pos: 4},
+						&Char{Lo: 'b', Hi: 'b', Pos: 5},
+					},
+					comp: &computed{
+						nullable: false,
+						firstPos: Poses{1, 2, 3},
+						lastPos:  Poses{5},
+					},
+				},
+				&Char{Lo: endmarker, Hi: endmarker, Pos: 6},
+			},
+		},
+		lastPos: 6,
+		posToChar: map[Pos]char.Range{
+			1: {'a', 'a'},
+			2: {'b', 'b'},
+			3: {'a', 'a'},
+			4: {'b', 'b'},
+			5: {'b', 'b'},
+			6: {endmarker, endmarker},
+		},
+		charToPos: map[char.Range]Poses{
+			{'a', 'a'}:             {1, 3},
+			{'b', 'b'}:             {2, 4, 5},
+			{endmarker, endmarker}: {6},
+		},
+		follows: map[Pos]Poses{
+			1: {1, 2, 3},
+			2: {1, 2, 3},
+			3: {4},
+			4: {5},
+			5: {6},
+		},
+	},
+	`\n|\r|\r\n`: {
+		Root: &Concat{
+			Exprs: []Node{
+				&Alt{
+					Exprs: []Node{
+						&Concat{
+							Exprs: []Node{
+								&Char{Lo: '\n', Hi: '\n', Pos: 1},
+							},
+						},
+						&Alt{
+							Exprs: []Node{
+								&Concat{
+									Exprs: []Node{
+										&Char{Lo: '\r', Hi: '\r', Pos: 2},
+									},
+								},
+								&Concat{
+									Exprs: []Node{
+										&Char{Lo: '\r', Hi: '\r', Pos: 3},
+										&Char{Lo: '\n', Hi: '\n', Pos: 4},
+									},
+								},
+							},
+						},
+					},
+				},
+				&Char{Lo: endmarker, Hi: endmarker, Pos: 5},
+			},
+		},
+		lastPos: 5,
+		posToChar: map[Pos]char.Range{
+			1: {'\n', '\n'},
+			2: {'\r', '\r'},
+			3: {'\r', '\r'},
+			4: {'\n', '\n'},
+			5: {endmarker, endmarker},
+		},
+		charToPos: map[char.Range]Poses{
+			{'\n', '\n'}:           {1, 4},
+			{'\r', '\r'}:           {2, 3},
+			{endmarker, endmarker}: {5},
+		},
+		follows: map[Pos]Poses{
+			1: {5},
+			2: {5},
+			3: {4},
+			4: {5},
+		},
+	},
+	`^[a-f][0-9a-f]*$`: {
+		Root: &Concat{
+			Exprs: []Node{
+				&Concat{
+					Exprs: []Node{
+						&Char{Lo: 'a', Hi: 'f', Pos: 1},
+						&Star{
+							Expr: &Alt{
+								Exprs: []Node{
+									&Char{Lo: '0', Hi: '9', Pos: 2},
+									&Char{Lo: 'a', Hi: 'f', Pos: 3},
+								},
+								comp: &computed{
+									nullable: false,
+									firstPos: Poses{2, 3},
+									lastPos:  Poses{2, 3},
+								},
+							},
+						},
+					},
+					comp: &computed{
+						nullable: false,
+						firstPos: Poses{1},
+						lastPos:  Poses{1, 2, 3},
+					},
+				},
+				&Char{Lo: endmarker, Hi: endmarker, Pos: 4},
+			},
+		},
+		lastPos: 4,
+		posToChar: map[Pos]char.Range{
+			1: {'a', 'f'},
+			2: {'0', '9'},
+			3: {'a', 'f'},
+			4: {endmarker, endmarker},
+		},
+		charToPos: map[char.Range]Poses{
+			{'0', '9'}:             {2},
+			{'a', 'f'}:             {1, 3},
+			{endmarker, endmarker}: {4},
+		},
+		follows: map[Pos]Poses{
+			1: {2, 3, 4},
+			2: {2, 3, 4},
+			3: {2, 3, 4},
+		},
+	},
+	`[A-Za-z_][0-9A-Za-z_]*`: {
+		Root: &Concat{
+			Exprs: []Node{
+				&Concat{
+					Exprs: []Node{
+						&Alt{
+							Exprs: []Node{
+								&Char{Lo: 'A', Hi: 'Z', Pos: 1},
+								&Char{Lo: '_', Hi: '_', Pos: 2},
+								&Char{Lo: 'a', Hi: 'z', Pos: 3},
+							},
+						},
+						&Star{
+							Expr: &Alt{
+								Exprs: []Node{
+									&Char{Lo: '0', Hi: '9', Pos: 4},
+									&Char{Lo: 'A', Hi: 'Z', Pos: 5},
+									&Char{Lo: '_', Hi: '_', Pos: 6},
+									&Char{Lo: 'a', Hi: 'z', Pos: 7},
+								},
+							},
+						},
+					},
+				},
+				&Char{Lo: endmarker, Hi: endmarker, Pos: 8},
+			},
+		},
+		lastPos: 8,
+		posToChar: map[Pos]char.Range{
+			1: {'A', 'Z'},
+			2: {'_', '_'},
+			3: {'a', 'z'},
+			4: {'0', '9'},
+			5: {'A', 'Z'},
+			6: {'_', '_'},
+			7: {'a', 'z'},
+			8: {endmarker, endmarker},
+		},
+		charToPos: map[char.Range]Poses{
+			{'0', '9'}:             {4},
+			{'A', 'Z'}:             {1, 5},
+			{'_', '_'}:             {2, 6},
+			{'a', 'z'}:             {3, 7},
+			{endmarker, endmarker}: {8},
+		},
+		follows: map[Pos]Poses{
+			1: {4, 5, 6, 7, 8},
+			2: {4, 5, 6, 7, 8},
+			3: {4, 5, 6, 7, 8},
+			4: {4, 5, 6, 7, 8},
+			5: {4, 5, 6, 7, 8},
+			6: {4, 5, 6, 7, 8},
+			7: {4, 5, 6, 7, 8},
+		},
+	},
+}
 
 func TestParse_Sanity(t *testing.T) {
 	regexes := []string{
@@ -114,248 +341,29 @@ func TestParse_Verify(t *testing.T) {
 			expectedError: "invalid regular expression: [0-9]{4,2}: 5: invalid repetition range {4,2}",
 		},
 		{
-			regex: `(a|b)*abb`,
-			expectedAST: &AST{
-				Root: &Concat{
-					Exprs: []Node{
-						&Concat{
-							Exprs: []Node{
-								&Star{
-									Expr: &Alt{
-										Exprs: []Node{
-											&Concat{
-												Exprs: []Node{
-													&Char{Lo: 'a', Hi: 'a', Pos: 1},
-												},
-												comp: &computed{
-													nullable: false,
-													firstPos: Poses{1},
-													lastPos:  Poses{1},
-												},
-											},
-											&Concat{
-												Exprs: []Node{
-													&Char{Lo: 'b', Hi: 'b', Pos: 2},
-												},
-												comp: &computed{
-													nullable: false,
-													firstPos: Poses{2},
-													lastPos:  Poses{2},
-												},
-											},
-										},
-										comp: &computed{
-											nullable: false,
-											firstPos: Poses{1, 2},
-											lastPos:  Poses{1, 2},
-										},
-									},
-								},
-								&Char{Lo: 'a', Hi: 'a', Pos: 3},
-								&Char{Lo: 'b', Hi: 'b', Pos: 4},
-								&Char{Lo: 'b', Hi: 'b', Pos: 5},
-							},
-							comp: &computed{
-								nullable: false,
-								firstPos: Poses{1, 2, 3},
-								lastPos:  Poses{5},
-							},
-						},
-						&Char{Lo: endmarker, Hi: endmarker, Pos: 6},
-					},
-				},
-				lastPos: 6,
-				posToChar: map[Pos]char.Range{
-					1: {'a', 'a'},
-					2: {'b', 'b'},
-					3: {'a', 'a'},
-					4: {'b', 'b'},
-					5: {'b', 'b'},
-					6: {endmarker, endmarker},
-				},
-				charToPos: map[char.Range]Poses{
-					{'a', 'a'}:             {1, 3},
-					{'b', 'b'}:             {2, 4, 5},
-					{endmarker, endmarker}: {6},
-				},
-				follows: map[Pos]Poses{
-					1: {1, 2, 3},
-					2: {1, 2, 3},
-					3: {4},
-					4: {5},
-					5: {6},
-				},
-			},
+			regex:            `(a|b)*abb`,
+			expectedAST:      testAST[`(a|b)*abb`],
 			expectedNullable: false,
 			expectedFirstPos: Poses{1, 2, 3},
 			expectedLastPos:  Poses{6},
 		},
 		{
-			regex: `\n|\r|\r\n`,
-			expectedAST: &AST{
-				Root: &Concat{
-					Exprs: []Node{
-						&Alt{
-							Exprs: []Node{
-								&Concat{
-									Exprs: []Node{
-										&Char{Lo: '\n', Hi: '\n', Pos: 1},
-									},
-								},
-								&Alt{
-									Exprs: []Node{
-										&Concat{
-											Exprs: []Node{
-												&Char{Lo: '\r', Hi: '\r', Pos: 2},
-											},
-										},
-										&Concat{
-											Exprs: []Node{
-												&Char{Lo: '\r', Hi: '\r', Pos: 3},
-												&Char{Lo: '\n', Hi: '\n', Pos: 4},
-											},
-										},
-									},
-								},
-							},
-						},
-						&Char{Lo: endmarker, Hi: endmarker, Pos: 5},
-					},
-				},
-				lastPos: 5,
-				posToChar: map[Pos]char.Range{
-					1: {'\n', '\n'},
-					2: {'\r', '\r'},
-					3: {'\r', '\r'},
-					4: {'\n', '\n'},
-					5: {endmarker, endmarker},
-				},
-				charToPos: map[char.Range]Poses{
-					{'\n', '\n'}:           {1, 4},
-					{'\r', '\r'}:           {2, 3},
-					{endmarker, endmarker}: {5},
-				},
-				follows: map[Pos]Poses{
-					1: {5},
-					2: {5},
-					3: {4},
-					4: {5},
-				},
-			},
+			regex:            `\n|\r|\r\n`,
+			expectedAST:      testAST[`\n|\r|\r\n`],
 			expectedNullable: false,
 			expectedFirstPos: Poses{1, 2, 3},
 			expectedLastPos:  Poses{5},
 		},
 		{
-			regex: `^[a-f][0-9a-f]*$`,
-			expectedAST: &AST{
-				Root: &Concat{
-					Exprs: []Node{
-						&Concat{
-							Exprs: []Node{
-								&Char{Lo: 'a', Hi: 'f', Pos: 1},
-								&Star{
-									Expr: &Alt{
-										Exprs: []Node{
-											&Char{Lo: '0', Hi: '9', Pos: 2},
-											&Char{Lo: 'a', Hi: 'f', Pos: 3},
-										},
-										comp: &computed{
-											nullable: false,
-											firstPos: Poses{2, 3},
-											lastPos:  Poses{2, 3},
-										},
-									},
-								},
-							},
-							comp: &computed{
-								nullable: false,
-								firstPos: Poses{1},
-								lastPos:  Poses{1, 2, 3},
-							},
-						},
-						&Char{Lo: endmarker, Hi: endmarker, Pos: 4},
-					},
-				},
-				lastPos: 4,
-				posToChar: map[Pos]char.Range{
-					1: {'a', 'f'},
-					2: {'0', '9'},
-					3: {'a', 'f'},
-					4: {endmarker, endmarker},
-				},
-				charToPos: map[char.Range]Poses{
-					{'0', '9'}:             {2},
-					{'a', 'f'}:             {1, 3},
-					{endmarker, endmarker}: {4},
-				},
-				follows: map[Pos]Poses{
-					1: {2, 3, 4},
-					2: {2, 3, 4},
-					3: {2, 3, 4},
-				},
-			},
+			regex:            `^[a-f][0-9a-f]*$`,
+			expectedAST:      testAST[`^[a-f][0-9a-f]*$`],
 			expectedNullable: false,
 			expectedFirstPos: Poses{1},
 			expectedLastPos:  Poses{4},
 		},
 		{
-			regex: `[A-Za-z_][0-9A-Za-z_]*`,
-			expectedAST: &AST{
-				Root: &Concat{
-					Exprs: []Node{
-						&Concat{
-							Exprs: []Node{
-								&Alt{
-									Exprs: []Node{
-										&Char{Lo: 'A', Hi: 'Z', Pos: 1},
-										&Char{Lo: '_', Hi: '_', Pos: 2},
-										&Char{Lo: 'a', Hi: 'z', Pos: 3},
-									},
-								},
-								&Star{
-									Expr: &Alt{
-										Exprs: []Node{
-											&Char{Lo: '0', Hi: '9', Pos: 4},
-											&Char{Lo: 'A', Hi: 'Z', Pos: 5},
-											&Char{Lo: '_', Hi: '_', Pos: 6},
-											&Char{Lo: 'a', Hi: 'z', Pos: 7},
-										},
-									},
-								},
-							},
-						},
-						&Char{Lo: endmarker, Hi: endmarker, Pos: 8},
-					},
-				},
-				lastPos: 8,
-				posToChar: map[Pos]char.Range{
-					1: {'A', 'Z'},
-					2: {'_', '_'},
-					3: {'a', 'z'},
-					4: {'0', '9'},
-					5: {'A', 'Z'},
-					6: {'_', '_'},
-					7: {'a', 'z'},
-					8: {endmarker, endmarker},
-				},
-				charToPos: map[char.Range]Poses{
-					{'0', '9'}:             {4},
-					{'A', 'Z'}:             {1, 5},
-					{'_', '_'}:             {2, 6},
-					{'a', 'z'}:             {3, 7},
-					{endmarker, endmarker}: {8},
-				},
-				follows: map[Pos]Poses{
-					1: {4, 5, 6, 7, 8},
-					2: {4, 5, 6, 7, 8},
-					3: {4, 5, 6, 7, 8},
-					4: {4, 5, 6, 7, 8},
-					5: {4, 5, 6, 7, 8},
-					6: {4, 5, 6, 7, 8},
-					7: {4, 5, 6, 7, 8},
-				},
-			},
+			regex:            `[A-Za-z_][0-9A-Za-z_]*`,
+			expectedAST:      testAST[`[A-Za-z_][0-9A-Za-z_]*`],
 			expectedNullable: false,
 			expectedFirstPos: Poses{1, 2, 3},
 			expectedLastPos:  Poses{8},
@@ -373,7 +381,7 @@ func TestParse_Verify(t *testing.T) {
 				assert.NoError(t, err)
 				assert.NotNil(t, a)
 
-				assert.True(t, a.Root.equal(tc.expectedAST.Root))
+				assert.True(t, a.Root.Equal(tc.expectedAST.Root))
 				assert.Equal(t, tc.expectedNullable, a.Root.nullable())
 				assert.Equal(t, tc.expectedFirstPos, a.Root.firstPos())
 				assert.Equal(t, tc.expectedLastPos, a.Root.lastPos())
@@ -394,77 +402,7 @@ func TestAST_ToDFA(t *testing.T) {
 	}{
 		{
 			name: "OK",
-			a: &AST{ // (a|b)*abb
-				Root: &Concat{
-					Exprs: []Node{
-						&Concat{
-							Exprs: []Node{
-								&Star{
-									Expr: &Alt{
-										Exprs: []Node{
-											&Concat{
-												Exprs: []Node{
-													&Char{Lo: 'a', Hi: 'a', Pos: 1},
-												},
-												comp: &computed{
-													nullable: false,
-													firstPos: Poses{1},
-													lastPos:  Poses{1},
-												},
-											},
-											&Concat{
-												Exprs: []Node{
-													&Char{Lo: 'b', Hi: 'b', Pos: 2},
-												},
-												comp: &computed{
-													nullable: false,
-													firstPos: Poses{2},
-													lastPos:  Poses{2},
-												},
-											},
-										},
-										comp: &computed{
-											nullable: false,
-											firstPos: Poses{1, 2},
-											lastPos:  Poses{1, 2},
-										},
-									},
-								},
-								&Char{Lo: 'a', Hi: 'a', Pos: 3},
-								&Char{Lo: 'b', Hi: 'b', Pos: 4},
-								&Char{Lo: 'b', Hi: 'b', Pos: 5},
-							},
-							comp: &computed{
-								nullable: false,
-								firstPos: Poses{1, 2, 3},
-								lastPos:  Poses{5},
-							},
-						},
-						&Char{Lo: endmarker, Hi: endmarker, Pos: 6},
-					},
-				},
-				lastPos: 6,
-				posToChar: map[Pos]char.Range{
-					1: {'a', 'a'},
-					2: {'b', 'b'},
-					3: {'a', 'a'},
-					4: {'b', 'b'},
-					5: {'b', 'b'},
-					6: {endmarker, endmarker},
-				},
-				charToPos: map[char.Range]Poses{
-					{'a', 'a'}:             {1, 3},
-					{'b', 'b'}:             {2, 4, 5},
-					{endmarker, endmarker}: {6},
-				},
-				follows: map[Pos]Poses{
-					1: {1, 2, 3},
-					2: {1, 2, 3},
-					3: {4},
-					4: {5},
-					5: {6},
-				},
-			},
+			a:    testAST[`(a|b)*abb`],
 			expectedDFA: automata.NewDFABuilder().
 				SetStart(0).
 				SetFinal([]automata.State{3}).
@@ -488,17 +426,149 @@ func TestAST_ToDFA(t *testing.T) {
 	}
 }
 
+func TestAST_DOT(t *testing.T) {
+	tests := []struct {
+		name        string
+		a           *AST
+		expectedDOT string
+	}{
+		{
+			name: "OK",
+			a:    testAST[`^[a-f][0-9a-f]*$`],
+			expectedDOT: `strict digraph "AST" {
+  concentrate=false;
+  node [];
+
+  1 [label="CONCAT", shape=box];
+  2 [label="CONCAT", shape=box];
+  3 [label="a...f", shape=oval];
+  4 [label="STAR", shape=box];
+  5 [label="ALT", shape=box];
+  6 [label="0...9", shape=oval];
+  7 [label="a...f", shape=oval];
+  8 [label="endmarker", shape=oval];
+
+  1 -> 2 [];
+  1 -> 8 [];
+  2 -> 3 [];
+  2 -> 4 [];
+  4 -> 5 [];
+  5 -> 6 [];
+  5 -> 7 [];
+}
+`,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.expectedDOT, tc.a.DOT())
+		})
+	}
+}
+
+func TestTraverse(t *testing.T) {
+	root := testAST[`^[a-f][0-9a-f]*$`].Root
+
+	tests := []struct {
+		name           string
+		n              Node
+		order          generic.TraverseOrder
+		expectedVisits []string
+	}{
+		{
+			name:  "VLR",
+			n:     root,
+			order: generic.VLR,
+			expectedVisits: []string{
+				"Concat::Concat::Char::a-f <1> Star::Alt::Char::0-9 <2> | Char::a-f <3> Char::\ueeee-\ueeee <4>",
+				"Concat::Char::a-f <1> Star::Alt::Char::0-9 <2> | Char::a-f <3>",
+				"Char::a-f <1>",
+				"Star::Alt::Char::0-9 <2> | Char::a-f <3>",
+				"Alt::Char::0-9 <2> | Char::a-f <3>",
+				"Char::0-9 <2>",
+				"Char::a-f <3>",
+				"Char::\ueeee-\ueeee <4>",
+			},
+		},
+		{
+			name:  "VRL",
+			n:     root,
+			order: generic.VRL,
+			expectedVisits: []string{
+				"Concat::Concat::Char::a-f <1> Star::Alt::Char::0-9 <2> | Char::a-f <3> Char::\ueeee-\ueeee <4>",
+				"Char::\ueeee-\ueeee <4>",
+				"Concat::Char::a-f <1> Star::Alt::Char::0-9 <2> | Char::a-f <3>",
+				"Star::Alt::Char::0-9 <2> | Char::a-f <3>",
+				"Alt::Char::0-9 <2> | Char::a-f <3>",
+				"Char::a-f <3>",
+				"Char::0-9 <2>",
+				"Char::a-f <1>",
+			},
+		},
+		{
+			name:  "LRV",
+			n:     root,
+			order: generic.LRV,
+			expectedVisits: []string{
+				"Char::a-f <1>",
+				"Char::0-9 <2>",
+				"Char::a-f <3>",
+				"Alt::Char::0-9 <2> | Char::a-f <3>",
+				"Star::Alt::Char::0-9 <2> | Char::a-f <3>",
+				"Concat::Char::a-f <1> Star::Alt::Char::0-9 <2> | Char::a-f <3>",
+				"Char::\ueeee-\ueeee <4>",
+				"Concat::Concat::Char::a-f <1> Star::Alt::Char::0-9 <2> | Char::a-f <3> Char::\ueeee-\ueeee <4>",
+			},
+		},
+		{
+			name:  "RLV",
+			n:     root,
+			order: generic.RLV,
+			expectedVisits: []string{
+				"Char::\ueeee-\ueeee <4>",
+				"Char::a-f <3>",
+				"Char::0-9 <2>",
+				"Alt::Char::0-9 <2> | Char::a-f <3>",
+				"Star::Alt::Char::0-9 <2> | Char::a-f <3>",
+				"Char::a-f <1>",
+				"Concat::Char::a-f <1> Star::Alt::Char::0-9 <2> | Char::a-f <3>",
+				"Concat::Concat::Char::a-f <1> Star::Alt::Char::0-9 <2> | Char::a-f <3> Char::\ueeee-\ueeee <4>",
+			},
+		},
+		{
+			name:           "InvalidOrder",
+			n:              root,
+			order:          generic.RVL,
+			expectedVisits: nil,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			var visits []string
+			traverse(tc.n, tc.order, func(n Node) bool {
+				visits = append(visits, n.String())
+				return true
+			})
+
+			assert.Equal(t, tc.expectedVisits, visits)
+		})
+	}
+}
+
 func TestConcat(t *testing.T) {
 	tests := []struct {
 		name             string
-		node             *Concat
+		n                *Concat
+		expectedString   string
 		expectedNullable bool
 		expectedFirstPos Poses
 		expectedLastPos  Poses
 	}{
 		{
 			name: "Nullable",
-			node: &Concat{
+			n: &Concat{
 				Exprs: []Node{
 					&Star{
 						Expr: &Char{
@@ -516,13 +586,14 @@ func TestConcat(t *testing.T) {
 					},
 				},
 			},
+			expectedString:   "Concat::Star::Char::a-a <1> Star::Char::b-b <2>",
 			expectedNullable: true,
 			expectedFirstPos: Poses{1, 2},
 			expectedLastPos:  Poses{1, 2},
 		},
 		{
 			name: "Flat",
-			node: &Concat{
+			n: &Concat{
 				Exprs: []Node{
 					&Char{
 						Lo:  '_',
@@ -546,13 +617,14 @@ func TestConcat(t *testing.T) {
 					},
 				},
 			},
+			expectedString:   "Concat::Char::_-_ <1> Char::0-9 <2> Char::A-Z <3> Char::a-z <4>",
 			expectedNullable: false,
 			expectedFirstPos: Poses{1},
 			expectedLastPos:  Poses{4},
 		},
 		{
 			name: "Nested",
-			node: &Concat{
+			n: &Concat{
 				Exprs: []Node{
 					&Alt{
 						Exprs: []Node{
@@ -584,6 +656,7 @@ func TestConcat(t *testing.T) {
 					},
 				},
 			},
+			expectedString:   "Concat::Alt::Char::_-_ <1> | Char::0-9 <2> Alt::Char::A-Z <3> | Char::a-z <4>",
 			expectedNullable: false,
 			expectedFirstPos: Poses{1, 2},
 			expectedLastPos:  Poses{3, 4},
@@ -592,9 +665,10 @@ func TestConcat(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			assert.Equal(t, tc.expectedNullable, tc.node.nullable())
-			assert.Equal(t, tc.expectedFirstPos, tc.node.firstPos())
-			assert.Equal(t, tc.expectedLastPos, tc.node.lastPos())
+			assert.Equal(t, tc.expectedString, tc.n.String())
+			assert.Equal(t, tc.expectedNullable, tc.n.nullable())
+			assert.Equal(t, tc.expectedFirstPos, tc.n.firstPos())
+			assert.Equal(t, tc.expectedLastPos, tc.n.lastPos())
 		})
 	}
 }
@@ -602,14 +676,15 @@ func TestConcat(t *testing.T) {
 func TestAlt(t *testing.T) {
 	tests := []struct {
 		name             string
-		node             *Alt
+		n                *Alt
+		expectedString   string
 		expectedNullable bool
 		expectedFirstPos Poses
 		expectedLastPos  Poses
 	}{
 		{
 			name: "Nullable",
-			node: &Alt{
+			n: &Alt{
 				Exprs: []Node{
 					&Star{
 						Expr: &Char{
@@ -627,13 +702,14 @@ func TestAlt(t *testing.T) {
 					},
 				},
 			},
+			expectedString:   "Alt::Star::Char::a-a <1> | Star::Char::b-b <2>",
 			expectedNullable: true,
 			expectedFirstPos: Poses{1, 2},
 			expectedLastPos:  Poses{1, 2},
 		},
 		{
 			name: "Flat",
-			node: &Alt{
+			n: &Alt{
 				Exprs: []Node{
 					&Char{
 						Lo:  '_',
@@ -657,13 +733,14 @@ func TestAlt(t *testing.T) {
 					},
 				},
 			},
+			expectedString:   "Alt::Char::_-_ <1> | Char::0-9 <2> | Char::A-Z <3> | Char::a-z <4>",
 			expectedNullable: false,
 			expectedFirstPos: Poses{1, 2, 3, 4},
 			expectedLastPos:  Poses{1, 2, 3, 4},
 		},
 		{
 			name: "Nested",
-			node: &Alt{
+			n: &Alt{
 				Exprs: []Node{
 					&Concat{
 						Exprs: []Node{
@@ -695,6 +772,7 @@ func TestAlt(t *testing.T) {
 					},
 				},
 			},
+			expectedString:   "Alt::Concat::Char::_-_ <1> Char::0-9 <2> | Concat::Char::A-Z <3> Char::a-z <4>",
 			expectedNullable: false,
 			expectedFirstPos: Poses{1, 3},
 			expectedLastPos:  Poses{2, 4},
@@ -703,9 +781,10 @@ func TestAlt(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			assert.Equal(t, tc.expectedNullable, tc.node.nullable())
-			assert.Equal(t, tc.expectedFirstPos, tc.node.firstPos())
-			assert.Equal(t, tc.expectedLastPos, tc.node.lastPos())
+			assert.Equal(t, tc.expectedString, tc.n.String())
+			assert.Equal(t, tc.expectedNullable, tc.n.nullable())
+			assert.Equal(t, tc.expectedFirstPos, tc.n.firstPos())
+			assert.Equal(t, tc.expectedLastPos, tc.n.lastPos())
 		})
 	}
 }
@@ -713,20 +792,22 @@ func TestAlt(t *testing.T) {
 func TestStar(t *testing.T) {
 	tests := []struct {
 		name             string
-		node             *Star
+		n                *Star
+		expectedString   string
 		expectedNullable bool
 		expectedFirstPos Poses
 		expectedLastPos  Poses
 	}{
 		{
 			name: "OK",
-			node: &Star{
+			n: &Star{
 				Expr: &Char{
 					Lo:  'a',
 					Hi:  'a',
 					Pos: 1,
 				},
 			},
+			expectedString:   "Star::Char::a-a <1>",
 			expectedNullable: true,
 			expectedFirstPos: Poses{1},
 			expectedLastPos:  Poses{1},
@@ -735,9 +816,10 @@ func TestStar(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			assert.Equal(t, tc.expectedNullable, tc.node.nullable())
-			assert.Equal(t, tc.expectedFirstPos, tc.node.firstPos())
-			assert.Equal(t, tc.expectedLastPos, tc.node.lastPos())
+			assert.Equal(t, tc.expectedString, tc.n.String())
+			assert.Equal(t, tc.expectedNullable, tc.n.nullable())
+			assert.Equal(t, tc.expectedFirstPos, tc.n.firstPos())
+			assert.Equal(t, tc.expectedLastPos, tc.n.lastPos())
 		})
 	}
 }
@@ -745,14 +827,16 @@ func TestStar(t *testing.T) {
 func TestEmpty(t *testing.T) {
 	tests := []struct {
 		name             string
-		node             *Empty
+		n                *Empty
+		expectedString   string
 		expectedNullable bool
 		expectedFirstPos Poses
 		expectedLastPos  Poses
 	}{
 		{
 			name:             "OK",
-			node:             &Empty{},
+			n:                &Empty{},
+			expectedString:   "Empty::ε",
 			expectedNullable: true,
 			expectedFirstPos: Poses{},
 			expectedLastPos:  Poses{},
@@ -761,9 +845,10 @@ func TestEmpty(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			assert.Equal(t, tc.expectedNullable, tc.node.nullable())
-			assert.Equal(t, tc.expectedFirstPos, tc.node.firstPos())
-			assert.Equal(t, tc.expectedLastPos, tc.node.lastPos())
+			assert.Equal(t, tc.expectedString, tc.n.String())
+			assert.Equal(t, tc.expectedNullable, tc.n.nullable())
+			assert.Equal(t, tc.expectedFirstPos, tc.n.firstPos())
+			assert.Equal(t, tc.expectedLastPos, tc.n.lastPos())
 		})
 	}
 }
@@ -771,21 +856,24 @@ func TestEmpty(t *testing.T) {
 func TestChar(t *testing.T) {
 	tests := []struct {
 		name             string
-		node             *Char
+		n                *Char
+		expectedString   string
 		expectedNullable bool
 		expectedFirstPos Poses
 		expectedLastPos  Poses
 	}{
 		{
 			name:             "Single",
-			node:             &Char{Lo: 'a', Hi: 'a', Pos: 1},
+			n:                &Char{Lo: 'a', Hi: 'a', Pos: 1},
+			expectedString:   "Char::a-a <1>",
 			expectedNullable: false,
 			expectedFirstPos: Poses{1},
 			expectedLastPos:  Poses{1},
 		},
 		{
 			name:             "Range",
-			node:             &Char{Lo: 'a', Hi: 'z', Pos: 2},
+			n:                &Char{Lo: 'a', Hi: 'z', Pos: 2},
+			expectedString:   "Char::a-z <2>",
 			expectedNullable: false,
 			expectedFirstPos: Poses{2},
 			expectedLastPos:  Poses{2},
@@ -794,9 +882,10 @@ func TestChar(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			assert.Equal(t, tc.expectedNullable, tc.node.nullable())
-			assert.Equal(t, tc.expectedFirstPos, tc.node.firstPos())
-			assert.Equal(t, tc.expectedLastPos, tc.node.lastPos())
+			assert.Equal(t, tc.expectedString, tc.n.String())
+			assert.Equal(t, tc.expectedNullable, tc.n.nullable())
+			assert.Equal(t, tc.expectedFirstPos, tc.n.firstPos())
+			assert.Equal(t, tc.expectedLastPos, tc.n.lastPos())
 		})
 	}
 }

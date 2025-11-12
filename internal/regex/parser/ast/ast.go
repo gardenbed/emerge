@@ -5,10 +5,13 @@
 package ast
 
 import (
+	"bytes"
 	"fmt"
 	"sort"
 
 	"github.com/moorara/algo/automata"
+	"github.com/moorara/algo/dot"
+	"github.com/moorara/algo/generic"
 	"github.com/moorara/algo/list"
 	"github.com/moorara/algo/parser/combinator"
 
@@ -199,8 +202,124 @@ func (a *AST) ToDFA() *automata.DFA {
 	return b.SetFinal(final).Build().Minimize()
 }
 
+func (a *AST) DOT() string {
+	// Create a map of node --> id
+	var id int
+	nodeID := map[Node]int{}
+	traverse(a.Root, generic.VLR, func(n Node) bool {
+		id++
+		nodeID[n] = id
+		return true
+	})
+
+	graph := dot.NewGraph(true, true, false, "AST", "", "", "", "")
+
+	traverse(a.Root, generic.VLR, func(n Node) bool {
+		name := fmt.Sprintf("%d", nodeID[n])
+
+		switch n := n.(type) {
+		case *Concat:
+			graph.AddNode(dot.NewNode(name, "", "CONCAT", "", "", dot.ShapeBox, "", ""))
+
+			for _, m := range n.Exprs {
+				from, to := name, fmt.Sprintf("%d", nodeID[m])
+				graph.AddEdge(dot.NewEdge(from, to, dot.EdgeTypeDirected, "", "", "", "", "", ""))
+			}
+
+		case *Alt:
+			graph.AddNode(dot.NewNode(name, "", "ALT", "", "", dot.ShapeBox, "", ""))
+
+			for _, m := range n.Exprs {
+				from, to := name, fmt.Sprintf("%d", nodeID[m])
+				graph.AddEdge(dot.NewEdge(from, to, dot.EdgeTypeDirected, "", "", "", "", "", ""))
+			}
+
+		case *Star:
+			graph.AddNode(dot.NewNode(name, "", "STAR", "", "", dot.ShapeBox, "", ""))
+
+			m := n.Expr
+			from, to := name, fmt.Sprintf("%d", nodeID[m])
+			graph.AddEdge(dot.NewEdge(from, to, dot.EdgeTypeDirected, "", "", "", "", "", ""))
+
+		case *Empty:
+			graph.AddNode(dot.NewNode(name, "", "ε", "", "", dot.ShapeCircle, "", ""))
+
+		case *Char:
+			if n.Lo == endmarker && n.Hi == endmarker {
+				graph.AddNode(dot.NewNode(name, "", "endmarker", "", "", dot.ShapeOval, "", ""))
+			} else {
+				label := fmt.Sprintf("%c...%c", n.Lo, n.Hi)
+				graph.AddNode(dot.NewNode(name, "", label, "", "", dot.ShapeOval, "", ""))
+			}
+		}
+
+		return true
+	})
+
+	return graph.DOT() + "\n"
+}
+
+// traverse performs a depth-first traversal of a regular expression abstract syntax tree (AST), starting from the given root node.
+// It visits each node according to the specified traversal order and passes each node to the provided visit function.
+// If the visit function returns false, the traversal is stopped early.
+//
+// Valid traversal orders for an AST are VLR, VRL, LRV, and RLV.
+func traverse(n Node, order generic.TraverseOrder, visit generic.VisitFunc1[Node]) bool {
+	switch n.(type) {
+	case *Empty, *Char:
+		return visit(n)
+	}
+
+	var children []Node
+
+	switch n := n.(type) {
+	case *Concat:
+		children = n.Exprs
+	case *Alt:
+		children = n.Exprs
+	case *Star:
+		children = []Node{n.Expr}
+	}
+
+	switch order {
+	case generic.VLR:
+		res := visit(n)
+		for i := range len(children) {
+			res = res && traverse(children[i], order, visit)
+		}
+		return res
+
+	case generic.VRL:
+		res := visit(n)
+		for i := len(children) - 1; i >= 0; i-- {
+			res = res && traverse(children[i], order, visit)
+		}
+		return res
+
+	case generic.LRV:
+		res := true
+		for i := range len(children) {
+			res = res && traverse(children[i], order, visit)
+		}
+		return res && visit(n)
+
+	case generic.RLV:
+		res := true
+		for i := len(children) - 1; i >= 0; i-- {
+			res = res && traverse(children[i], order, visit)
+		}
+		return res && visit(n)
+
+	default:
+		return false
+	}
+}
+
 // Node is the interface for all nodes in an abstract syntax tree.
 type Node interface {
+	fmt.Stringer
+	generic.Equaler[Node]
+
 	// nullable(n) is true for a node n if and only if the subexpression represented by n has ε in its language.
 	nullable() bool
 
@@ -211,9 +330,6 @@ type Node interface {
 	// lastPos(n) is the set of positions in the subtree rooted at n that
 	// correspond to the last symbol of at least one string in the language of the subexpression rooted at n.
 	lastPos() Poses
-
-	// equal checks if two nodes are equal.
-	equal(Node) bool
 }
 
 type computed struct {
@@ -226,6 +342,41 @@ type computed struct {
 type Concat struct {
 	Exprs []Node
 	comp  *computed
+}
+
+func (n *Concat) String() string {
+	var b bytes.Buffer
+
+	fmt.Fprintf(&b, "Concat::")
+	for _, expr := range n.Exprs {
+		fmt.Fprintf(&b, "%s ", expr)
+	}
+
+	// Remove trailing space
+	if len(n.Exprs) > 0 {
+		b.Truncate(b.Len() - 1)
+	}
+
+	return b.String()
+}
+
+func (n *Concat) Equal(rhs Node) bool {
+	nn, ok := rhs.(*Concat)
+	if !ok {
+		return false
+	}
+
+	if len(n.Exprs) != len(nn.Exprs) {
+		return false
+	}
+
+	for i := 0; i < len(n.Exprs); i++ {
+		if !n.Exprs[i].Equal(nn.Exprs[i]) {
+			return false
+		}
+	}
+
+	return true
 }
 
 func (n *Concat) compute() {
@@ -273,8 +424,30 @@ func (n *Concat) lastPos() Poses {
 	return n.comp.lastPos
 }
 
-func (n *Concat) equal(rhs Node) bool {
-	nn, ok := rhs.(*Concat)
+// Alt represents an Alternation node.
+type Alt struct {
+	Exprs []Node
+	comp  *computed
+}
+
+func (n *Alt) String() string {
+	var b bytes.Buffer
+
+	fmt.Fprintf(&b, "Alt::")
+	for _, expr := range n.Exprs {
+		fmt.Fprintf(&b, "%s | ", expr)
+	}
+
+	// Remove trailing separator
+	if len(n.Exprs) > 0 {
+		b.Truncate(b.Len() - 3)
+	}
+
+	return b.String()
+}
+
+func (n *Alt) Equal(rhs Node) bool {
+	nn, ok := rhs.(*Alt)
 	if !ok {
 		return false
 	}
@@ -284,18 +457,12 @@ func (n *Concat) equal(rhs Node) bool {
 	}
 
 	for i := 0; i < len(n.Exprs); i++ {
-		if !n.Exprs[i].equal(nn.Exprs[i]) {
+		if !n.Exprs[i].Equal(nn.Exprs[i]) {
 			return false
 		}
 	}
 
 	return true
-}
-
-// Alt represents an Alternation node.
-type Alt struct {
-	Exprs []Node
-	comp  *computed
 }
 
 func (n *Alt) compute() {
@@ -331,28 +498,22 @@ func (n *Alt) lastPos() Poses {
 	return n.comp.lastPos
 }
 
-func (n *Alt) equal(rhs Node) bool {
-	nn, ok := rhs.(*Alt)
+// Star represents a Kleene Star node.
+type Star struct {
+	Expr Node
+}
+
+func (n *Star) String() string {
+	return fmt.Sprintf("Star::%s", n.Expr)
+}
+
+func (n *Star) Equal(rhs Node) bool {
+	nn, ok := rhs.(*Star)
 	if !ok {
 		return false
 	}
 
-	if len(n.Exprs) != len(nn.Exprs) {
-		return false
-	}
-
-	for i := 0; i < len(n.Exprs); i++ {
-		if !n.Exprs[i].equal(nn.Exprs[i]) {
-			return false
-		}
-	}
-
-	return true
-}
-
-// Star represents a Kleene Star node.
-type Star struct {
-	Expr Node
+	return n.Expr.Equal(nn.Expr)
 }
 
 func (n *Star) nullable() bool {
@@ -367,17 +528,18 @@ func (n *Star) lastPos() Poses {
 	return n.Expr.lastPos()
 }
 
-func (n *Star) equal(rhs Node) bool {
-	nn, ok := rhs.(*Star)
-	if !ok {
-		return false
-	}
-
-	return n.Expr.equal(nn.Expr)
-}
-
 // Empty represents an Empty string ε leaf node.
 type Empty struct{}
+
+func (n *Empty) String() string {
+	return "Empty::ε"
+}
+
+func (n *Empty) Equal(rhs Node) bool {
+	_, ok := rhs.(*Empty)
+
+	return ok
+}
 
 func (n *Empty) nullable() bool {
 	return true
@@ -391,18 +553,25 @@ func (n *Empty) lastPos() Poses {
 	return Poses{}
 }
 
-func (n *Empty) equal(rhs Node) bool {
-	_, ok := rhs.(*Empty)
-
-	return ok
-}
-
 // Char represents a Character leaf node.
 // It represents an inclusive range of characters.
 type Char struct {
 	Lo  rune
 	Hi  rune
 	Pos Pos // one-based
+}
+
+func (n *Char) String() string {
+	return fmt.Sprintf("Char::%c-%c <%d>", n.Lo, n.Hi, n.Pos)
+}
+
+func (n *Char) Equal(rhs Node) bool {
+	nn, ok := rhs.(*Char)
+	if !ok {
+		return false
+	}
+
+	return n.Lo == nn.Lo && n.Hi == nn.Hi && n.Pos == nn.Pos
 }
 
 func (n *Char) nullable() bool {
@@ -415,15 +584,6 @@ func (n *Char) firstPos() Poses {
 
 func (n *Char) lastPos() Poses {
 	return Poses{n.Pos}
-}
-
-func (n *Char) equal(rhs Node) bool {
-	nn, ok := rhs.(*Char)
-	if !ok {
-		return false
-	}
-
-	return n.Lo == nn.Lo && n.Hi == nn.Hi && n.Pos == nn.Pos
 }
 
 // Pos is the type for positions.
