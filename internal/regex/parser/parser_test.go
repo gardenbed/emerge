@@ -155,6 +155,17 @@ func TestToEscapedChar(t *testing.T) {
 		expectedError  string
 	}{
 		{
+			name: "Slash",
+			r: comb.Result{
+				Val: comb.List{
+					{Val: '\\', Pos: 1},
+					{Val: '/', Pos: 2},
+				},
+			},
+			expectedResult: comb.Result{Val: '/', Pos: 1},
+			expectedError:  "",
+		},
+		{
 			name: "Backslash",
 			r: comb.Result{
 				Val: comb.List{
@@ -806,6 +817,13 @@ func TestParser_rawChar(t *testing.T) {
 		expectedError string
 	}{
 		{
+			name:          "Slash",
+			m:             &mockMappers{},
+			in:            newStringInput(`/`),
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '/'",
+		},
+		{
 			name:          "Backslash",
 			m:             &mockMappers{},
 			in:            newStringInput("\\"),
@@ -965,6 +983,15 @@ func TestParser_escapedChar(t *testing.T) {
 			in:            newStringInput(`a`),
 			expectedOut:   nil,
 			expectedError: "0: unexpected rune 'a'",
+		},
+		{
+			name: "Success_Slash",
+			m:    &mockMappers{},
+			in:   newStringInput(`\/`),
+			expectedOut: &comb.Output{
+				Result: comb.Result{Val: '/', Pos: 0},
+			},
+			expectedError: "",
 		},
 		{
 			name: "Success_Backslash",
@@ -5653,6 +5680,76 @@ func TestParser_Parse(t *testing.T) {
 		expectedOut   *comb.Output
 		expectedError string
 	}{
+		{
+			name: "InvalidRegex_FirstChar",
+			m: &mockMappers{
+				ToSingleCharMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
+				},
+				ToMatchItemMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
+				},
+				ToMatchMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
+				},
+				ToSubexprItemMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
+				},
+				ToSubexprMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
+				},
+				ToExprMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
+				},
+				ToRegexMocks: []MapFuncMock{
+					{OutError: nil},
+				},
+			},
+			regex:         `/`,
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '/'",
+		},
+		{
+			name: "InvalidRegex_SecondChar",
+			m: &mockMappers{
+				ToSingleCharMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
+				},
+				ToMatchItemMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
+				},
+				ToMatchMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
+				},
+				ToSubexprItemMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
+				},
+				ToSubexprMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
+				},
+				ToExprMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
+				},
+				ToRegexMocks: []MapFuncMock{
+					{OutError: nil},
+				},
+			},
+			regex:         `a/`,
+			expectedOut:   nil,
+			expectedError: "1: unexpected rune '/'",
+		},
 		{
 			name: "Success",
 			m: &mockMappers{

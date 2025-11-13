@@ -25,7 +25,7 @@ var Predefs = map[string]string{
 	"$INT":     `-?[0-9]+`,
 	"$FLOAT":   `-?[0-9]+(\.[0-9]+)?`,
 	"$STRING":  `"([^\\"]|\\[\\"'tnr])*"`,
-	"$COMMENT": `(#|//)[^\n\r]*|/\*.*?\*/`,
+	"$COMMENT": `(#|\/\/)[^\n\r]*|\/\*.*?\*\/`,
 }
 
 // ProductionFunc is a function that is invoked each time a production rule

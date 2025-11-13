@@ -57,9 +57,9 @@ unicode_category   = "Math" | "Emoji"
 
 ascii_char         = "\x" hex_digit{2}
 unicode_char       = "\x" hex_digit{4,8}
-escaped_char       = "\" ("\", "t", "n", "r", "^", "$", "|", ".", "?", "*", "+", "(", ")", "[", "]", "{", "}")
-raw_char           = # all characters except "\\", "\t", "\n", "\r", "^", "$", "|", ".", "?", "*", "+", "(", ")", "[", "]", "{", "}"
-raw_char_in_group  = # all characters except "\\", "\t", "\n", "\r", "[", "]"
+escaped_char       = "\" ("/", "\", "t", "n", "r", "^", "$", "|", ".", "?", "*", "+", "(", ")", "[", "]", "{", "}")
+raw_char           = # all characters except "/", "\\", "\t", "\n", "\r", "^", "$", "|", ".", "?", "*", "+", "(", ")", "[", "]", "{", "}"
+raw_char_in_group  = # all characters except "/", "\\", "\t", "\n", "\r", "[", "]"
 char               = # all characters
 
 num                = {{digit}}
