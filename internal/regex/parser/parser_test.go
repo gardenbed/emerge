@@ -5681,6 +5681,76 @@ func TestParser_Parse(t *testing.T) {
 		expectedError string
 	}{
 		{
+			name: "InvalidRegex_FirstChar",
+			m: &mockMappers{
+				ToSingleCharMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
+				},
+				ToMatchItemMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
+				},
+				ToMatchMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
+				},
+				ToSubexprItemMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
+				},
+				ToSubexprMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
+				},
+				ToExprMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
+				},
+				ToRegexMocks: []MapFuncMock{
+					{OutError: nil},
+				},
+			},
+			regex:         `/`,
+			expectedOut:   nil,
+			expectedError: "0: unexpected rune '/'",
+		},
+		{
+			name: "InvalidRegex_SecondChar",
+			m: &mockMappers{
+				ToSingleCharMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
+				},
+				ToMatchItemMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
+				},
+				ToMatchMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
+				},
+				ToSubexprItemMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
+				},
+				ToSubexprMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
+				},
+				ToExprMocks: []MapFuncMock{
+					{OutError: nil},
+					{OutError: nil},
+				},
+				ToRegexMocks: []MapFuncMock{
+					{OutError: nil},
+				},
+			},
+			regex:         `a/`,
+			expectedOut:   nil,
+			expectedError: "1: unexpected rune '/'",
+		},
+		{
 			name: "Success",
 			m: &mockMappers{
 				ToSingleCharMocks: []MapFuncMock{

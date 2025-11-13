@@ -213,7 +213,7 @@ func New(m Mappers) *Parser {
 	// char --> all Unicode characters
 	p.char = comb.ExpectRuneInRange(0x20, 0x10FFFF)
 
-	// raw_char_in_group --> all characters except '[' and ']'
+	// raw_char_in_group --> all characters except ...
 	p.rawCharInGroup = p.char.Bind(
 		excludeRunes('/', '\\', '\t', '\n', '\r', '[', ']'),
 	)
@@ -390,5 +390,17 @@ func (p *Parser) expr(in comb.Input) (*comb.Output, error) {
 // Parse is the topmost parser combinator for parsing a regular expression read from the input.
 func (p *Parser) Parse(regex string) (*comb.Output, error) {
 	in := newStringInput(regex)
-	return p.regex(in)
+
+	out, err := p.regex(in)
+	if err != nil {
+		return nil, err
+	}
+
+	// Ensure that the entire input has been matched.
+	if out.Remaining != nil {
+		curr, pos := out.Remaining.Current()
+		return nil, fmt.Errorf("%d: unexpected rune %q", pos, curr)
+	}
+
+	return out, nil
 }
