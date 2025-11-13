@@ -76,7 +76,7 @@ func Parse(regex string) (*AST, error) {
 	return a, nil
 }
 
-// assignCharPos backfills Pos for all Char nodes in the abstract syntaxt tree from left to right.
+// assignCharPos backfills Pos for all Char nodes in the abstract syntax tree from left to right.
 // These positions are one-based and used for directly converting a regular expression to a DFA.
 // They are semantically different from the zero-based positions set by parsers (in the mappers).
 //
