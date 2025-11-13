@@ -154,11 +154,10 @@ type Mappers interface {
 	ToMatchItem(comb.Result) (comb.Result, error)        // match_item --> any_char | single_char | char_class | ascii_char_class | unicode_char_class | char_group
 	ToMatch(comb.Result) (comb.Result, error)            // match --> match_item quantifier?
 	ToGroup(comb.Result) (comb.Result, error)            // group --> "(" expr ")" quantifier?
-	ToAnchor(comb.Result) (comb.Result, error)           // anchor --> "$"
-	ToSubexprItem(comb.Result) (comb.Result, error)      // subexpr_item --> anchor | group | match
+	ToSubexprItem(comb.Result) (comb.Result, error)      // subexpr_item --> group | match
 	ToSubexpr(comb.Result) (comb.Result, error)          // subexpr --> subexpr_item+
 	ToExpr(comb.Result) (comb.Result, error)             // expr --> subexpr ("|" expr)?
-	ToRegex(comb.Result) (comb.Result, error)            // regex --> start_of_string? expr
+	ToRegex(comb.Result) (comb.Result, error)            // regex --> expr
 }
 
 // Parser is a parser combinator for regular expressions.
@@ -194,7 +193,6 @@ type Parser struct {
 	charGroup        comb.Parser
 	matchItem        comb.Parser
 	match            comb.Parser
-	anchor           comb.Parser
 	regex            comb.Parser
 }
 
@@ -220,12 +218,12 @@ func New(m Mappers) *Parser {
 
 	// raw_char --> all characters except the escaped ones
 	p.rawChar = p.char.Bind(
-		excludeRunes('/', '\\', '\t', '\n', '\r', '^', '$', '|', '.', '?', '*', '+', '(', ')', '[', ']', '{', '}'),
+		excludeRunes('/', '\\', '\t', '\n', '\r', '|', '.', '?', '*', '+', '(', ')', '[', ']', '{', '}'),
 	)
 
 	// escaped_char --> "\" (...)
 	p.escapedChar = comb.ExpectRune('\\').CONCAT(
-		comb.ExpectRuneIn('/', '\\', 't', 'n', 'r', '^', '$', '|', '.', '?', '*', '+', '(', ')', '[', ']', '{', '}'),
+		comb.ExpectRuneIn('/', '\\', 't', 'n', 'r', '|', '.', '?', '*', '+', '(', ')', '[', ']', '{', '}'),
 	).Map(toEscapedChar)
 
 	// ascii_char --> "\x" hex_digit{2}
@@ -350,9 +348,8 @@ func New(m Mappers) *Parser {
 		p.charGroup,
 	).Map(p.m.ToMatchItem)
 
-	p.match = p.matchItem.CONCAT(p.quantifier.OPT()).Map(p.m.ToMatch)    // match --> match_item quantifier?
-	p.anchor = comb.ExpectRune('$').Map(p.m.ToAnchor)                    // anchor --> "$"
-	p.regex = comb.ExpectRune('^').OPT().CONCAT(p.expr).Map(p.m.ToRegex) // regex --> start_of_string? expr
+	p.match = p.matchItem.CONCAT(p.quantifier.OPT()).Map(p.m.ToMatch) // match --> match_item quantifier?
+	p.regex = comb.Parser(p.expr).Map(p.m.ToRegex)                    // regex --> expr
 
 	return p
 }
@@ -360,7 +357,8 @@ func New(m Mappers) *Parser {
 // Recursive definition
 // group --> "(" expr ")" quantifier?
 func (p *Parser) group(in comb.Input) (*comb.Output, error) {
-	return comb.ExpectRune('(').CONCAT(
+	return comb.CONCAT(
+		comb.ExpectRune('('),
 		p.expr,
 		comb.ExpectRune(')'),
 		p.quantifier.OPT(),
@@ -368,9 +366,9 @@ func (p *Parser) group(in comb.Input) (*comb.Output, error) {
 }
 
 // Recursive definition
-// subexpr_item --> anchor | group | match
+// subexpr_item --> group | match
 func (p *Parser) subexprItem(in comb.Input) (*comb.Output, error) {
-	return comb.Parser(p.anchor).ALT(p.group, p.match).Map(p.m.ToSubexprItem)(in)
+	return comb.ALT(p.group, p.match).Map(p.m.ToSubexprItem)(in)
 }
 
 // Recursive definition

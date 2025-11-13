@@ -510,7 +510,6 @@ func TestParse_Sanity(t *testing.T) {
 	regexes := []string{
 		// Escaped characters
 		`\\`, `\t`, `\n`, `\r`,
-		`\^`, `\$`,
 		`\|`, `\.`,
 		`\?`, `\*`, `\+`,
 		`\(`, `\)`, `\[`, `\]`, `\{`, `\}`,
@@ -614,7 +613,7 @@ func TestParse_Verify(t *testing.T) {
 			),
 		},
 		{
-			regex: `^[A-Z]?[a-z][0-9A-Za-z]{1,}$`,
+			regex: `[A-Z]?[a-z][0-9A-Za-z]{1,}`,
 			expectedNFA: empty().Union(testNFA["upper"]).Concat(
 				testNFA["lower"],
 				testNFA["alnum"].Concat(testNFA["alnum"].Star()),
@@ -2187,38 +2186,6 @@ func TestMappers_ToGroup(t *testing.T) {
 	}
 }
 
-func TestMappers_ToAnchor(t *testing.T) {
-	tests := []MapperTest{
-		{
-			name: "Success",
-			r: combinator.Result{
-				Val: '$',
-				Pos: 2,
-			},
-			expectedResult: combinator.Result{
-				Val: EndOfString,
-				Pos: 2,
-			},
-			expectedError: "",
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			m := new(mappers)
-			res, err := m.ToAnchor(tc.r)
-
-			if tc.expectedError == "" {
-				assert.NoError(t, err)
-				assertEqualResults(t, tc.expectedResult, res)
-			} else {
-				assert.Empty(t, res)
-				assert.EqualError(t, err, tc.expectedError)
-			}
-		})
-	}
-}
-
 func TestMappers_ToSubexprItem(t *testing.T) {
 	tests := []MapperTest{
 		{
@@ -2361,39 +2328,12 @@ func TestMappers_ToRegex(t *testing.T) {
 		{
 			name: "Success",
 			r: combinator.Result{
-				Val: combinator.List{
-					{Val: combinator.Empty{}},
-					{
-						Val: testNFA["digit"],
-						Pos: 0,
-					},
-				},
+				Val: testNFA["digit"],
 				Pos: 0,
 			},
 			expectedResult: combinator.Result{
 				Val: testNFA["digit"],
 				Pos: 0,
-			},
-			expectedError: "",
-		},
-		{
-			name: "Success_WithStartOfString",
-			r: combinator.Result{
-				Val: combinator.List{
-					{Val: '^', Pos: 0},
-					{
-						Val: testNFA["digit"],
-						Pos: 1,
-					},
-				},
-				Pos: 0,
-			},
-			expectedResult: combinator.Result{
-				Val: testNFA["digit"],
-				Pos: 0,
-				Bag: combinator.Bag{
-					BagKeyStartOfString: true,
-				},
 			},
 			expectedError: "",
 		},

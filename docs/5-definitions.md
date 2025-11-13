@@ -22,11 +22,10 @@ we can define the regular expression language using the EBNF notation as well
 
 {% raw %}
 ```
-regex              = ["^"] expr
+regex              = expr
 expr               = subexpr ["|" expr]
 subexpr            = {{subexpr_item}}
-subexpr_item       = anchor | group | match
-anchor             = "$"
+subexpr_item       = group | match
 group              = "(" expr ")" [quantifier]
 match              = match_item [quantifier]
 match_item         = any_char | single_char | char_class | ascii_char_class | unicode_char_class | char_group
@@ -57,8 +56,8 @@ unicode_category   = "Math" | "Emoji"
 
 ascii_char         = "\x" hex_digit{2}
 unicode_char       = "\x" hex_digit{4,8}
-escaped_char       = "\" ("/", "\", "t", "n", "r", "^", "$", "|", ".", "?", "*", "+", "(", ")", "[", "]", "{", "}")
-raw_char           = # all characters except "/", "\\", "\t", "\n", "\r", "^", "$", "|", ".", "?", "*", "+", "(", ")", "[", "]", "{", "}"
+escaped_char       = "\" ("/", "\", "t", "n", "r", "|", ".", "?", "*", "+", "(", ")", "[", "]", "{", "}")
+raw_char           = # all characters except "/", "\\", "\t", "\n", "\r", "|", ".", "?", "*", "+", "(", ")", "[", "]", "{", "}"
 raw_char_in_group  = # all characters except "/", "\\", "\t", "\n", "\r", "[", "]"
 char               = # all characters
 

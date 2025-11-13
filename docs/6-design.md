@@ -7,22 +7,30 @@ In this document, we go over some of the design decisions and rationals behind *
 ### Language Design
 
 The following features are NOT included in Emerge's Regular Expression language.
-They seem unnecessary for the purpose of designing and defining tokens of a language.
+They seem irrelevant for the purpose of designing and defining tokens of a language.
 
   - Backreference
   - Non-capturing group modifier `?:`
   - Lookarounds `?=` `?!` `?<=` `?<!`
   - Anchors:
+      - Start of string `^`
+      - End of string `$`
       - Word boundary `\b`
       - Non-word boundary`\B`
-      - Start of string only `\A`
-      - End of string only `\Z`
-      - End of string only (not newline) `\z`
+      - Start of string `\A`
+      - End of string `\Z`
+      - End of string (not newline) `\z`
       - Previous match end `\G`
+
+In a lexical analyzer, regular expressions are intended to match substrings at any position in the input stream.
+Constraints such as the *start of string*, *end of string*, *word boundary*, etc. should be expressed in the grammar.
 
 The following features are implemented slightly different in Emerge's Regular Expression language.
 
   - The `.` (dot) matches any Unicode character in the range `0x00–0x10FFFF`, including the newlines.
+
+The **lazy quantifiers** (`??`, `*?`, `+?`, `{..}?`) are currently accepted,
+but lazy matching is not implemented at the moment.
 
 ### Parser Design
 

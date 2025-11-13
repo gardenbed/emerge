@@ -134,7 +134,7 @@ var testAST = map[string]*AST{
 			4: {5},
 		},
 	},
-	`^[a-f][0-9a-f]*$`: {
+	`[a-f][0-9a-f]*`: {
 		Root: &Concat{
 			Exprs: []Node{
 				&Concat{
@@ -242,7 +242,6 @@ func TestParse_Sanity(t *testing.T) {
 	regexes := []string{
 		// Escaped characters
 		`\\`, `\t`, `\n`, `\r`,
-		`\^`, `\$`,
 		`\|`, `\.`,
 		`\?`, `\*`, `\+`,
 		`\(`, `\)`, `\[`, `\]`, `\{`, `\}`,
@@ -355,8 +354,8 @@ func TestParse_Verify(t *testing.T) {
 			expectedLastPos:  Poses{5},
 		},
 		{
-			regex:            `^[a-f][0-9a-f]*$`,
-			expectedAST:      testAST[`^[a-f][0-9a-f]*$`],
+			regex:            `[a-f][0-9a-f]*`,
+			expectedAST:      testAST[`[a-f][0-9a-f]*`],
 			expectedNullable: false,
 			expectedFirstPos: Poses{1},
 			expectedLastPos:  Poses{4},
@@ -434,7 +433,7 @@ func TestAST_DOT(t *testing.T) {
 	}{
 		{
 			name: "OK",
-			a:    testAST[`^[a-f][0-9a-f]*$`],
+			a:    testAST[`[a-f][0-9a-f]*`],
 			expectedDOT: `strict digraph "AST" {
   concentrate=false;
   node [];
@@ -468,7 +467,7 @@ func TestAST_DOT(t *testing.T) {
 }
 
 func TestTraverse(t *testing.T) {
-	root := testAST[`^[a-f][0-9a-f]*$`].Root
+	root := testAST[`[a-f][0-9a-f]*`].Root
 
 	tests := []struct {
 		name           string
@@ -3053,38 +3052,6 @@ func TestMappers_ToGroup(t *testing.T) {
 	}
 }
 
-func TestMappers_ToAnchor(t *testing.T) {
-	tests := []MapperTest{
-		{
-			name: "Success",
-			r: combinator.Result{
-				Val: '$',
-				Pos: 2,
-			},
-			expectedResult: combinator.Result{
-				Val: EndOfString,
-				Pos: 2,
-			},
-			expectedError: "",
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			m := new(mappers)
-			res, err := m.ToAnchor(tc.r)
-
-			if tc.expectedError == "" {
-				assert.NoError(t, err)
-				assert.Equal(t, tc.expectedResult, res)
-			} else {
-				assert.Empty(t, res)
-				assert.EqualError(t, err, tc.expectedError)
-			}
-		})
-	}
-}
-
 func TestMappers_ToSubexprItem(t *testing.T) {
 	tests := []MapperTest{
 		{
@@ -3260,15 +3227,9 @@ func TestMappers_ToRegex(t *testing.T) {
 		{
 			name: "Success",
 			r: combinator.Result{
-				Val: combinator.List{
-					{Val: combinator.Empty{}},
-					{
-						Val: &Concat{
-							Exprs: []Node{
-								&Char{Lo: 's', Hi: 's'},
-							},
-						},
-						Pos: 0,
+				Val: &Concat{
+					Exprs: []Node{
+						&Char{Lo: 's', Hi: 's'},
 					},
 				},
 				Pos: 0,
@@ -3280,35 +3241,6 @@ func TestMappers_ToRegex(t *testing.T) {
 					},
 				},
 				Pos: 0,
-			},
-			expectedError: "",
-		},
-		{
-			name: "Success_WithStartOfString",
-			r: combinator.Result{
-				Val: combinator.List{
-					{Val: '^', Pos: 0},
-					{
-						Val: &Concat{
-							Exprs: []Node{
-								&Char{Lo: 's', Hi: 's'},
-							},
-						},
-						Pos: 1,
-					},
-				},
-				Pos: 0,
-			},
-			expectedResult: combinator.Result{
-				Val: &Concat{
-					Exprs: []Node{
-						&Char{Lo: 's', Hi: 's'},
-					},
-				},
-				Pos: 0,
-				Bag: combinator.Bag{
-					BagKeyStartOfString: true,
-				},
 			},
 			expectedError: "",
 		},

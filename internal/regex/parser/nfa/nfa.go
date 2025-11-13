@@ -332,21 +332,6 @@ func (m *mappers) ToGroup(r combinator.Result) (combinator.Result, error) {
 	}, nil
 }
 
-func (m *mappers) ToAnchor(r combinator.Result) (combinator.Result, error) {
-	c := r.Val.(rune)
-
-	var anchor Anchor
-	switch c {
-	case '$': // end-of-string
-		anchor = EndOfString
-	}
-
-	return combinator.Result{
-		Val: anchor,
-		Pos: r.Pos,
-	}, nil
-}
-
 func (m *mappers) ToSubexprItem(r combinator.Result) (combinator.Result, error) {
 	// Passing the result up the parsing chain
 	return r, nil
@@ -390,27 +375,8 @@ func (m *mappers) ToExpr(r combinator.Result) (combinator.Result, error) {
 }
 
 func (m *mappers) ToRegex(r combinator.Result) (combinator.Result, error) {
-	r0, _ := r.Get(0)
-	r1, _ := r.Get(1)
-
-	pos := r1.Pos
-	var bag combinator.Bag
-
-	// Check whether or not the start-of-string is present
-	if _, sos := r0.Val.(rune); sos {
-		pos = r0.Pos
-		bag = combinator.Bag{
-			BagKeyStartOfString: true,
-		}
-	}
-
-	nfa := r1.Val.(*automata.NFA)
-
-	return combinator.Result{
-		Val: nfa,
-		Pos: pos,
-		Bag: bag,
-	}, nil
+	// Passing the result up
+	return r, nil
 }
 
 //==================================================< HELPERS >==================================================
