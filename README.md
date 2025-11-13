@@ -30,8 +30,8 @@ Below is the context-free grammar for the JSON language in EBNF format. Save thi
 ```
 grammar json
 
-NUMBER = /-?[0-9]+(\.[0-9]+)?/
-STRING = /"([\x21\x23-\x5B\x5D-\x7E]\|\\[\x21-\x7E])+"/
+NUMBER   = $FLOAT
+STRING   = $STRING
 
 start    = value;
 value    = object | array | STRING | NUMBER | "true" | "false" | "null";
