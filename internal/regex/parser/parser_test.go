@@ -210,28 +210,6 @@ func TestToEscapedChar(t *testing.T) {
 			expectedError:  "",
 		},
 		{
-			name: "Caret",
-			r: comb.Result{
-				Val: comb.List{
-					{Val: '\\', Pos: 1},
-					{Val: '^', Pos: 2},
-				},
-			},
-			expectedResult: comb.Result{Val: '^', Pos: 1},
-			expectedError:  "",
-		},
-		{
-			name: "Dollar",
-			r: comb.Result{
-				Val: comb.List{
-					{Val: '\\', Pos: 1},
-					{Val: '$', Pos: 2},
-				},
-			},
-			expectedResult: comb.Result{Val: '$', Pos: 1},
-			expectedError:  "",
-		},
-		{
 			name: "Bar",
 			r: comb.Result{
 				Val: comb.List{
@@ -852,20 +830,6 @@ func TestParser_rawChar(t *testing.T) {
 			expectedError: "0: unexpected rune '\\r'",
 		},
 		{
-			name:          "Caret",
-			m:             &mockMappers{},
-			in:            newStringInput(`^`),
-			expectedOut:   nil,
-			expectedError: "0: unexpected rune '^'",
-		},
-		{
-			name:          "Dollar",
-			m:             &mockMappers{},
-			in:            newStringInput(`$`),
-			expectedOut:   nil,
-			expectedError: "0: unexpected rune '$'",
-		},
-		{
 			name:          "Bar",
 			m:             &mockMappers{},
 			in:            newStringInput(`|`),
@@ -1026,24 +990,6 @@ func TestParser_escapedChar(t *testing.T) {
 			in:   newStringInput(`\r`),
 			expectedOut: &comb.Output{
 				Result: comb.Result{Val: '\r', Pos: 0},
-			},
-			expectedError: "",
-		},
-		{
-			name: "Success_Caret",
-			m:    &mockMappers{},
-			in:   newStringInput(`\^`),
-			expectedOut: &comb.Output{
-				Result: comb.Result{Val: '^', Pos: 0},
-			},
-			expectedError: "",
-		},
-		{
-			name: "Success_Dollar",
-			m:    &mockMappers{},
-			in:   newStringInput(`\$`),
-			expectedOut: &comb.Output{
-				Result: comb.Result{Val: '$', Pos: 0},
 			},
 			expectedError: "",
 		},
@@ -5291,44 +5237,6 @@ func TestParser_group(t *testing.T) {
 	}
 }
 
-func TestParser_anchor(t *testing.T) {
-	tests := []struct {
-		name             string
-		m                *mockMappers
-		in               comb.Input
-		expectedInResult comb.Result
-	}{
-		{
-			name:             "Failure",
-			m:                &mockMappers{},
-			in:               newStringInput(`#`),
-			expectedInResult: comb.Result{},
-		},
-		{
-			name: "Success",
-			m: &mockMappers{
-				ToAnchorMocks: []MapFuncMock{
-					{},
-				},
-			},
-			in:               newStringInput(`$`),
-			expectedInResult: comb.Result{Val: '$', Pos: 0},
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			p := New(tc.m)
-			_, _ = p.anchor(tc.in)
-
-			// Verify the expected result has been passed to the mapper function
-			if m := tc.m.ToAnchorMocks; len(m) > 0 {
-				assert.Equal(t, tc.expectedInResult, m[len(m)-1].InResult)
-			}
-		})
-	}
-}
-
 func TestParser_subexprItem(t *testing.T) {
 	tests := []struct {
 		name             string
@@ -5340,19 +5248,6 @@ func TestParser_subexprItem(t *testing.T) {
 			name:             "Failure",
 			m:                &mockMappers{},
 			in:               newStringInput(`\`),
-			expectedInResult: comb.Result{},
-		},
-		{
-			name: "Success_Anchor",
-			m: &mockMappers{
-				ToAnchorMocks: []MapFuncMock{
-					{OutError: nil},
-				},
-				ToSubexprItemMocks: []MapFuncMock{
-					{},
-				},
-			},
-			in:               newStringInput(`$`),
 			expectedInResult: comb.Result{},
 		},
 		{
@@ -5591,7 +5486,7 @@ func TestParser_regex(t *testing.T) {
 			expectedInResult: comb.Result{},
 		},
 		{
-			name: "Success_WithoutStartOfString",
+			name: "Success",
 			m: &mockMappers{
 				ToSingleCharMocks: []MapFuncMock{
 					{OutError: nil},
@@ -5615,47 +5510,8 @@ func TestParser_regex(t *testing.T) {
 					{},
 				},
 			},
-			in: newStringInput(`a`),
-			expectedInResult: comb.Result{
-				Val: comb.List{
-					{Val: comb.Empty{}},
-					{},
-				},
-			},
-		},
-		{
-			name: "Success_WithStartOfString",
-			m: &mockMappers{
-				ToSingleCharMocks: []MapFuncMock{
-					{OutError: nil},
-				},
-				ToMatchItemMocks: []MapFuncMock{
-					{OutError: nil},
-				},
-				ToMatchMocks: []MapFuncMock{
-					{OutError: nil},
-				},
-				ToSubexprItemMocks: []MapFuncMock{
-					{OutError: nil},
-				},
-				ToSubexprMocks: []MapFuncMock{
-					{OutError: nil},
-				},
-				ToExprMocks: []MapFuncMock{
-					{OutError: nil},
-				},
-				ToRegexMocks: []MapFuncMock{
-					{},
-				},
-			},
-			in: newStringInput(`^a`),
-			expectedInResult: comb.Result{
-				Val: comb.List{
-					{Val: '^', Pos: 0},
-					{},
-				},
-				Pos: 0,
-			},
+			in:               newStringInput(`a`),
+			expectedInResult: comb.Result{},
 		},
 	}
 
@@ -5874,9 +5730,6 @@ type mockMappers struct {
 	ToGroupIndex int
 	ToGroupMocks []MapFuncMock
 
-	ToAnchorIndex int
-	ToAnchorMocks []MapFuncMock
-
 	ToSubexprItemIndex int
 	ToSubexprItemMocks []MapFuncMock
 
@@ -6014,13 +5867,6 @@ func (m *mockMappers) ToGroup(r comb.Result) (comb.Result, error) {
 	m.ToGroupIndex++
 	m.ToGroupMocks[i].InResult = r
 	return m.ToGroupMocks[i].OutResult, m.ToGroupMocks[i].OutError
-}
-
-func (m *mockMappers) ToAnchor(r comb.Result) (comb.Result, error) {
-	i := m.ToAnchorIndex
-	m.ToAnchorIndex++
-	m.ToAnchorMocks[i].InResult = r
-	return m.ToAnchorMocks[i].OutResult, m.ToAnchorMocks[i].OutError
 }
 
 func (m *mockMappers) ToSubexprItem(r comb.Result) (comb.Result, error) {
