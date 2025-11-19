@@ -339,19 +339,19 @@ func ACTION(s int, a Terminal) (ActionType, int, error) {
 		switch a {
 		{{- range $a := (appendEndmarker $.Terminals) }}
 		{{- if $action := lookupACTION $.ParsingTable $s $a }}
-		{{- if equalEndmarker $a }} {{/* grammar.Endmarker */}}
+		{{- if equalEndmarker $a }}{{/* grammar.Endmarker */}}
 		case endmarker:
 		{{- else }}
 		case {{ printf "%s" $a }}:
 		{{- end }}
-		{{- if eq $action.Type 1 }} {{/* SHIFT */}}
+		{{- if eq $action.Type 1 }}{{/* SHIFT */}}
 			return SHIFT, {{ printf "%d" $action.State }}, nil // {{ printf "%s" $action }}
-		{{- else if eq $action.Type 2 }} {{/* REDUCE */}}
+		{{- else if eq $action.Type 2 }}{{/* REDUCE */}}
 			{{- $i := findProductionIndex $.Productions $action.Production }}
 			{{- if ne $i -1 }}
 			return REDUCE, {{ printf "%d" $i }}, nil // {{ printf "%s" $action }}
 			{{- end }}
-		{{- else if eq $action.Type 3 }} {{/* ACCEPT */}}
+		{{- else if eq $action.Type 3 }}{{/* ACCEPT */}}
 			return ACCEPT, 0, nil // ACCEPT
 		{{- end }}
 		{{- end }}
