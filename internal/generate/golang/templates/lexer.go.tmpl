@@ -66,10 +66,10 @@ func (l *Lexer) evalDFA(state int) Token {
 	switch state {
 {{- range .Assocs }}
 	case {{ formatStates .Final }}:
-	{{- if eq .Kind 0 }} {{/* StringDef */}}
+	{{- if eq .Kind 0 }}{{/* StringDef */}}
 		pos := l.in.Skip()
 		return Token{Terminal: {{ .Terminal }}, Lexeme: {{ printf "%q" .Value }}, Pos: pos}
-	{{- else if eq .Kind 1 }} {{/* RegexDef */}}
+	{{- else if eq .Kind 1 }}{{/* RegexDef */}}
 		lexeme, pos := l.in.Lexeme()
 		return Token{Terminal: {{ .Terminal }}, Lexeme: lexeme, Pos: pos}
 	{{- end }}
@@ -94,8 +94,8 @@ func advanceDFA(state int, r rune) int {
 	case {{ $from }}:
 		switch {
 		{{- range $ranges, $to := $seq }}
-			case {{ formatRanges $ranges }}:
-				return {{ $to }}
+		case {{ formatRanges $ranges }}:
+			return {{ $to }}
 		{{- end }}
 		}
 {{ end }}
