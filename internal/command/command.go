@@ -98,6 +98,7 @@ const helpTemplate = `
 var (
 	plum       = ui.Fg256Color(219)
 	gold       = ui.Fg256Color(220)
+	turquoise  = ui.Fg256Color(45)
 	chartreuse = ui.Fg256Color(82)
 
 	helpFuncMap = template.FuncMap{
@@ -209,6 +210,7 @@ func (c *Command) Run(args []string) error {
 		return err
 	}
 
+	c.Infof(turquoise, "%c Generating examples ...", getFood())
 	c.Infof(chartreuse, "%c Successful!", getFruit())
 
 	return nil
@@ -239,7 +241,6 @@ func getFruit() rune {
 	return fruits[i]
 }
 
-// nolint: unused
 func getFood() rune {
 	food := []rune(emojis["food"])
 	i := rand.Intn(len(food))

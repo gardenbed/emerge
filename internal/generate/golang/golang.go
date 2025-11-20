@@ -32,6 +32,7 @@ var (
 	darkOrange  = ui.Fg256Color(166)
 	hotPink     = ui.Fg256Color(168)
 	orchid      = ui.Fg256Color(170)
+	violet      = ui.Fg256Color(177)
 )
 
 var (
@@ -102,6 +103,10 @@ func Generate(u ui.UI, params *Params) error {
 	}
 
 	if err := g.generateParser(); err != nil {
+		errs = errors.Append(errs, err)
+	}
+
+	if err := g.generateExample(); err != nil {
 		errs = errors.Append(errs, err)
 	}
 
@@ -332,6 +337,50 @@ func (g *generator) generateParsingTable(T *lr.ParsingTable) error {
 	content := T.String()
 
 	if _, err := f.WriteString(content); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type exampleData struct {
+	Debug   bool
+	Package string
+}
+
+// generateExample generates an example test file demonstrating how to use the generated lexer and parser.
+func (g *generator) generateExample() error {
+	g.Infof(violet, "     Generating the examples ...")
+
+	filename := "example.go.tmpl"
+	data := &exampleData{
+		Debug:   g.Debug,
+		Package: g.Spec.Name,
+	}
+
+	g.Debugf(navajoWhite, "       Rendering %q ...", filename)
+
+	content, err := templates.ReadFile(filepath.Join("templates", filename))
+	if err != nil {
+		return err
+	}
+
+	tmpl, err := template.New(filename).Parse(string(content))
+	if err != nil {
+		return err
+	}
+
+	filepath := filepath.Join(g.Path, g.Spec.Name, "example_test.go")
+	f, err := os.OpenFile(filepath, os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0666)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		_ = f.Close()
+	}()
+
+	if err := tmpl.Execute(f, data); err != nil {
 		return err
 	}
 
