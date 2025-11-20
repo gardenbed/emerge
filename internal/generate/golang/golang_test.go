@@ -594,6 +594,69 @@ func TestGenerator_generateParsingTable(t *testing.T) {
 	}
 }
 
+func TestGenerator_generateExample(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "emerge-test-")
+	assert.NoError(t, err)
+
+	defer func() {
+		assert.NoError(t, os.RemoveAll(tempDir))
+	}()
+
+	tests := []struct {
+		name                 string
+		g                    *generator
+		expectedErrorRegexes []string
+	}{
+		{
+			name: "PackageDirNotExist",
+			g: &generator{
+				UI: ui.NewNop(),
+				Params: &Params{
+					Debug: false,
+					Path:  tempDir,
+					Spec: &spec.Spec{
+						Name: "foo",
+					},
+				},
+			},
+			expectedErrorRegexes: []string{
+				`open .+/foo/example_test.go: no such file or directory`,
+			},
+		},
+		{
+			name: "Success",
+			g: &generator{
+				UI: ui.NewNop(),
+				Params: &Params{
+					Debug: false,
+					Path:  tempDir,
+					Spec: &spec.Spec{
+						Name: "",
+					},
+				},
+			},
+			expectedErrorRegexes: nil,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			err := tc.g.generateExample()
+
+			if len(tc.expectedErrorRegexes) == 0 {
+				assert.NoError(t, err)
+			} else {
+				assert.Error(t, err)
+
+				for _, expectedErrorRegex := range tc.expectedErrorRegexes {
+					re := regexp.MustCompile(expectedErrorRegex)
+					assert.True(t, re.MatchString(err.Error()), "%q DOES NOT MATCH %q", expectedErrorRegex, err)
+				}
+			}
+		})
+	}
+}
+
 func TestGenerator_renderTemplate(t *testing.T) {
 	tempDir, err := os.MkdirTemp("", "emerge-test-")
 	assert.NoError(t, err)

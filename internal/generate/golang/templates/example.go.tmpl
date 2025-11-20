@@ -1,0 +1,98 @@
+package {{.Package}}
+
+import (
+	"fmt"
+	"io"
+	"os"
+)
+
+const filepath = "tbd"
+
+func ExampleGrammar() {
+	fmt.Println("TERMINALS:")
+	for _, term := range Grammar.Terminals {
+		fmt.Println(term)
+	}
+
+	fmt.Println("NON-TERMINALS:")
+	for _, nonTerm := range Grammar.NonTerminals {
+		fmt.Println(nonTerm)
+	}
+
+	fmt.Println("PRODUCTIONS:")
+	for _, prod := range Grammar.Productions {
+		fmt.Println(prod)
+	}
+}
+
+func ExampleLexer() {
+	f, err := os.Open(filepath)
+	if err != nil {
+		panic(err)
+	}
+
+	l, err := NewLexer(filepath, f)
+	if err != nil {
+		panic(err)
+	}
+
+	for {
+		token, err := l.NextToken()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			panic(err)
+		}
+
+		fmt.Println(token)
+	}
+}
+
+func ExampleParser_ParseAndBuildAST() {
+	f, err := os.Open(filepath)
+	if err != nil {
+		panic(err)
+	}
+
+	p, err := NewParser(filepath, f)
+	if err != nil {
+		panic(err)
+	}
+
+	root, err := p.ParseAndBuildAST()
+	if err != nil {
+		panic(err)
+	}
+
+	Traverse(root, VLR, func(n Node) bool {
+		fmt.Println(n)
+		return true
+	})
+}
+
+func ExampleParser_ParseAndEvaluate() {
+	f, err := os.Open(filepath)
+	if err != nil {
+		panic(err)
+	}
+
+	p, err := NewParser(filepath, f)
+	if err != nil {
+		panic(err)
+	}
+
+	eval, err := p.ParseAndEvaluate(func(p int, vals []*Value) (any, error) {
+		fmt.Println("Production rule:", Grammar.Productions[p])
+		for _, val := range vals {
+			fmt.Println("\t", val)
+		}
+
+		return vals, nil
+	})
+
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(eval)
+}
